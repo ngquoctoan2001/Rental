@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/RentalOS.API/RentalOS.API.csproj" />
+    <Project Path="src/RentalOS.Application/RentalOS.Application.csproj" />
+    <Project Path="src/RentalOS.Domain/RentalOS.Domain.csproj" />
+    <Project Path="src/RentalOS.Infrastructure/RentalOS.Infrastructure.csproj" />
+    <Project Path="src/RentalOS.Worker/RentalOS.Worker.csproj" />
+  </Folder>
+</Solution>

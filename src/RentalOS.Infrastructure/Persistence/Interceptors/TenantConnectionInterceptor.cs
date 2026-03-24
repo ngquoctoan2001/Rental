@@ -1,0 +1,51 @@
+using System.Data.Common;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using RentalOS.Infrastructure.Multitenancy;
+
+namespace RentalOS.Infrastructure.Persistence.Interceptors;
+
+/// <summary>
+/// Interceptor that stamps the PostgreSQL search_path on every connection open
+/// based on the resolved schemaName in ITenantContext.
+/// </summary>
+public sealed class TenantConnectionInterceptor(ITenantContext tenantContext) : DbConnectionInterceptor
+{
+    private readonly ITenantContext _tenantContext = tenantContext;
+
+    public override InterceptionResult ConnectionOpening(
+        DbConnection connection, 
+        ConnectionEventData eventData, 
+        InterceptionResult result)
+    {
+        SetSchema(connection);
+        return result;
+    }
+
+    public override async ValueTask<InterceptionResult> ConnectionOpeningAsync(
+        DbConnection connection, 
+        ConnectionEventData eventData, 
+        InterceptionResult result, 
+        CancellationToken cancellationToken = default)
+    {
+        await SetSchemaAsync(connection, cancellationToken);
+        return result;
+    }
+
+    private void SetSchema(DbConnection connection)
+    {
+        if (!_tenantContext.IsInitialized || string.IsNullOrEmpty(_tenantContext.SchemaName)) return;
+
+        using var cmd = connection.CreateCommand();
+        cmd.CommandText = $"SET search_path TO \"{_tenantContext.SchemaName}\", public;";
+        cmd.ExecuteNonQuery();
+    }
+
+    private async Task SetSchemaAsync(DbConnection connection, CancellationToken cancellationToken)
+    {
+        if (!_tenantContext.IsInitialized || string.IsNullOrEmpty(_tenantContext.SchemaName)) return;
+
+        await using var cmd = connection.CreateCommand();
+        cmd.CommandText = $"SET search_path TO \"{_tenantContext.SchemaName}\", public;";
+        await cmd.ExecuteNonQueryAsync(cancellationToken);
+    }
+}

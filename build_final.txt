@@ -1,0 +1,29 @@
+﻿  Determining projects to restore...
+C:\Users\Acer\Desktop\Rental\src\RentalOS.Application\RentalOS.Application.csproj : warning NU1903: Package 'AutoMapper' 12.0.1 has a known high severity vulnerability, https://github.com/advisories/GHSA-rvv3-g6hj-g44x [C:\Users\Acer\Desktop\Rental\src\RentalOS.API\RentalOS.API.csproj]
+C:\Users\Acer\Desktop\Rental\src\RentalOS.API\RentalOS.API.csproj : warning NU1903: Package 'AutoMapper' 12.0.1 has a known high severity vulnerability, https://github.com/advisories/GHSA-rvv3-g6hj-g44x
+C:\Users\Acer\Desktop\Rental\src\RentalOS.API\RentalOS.API.csproj : warning NU1903: Package 'Newtonsoft.Json' 11.0.1 has a known high severity vulnerability, https://github.com/advisories/GHSA-5crp-9r3c-p9vr
+C:\Users\Acer\Desktop\Rental\src\RentalOS.Infrastructure\RentalOS.Infrastructure.csproj : warning NU1903: Package 'AutoMapper' 12.0.1 has a known high severity vulnerability, https://github.com/advisories/GHSA-rvv3-g6hj-g44x [C:\Users\Acer\Desktop\Rental\src\RentalOS.API\RentalOS.API.csproj]
+  All projects are up-to-date for restore.
+C:\Users\Acer\Desktop\Rental\src\RentalOS.API\RentalOS.API.csproj : warning NU1903: Package 'AutoMapper' 12.0.1 has a known high severity vulnerability, https://github.com/advisories/GHSA-rvv3-g6hj-g44x
+C:\Users\Acer\Desktop\Rental\src\RentalOS.API\RentalOS.API.csproj : warning NU1903: Package 'Newtonsoft.Json' 11.0.1 has a known high severity vulnerability, https://github.com/advisories/GHSA-5crp-9r3c-p9vr
+C:\Users\Acer\Desktop\Rental\src\RentalOS.Application\RentalOS.Application.csproj : warning NU1903: Package 'AutoMapper' 12.0.1 has a known high severity vulnerability, https://github.com/advisories/GHSA-rvv3-g6hj-g44x
+C:\Users\Acer\Desktop\Rental\src\RentalOS.Infrastructure\RentalOS.Infrastructure.csproj : warning NU1903: Package 'AutoMapper' 12.0.1 has a known high severity vulnerability, https://github.com/advisories/GHSA-rvv3-g6hj-g44x
+  RentalOS.Domain -> C:\Users\Acer\Desktop\Rental\src\RentalOS.Domain\bin\Debug\net10.0\RentalOS.Domain.dll
+  RentalOS.Application -> C:\Users\Acer\Desktop\Rental\src\RentalOS.Application\bin\Debug\net10.0\RentalOS.Application.dll
+  RentalOS.Infrastructure -> C:\Users\Acer\Desktop\Rental\src\RentalOS.Infrastructure\bin\Debug\net10.0\RentalOS.Infrastructure.dll
+  RentalOS.API -> C:\Users\Acer\Desktop\Rental\src\RentalOS.API\bin\Debug\net10.0\RentalOS.API.dll
+
+Build succeeded.
+
+C:\Users\Acer\Desktop\Rental\src\RentalOS.Application\RentalOS.Application.csproj : warning NU1903: Package 'AutoMapper' 12.0.1 has a known high severity vulnerability, https://github.com/advisories/GHSA-rvv3-g6hj-g44x [C:\Users\Acer\Desktop\Rental\src\RentalOS.API\RentalOS.API.csproj]
+C:\Users\Acer\Desktop\Rental\src\RentalOS.API\RentalOS.API.csproj : warning NU1903: Package 'AutoMapper' 12.0.1 has a known high severity vulnerability, https://github.com/advisories/GHSA-rvv3-g6hj-g44x
+C:\Users\Acer\Desktop\Rental\src\RentalOS.API\RentalOS.API.csproj : warning NU1903: Package 'Newtonsoft.Json' 11.0.1 has a known high severity vulnerability, https://github.com/advisories/GHSA-5crp-9r3c-p9vr
+C:\Users\Acer\Desktop\Rental\src\RentalOS.Infrastructure\RentalOS.Infrastructure.csproj : warning NU1903: Package 'AutoMapper' 12.0.1 has a known high severity vulnerability, https://github.com/advisories/GHSA-rvv3-g6hj-g44x [C:\Users\Acer\Desktop\Rental\src\RentalOS.API\RentalOS.API.csproj]
+C:\Users\Acer\Desktop\Rental\src\RentalOS.API\RentalOS.API.csproj : warning NU1903: Package 'AutoMapper' 12.0.1 has a known high severity vulnerability, https://github.com/advisories/GHSA-rvv3-g6hj-g44x
+C:\Users\Acer\Desktop\Rental\src\RentalOS.API\RentalOS.API.csproj : warning NU1903: Package 'Newtonsoft.Json' 11.0.1 has a known high severity vulnerability, https://github.com/advisories/GHSA-5crp-9r3c-p9vr
+C:\Users\Acer\Desktop\Rental\src\RentalOS.Application\RentalOS.Application.csproj : warning NU1903: Package 'AutoMapper' 12.0.1 has a known high severity vulnerability, https://github.com/advisories/GHSA-rvv3-g6hj-g44x
+C:\Users\Acer\Desktop\Rental\src\RentalOS.Infrastructure\RentalOS.Infrastructure.csproj : warning NU1903: Package 'AutoMapper' 12.0.1 has a known high severity vulnerability, https://github.com/advisories/GHSA-rvv3-g6hj-g44x
+    8 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:06.02

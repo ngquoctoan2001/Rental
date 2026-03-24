@@ -1,0 +1,103 @@
+# ===========================================
+# .gitignore for .NET + Node.js (RentalOS)
+# ===========================================
+
+# ---- .NET ----
+## Build outputs
+[Bb]in/
+[Oo]bj/
+out/
+publish/
+
+## NuGet packages
+*.nupkg
+*.snupkg
+**/[Pp]ackages/
+!**/[Pp]ackages/build/
+*.nuget.props
+*.nuget.targets
+
+## Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.csproj.user
+.idea/
+
+## Rider
+.idea/
+*.DotSettings.user
+
+## Crash dumps & logs
+*.log
+*.tmp
+*.temp
+crash.txt
+error.txt
+ServiceFabricBackup/
+
+## Entity Framework migrations local DB
+*.mdf
+*.ldf
+
+## dotnet secrets
+secrets.json
+appsettings.*.json
+!appsettings.json
+!appsettings.Development.json
+
+## Test result
+TestResults/
+*.trx
+coverage/
+*.coverage
+*.coveragexml
+
+# ---- Node.js / Next.js ----
+node_modules/
+.next/
+.nuxt/
+dist/
+build/
+.cache/
+.parcel-cache/
+.turbo/
+
+## Env files
+.env
+.env.local
+.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+## Logs
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+## Package managers
+.pnp.js
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+
+## OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- Docker ----
+*.dockerignore
+
+# ---- Misc ----
+*.bak
+*.swp
+*~
+ERRORS.md

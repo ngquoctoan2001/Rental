@@ -1,0 +1,40 @@
+﻿  Determining projects to restore...
+C:\Users\Acer\Desktop\Rental\src\RentalOS.API\RentalOS.API.csproj : warning NU1903: Package 'AutoMapper' 12.0.1 has a known high severity vulnerability, https://github.com/advisories/GHSA-rvv3-g6hj-g44x
+C:\Users\Acer\Desktop\Rental\src\RentalOS.Infrastructure\RentalOS.Infrastructure.csproj : warning NU1903: Package 'AutoMapper' 12.0.1 has a known high severity vulnerability, https://github.com/advisories/GHSA-rvv3-g6hj-g44x [C:\Users\Acer\Desktop\Rental\src\RentalOS.API\RentalOS.API.csproj]
+C:\Users\Acer\Desktop\Rental\src\RentalOS.Application\RentalOS.Application.csproj : warning NU1903: Package 'AutoMapper' 12.0.1 has a known high severity vulnerability, https://github.com/advisories/GHSA-rvv3-g6hj-g44x [C:\Users\Acer\Desktop\Rental\src\RentalOS.API\RentalOS.API.csproj]
+C:\Users\Acer\Desktop\Rental\src\RentalOS.API\RentalOS.API.csproj : warning NU1903: Package 'Newtonsoft.Json' 11.0.1 has a known high severity vulnerability, https://github.com/advisories/GHSA-5crp-9r3c-p9vr
+  Restored C:\Users\Acer\Desktop\Rental\src\RentalOS.Domain\RentalOS.Domain.csproj (in 357 ms).
+  Restored C:\Users\Acer\Desktop\Rental\src\RentalOS.Application\RentalOS.Application.csproj (in 357 ms).
+  Restored C:\Users\Acer\Desktop\Rental\src\RentalOS.API\RentalOS.API.csproj (in 360 ms).
+  Restored C:\Users\Acer\Desktop\Rental\src\RentalOS.Infrastructure\RentalOS.Infrastructure.csproj (in 421 ms).
+C:\Users\Acer\Desktop\Rental\src\RentalOS.API\RentalOS.API.csproj : warning NU1903: Package 'AutoMapper' 12.0.1 has a known high severity vulnerability, https://github.com/advisories/GHSA-rvv3-g6hj-g44x
+C:\Users\Acer\Desktop\Rental\src\RentalOS.API\RentalOS.API.csproj : warning NU1903: Package 'Newtonsoft.Json' 11.0.1 has a known high severity vulnerability, https://github.com/advisories/GHSA-5crp-9r3c-p9vr
+C:\Users\Acer\Desktop\Rental\src\RentalOS.Application\RentalOS.Application.csproj : warning NU1903: Package 'AutoMapper' 12.0.1 has a known high severity vulnerability, https://github.com/advisories/GHSA-rvv3-g6hj-g44x
+C:\Users\Acer\Desktop\Rental\src\RentalOS.Infrastructure\RentalOS.Infrastructure.csproj : warning NU1903: Package 'AutoMapper' 12.0.1 has a known high severity vulnerability, https://github.com/advisories/GHSA-rvv3-g6hj-g44x
+C:\Users\Acer\Desktop\Rental\src\RentalOS.Domain\Entities\Address.cs(1,23): error CS0234: The type or namespace name 'Common' does not exist in the namespace 'RentalOS.Domain' (are you missing an assembly reference?) [C:\Users\Acer\Desktop\Rental\src\RentalOS.Domain\RentalOS.Domain.csproj]
+C:\Users\Acer\Desktop\Rental\src\RentalOS.Domain\Entities\ApplicationUser.cs(2,23): error CS0234: The type or namespace name 'Common' does not exist in the namespace 'RentalOS.Domain' (are you missing an assembly reference?) [C:\Users\Acer\Desktop\Rental\src\RentalOS.Domain\RentalOS.Domain.csproj]
+C:\Users\Acer\Desktop\Rental\src\RentalOS.Domain\Entities\AiConversation.cs(22,12): error CS0246: The type or namespace name 'User' could not be found (are you missing a using directive or an assembly reference?) [C:\Users\Acer\Desktop\Rental\src\RentalOS.Domain\RentalOS.Domain.csproj]
+C:\Users\Acer\Desktop\Rental\src\RentalOS.Domain\Entities\ApplicationUser.cs(6,52): error CS0246: The type or namespace name 'IEntity' could not be found (are you missing a using directive or an assembly reference?) [C:\Users\Acer\Desktop\Rental\src\RentalOS.Domain\RentalOS.Domain.csproj]
+C:\Users\Acer\Desktop\Rental\src\RentalOS.Domain\Entities\ApplicationUser.cs(30,32): error CS0246: The type or namespace name 'MaintenanceTask' could not be found (are you missing a using directive or an assembly reference?) [C:\Users\Acer\Desktop\Rental\src\RentalOS.Domain\RentalOS.Domain.csproj]
+C:\Users\Acer\Desktop\Rental\src\RentalOS.Domain\Entities\ApplicationUser.cs(31,32): error CS0246: The type or namespace name 'Review' could not be found (are you missing a using directive or an assembly reference?) [C:\Users\Acer\Desktop\Rental\src\RentalOS.Domain\RentalOS.Domain.csproj]
+
+Build FAILED.
+
+C:\Users\Acer\Desktop\Rental\src\RentalOS.API\RentalOS.API.csproj : warning NU1903: Package 'AutoMapper' 12.0.1 has a known high severity vulnerability, https://github.com/advisories/GHSA-rvv3-g6hj-g44x
+C:\Users\Acer\Desktop\Rental\src\RentalOS.Infrastructure\RentalOS.Infrastructure.csproj : warning NU1903: Package 'AutoMapper' 12.0.1 has a known high severity vulnerability, https://github.com/advisories/GHSA-rvv3-g6hj-g44x [C:\Users\Acer\Desktop\Rental\src\RentalOS.API\RentalOS.API.csproj]
+C:\Users\Acer\Desktop\Rental\src\RentalOS.Application\RentalOS.Application.csproj : warning NU1903: Package 'AutoMapper' 12.0.1 has a known high severity vulnerability, https://github.com/advisories/GHSA-rvv3-g6hj-g44x [C:\Users\Acer\Desktop\Rental\src\RentalOS.API\RentalOS.API.csproj]
+C:\Users\Acer\Desktop\Rental\src\RentalOS.API\RentalOS.API.csproj : warning NU1903: Package 'Newtonsoft.Json' 11.0.1 has a known high severity vulnerability, https://github.com/advisories/GHSA-5crp-9r3c-p9vr
+C:\Users\Acer\Desktop\Rental\src\RentalOS.API\RentalOS.API.csproj : warning NU1903: Package 'AutoMapper' 12.0.1 has a known high severity vulnerability, https://github.com/advisories/GHSA-rvv3-g6hj-g44x
+C:\Users\Acer\Desktop\Rental\src\RentalOS.API\RentalOS.API.csproj : warning NU1903: Package 'Newtonsoft.Json' 11.0.1 has a known high severity vulnerability, https://github.com/advisories/GHSA-5crp-9r3c-p9vr
+C:\Users\Acer\Desktop\Rental\src\RentalOS.Application\RentalOS.Application.csproj : warning NU1903: Package 'AutoMapper' 12.0.1 has a known high severity vulnerability, https://github.com/advisories/GHSA-rvv3-g6hj-g44x
+C:\Users\Acer\Desktop\Rental\src\RentalOS.Infrastructure\RentalOS.Infrastructure.csproj : warning NU1903: Package 'AutoMapper' 12.0.1 has a known high severity vulnerability, https://github.com/advisories/GHSA-rvv3-g6hj-g44x
+C:\Users\Acer\Desktop\Rental\src\RentalOS.Domain\Entities\Address.cs(1,23): error CS0234: The type or namespace name 'Common' does not exist in the namespace 'RentalOS.Domain' (are you missing an assembly reference?) [C:\Users\Acer\Desktop\Rental\src\RentalOS.Domain\RentalOS.Domain.csproj]
+C:\Users\Acer\Desktop\Rental\src\RentalOS.Domain\Entities\ApplicationUser.cs(2,23): error CS0234: The type or namespace name 'Common' does not exist in the namespace 'RentalOS.Domain' (are you missing an assembly reference?) [C:\Users\Acer\Desktop\Rental\src\RentalOS.Domain\RentalOS.Domain.csproj]
+C:\Users\Acer\Desktop\Rental\src\RentalOS.Domain\Entities\AiConversation.cs(22,12): error CS0246: The type or namespace name 'User' could not be found (are you missing a using directive or an assembly reference?) [C:\Users\Acer\Desktop\Rental\src\RentalOS.Domain\RentalOS.Domain.csproj]
+C:\Users\Acer\Desktop\Rental\src\RentalOS.Domain\Entities\ApplicationUser.cs(6,52): error CS0246: The type or namespace name 'IEntity' could not be found (are you missing a using directive or an assembly reference?) [C:\Users\Acer\Desktop\Rental\src\RentalOS.Domain\RentalOS.Domain.csproj]
+C:\Users\Acer\Desktop\Rental\src\RentalOS.Domain\Entities\ApplicationUser.cs(30,32): error CS0246: The type or namespace name 'MaintenanceTask' could not be found (are you missing a using directive or an assembly reference?) [C:\Users\Acer\Desktop\Rental\src\RentalOS.Domain\RentalOS.Domain.csproj]
+C:\Users\Acer\Desktop\Rental\src\RentalOS.Domain\Entities\ApplicationUser.cs(31,32): error CS0246: The type or namespace name 'Review' could not be found (are you missing a using directive or an assembly reference?) [C:\Users\Acer\Desktop\Rental\src\RentalOS.Domain\RentalOS.Domain.csproj]
+    8 Warning(s)
+    6 Error(s)
+
+Time Elapsed 00:00:01.89

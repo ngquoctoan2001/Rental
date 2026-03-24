@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>dotnet-RentalOS.Worker-a33d1f8a-3c83-434d-b7ed-7210e59f107a</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RentalOS.Application\RentalOS.Application.csproj" />
+    <ProjectReference Include="..\RentalOS.Infrastructure\RentalOS.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>
