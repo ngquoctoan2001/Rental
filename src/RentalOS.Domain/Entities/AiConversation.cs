@@ -19,5 +19,5 @@ public class AiConversation : BaseEntity
     public DateTime? LastMessageAt { get; set; }
 
     // Navigation
-    public ApplicationUser User { get; set; } = null!;
+    public User User { get; set; } = null!;
 }

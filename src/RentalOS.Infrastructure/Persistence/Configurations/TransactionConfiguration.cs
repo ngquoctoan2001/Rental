@@ -6,27 +6,19 @@ namespace RentalOS.Infrastructure.Persistence.Configurations;
 
 public class TransactionConfiguration : IEntityTypeConfiguration<Transaction>
 {
-    public void Configure(EntityTypeBuilder<Transaction> b)
+    public void Configure(EntityTypeBuilder<Transaction> builder)
     {
-        b.ToTable("transactions");
-        b.HasKey(t => t.Id);
-        b.Property(t => t.TransactionCode).HasMaxLength(100);
-        b.Property(t => t.Amount).HasColumnType("decimal(12,2)").IsRequired();
-        b.Property(t => t.Method).HasConversion<string>().HasMaxLength(20).IsRequired();
-        b.Property(t => t.Direction).HasConversion<string>().HasMaxLength(10).IsRequired();
-        b.Property(t => t.Category).HasConversion<string>().HasMaxLength(30).HasDefaultValue("rent");
-        b.Property(t => t.ProviderRef).HasMaxLength(200);
-        b.Property(t => t.ProviderResponse).HasColumnType("jsonb");
-        b.Property(t => t.Status).HasConversion<string>().HasMaxLength(20).HasDefaultValue("success");
-        b.Property(t => t.Note).HasMaxLength(500);
-        b.Property(t => t.ReceiptUrl).HasMaxLength(500);
-        b.Property(t => t.PaidAt).HasDefaultValueSql("NOW()");
+        builder.ToTable("transactions");
 
-        b.HasOne(t => t.Invoice).WithMany(i => i.Transactions).HasForeignKey(t => t.InvoiceId);
+        builder.HasKey(x => x.Id);
 
-        b.HasIndex(t => t.InvoiceId);
-        b.HasIndex(t => t.ProviderRef).HasFilter("provider_ref IS NOT NULL");
-        b.HasIndex(t => t.PaidAt);
-        b.HasIndex(t => t.Method);
+        builder.Property(x => x.Amount)
+            .HasPrecision(18, 2);
+
+        builder.Property(x => x.ProviderRef)
+            .HasMaxLength(200);
+
+        builder.HasIndex(x => x.ProviderRef);
+        builder.HasIndex(x => x.PaidAt);
     }
 }

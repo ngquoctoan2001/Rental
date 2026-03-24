@@ -4,25 +4,16 @@ using RentalOS.Application.Common.Interfaces;
 
 namespace RentalOS.Infrastructure.Services;
 
-public class CurrentUserService : ICurrentUserService
+public class CurrentUserService(IHttpContextAccessor httpContextAccessor) : ICurrentUserService
 {
-    private readonly IHttpContextAccessor _httpContextAccessor;
+    public string? UserId => httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier) 
+                             ?? httpContextAccessor.HttpContext?.User?.FindFirstValue("sub");
 
-    public CurrentUserService(IHttpContextAccessor httpContextAccessor)
-    {
-        _httpContextAccessor = httpContextAccessor;
-    }
+    public string? Role => httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.Role) 
+                            ?? httpContextAccessor.HttpContext?.User?.FindFirstValue("role");
 
-    public string? UserId => _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+    public string? TenantSlug => httpContextAccessor.HttpContext?.User?.FindFirstValue("tenant_slug");
 
-    public Guid? TenantId 
-    {
-        get
-        {
-            var tenantClaim = _httpContextAccessor.HttpContext?.User?.FindFirstValue("tenant_id");
-            return Guid.TryParse(tenantClaim, out var tenantId) ? tenantId : null;
-        }
-    }
-
-    public bool IsAuthenticated => _httpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated ?? false;
+    public bool IsAuthenticated => httpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated ?? false;
 }
+

@@ -100,6 +100,8 @@ Tạo các entity class theo đúng columns trong file 02-database.md:
 - Setting.cs (bảng 14)
 - AuditLog.cs (bảng 15)
 - PaymentLinkLog.cs (bảng 16: payment_link_logs) — MỚI
+- User.cs (bảng 3: users) — Kế thừa IdentityUser<Guid>
+- ApplicationRole.cs — Kế thừa IdentityRole<Guid>
 
 Tạo trong src/RentalOS.Domain/Enums/:
 - RoomStatus.cs: Available, Rented, Maintenance, Reserved
@@ -137,8 +139,8 @@ Tất cả entity dùng record hoặc class đều được, có XML doc comment
 Đọc file docs/specs/02-database.md và tạo EF Core infrastructure.
 
 1. Tạo src/RentalOS.Infrastructure/Persistence/ApplicationDbContext.cs:
-- Kế thừa DbContext
-- DbSet cho tất cả entities (Property, Room, Customer, Contract, ContractCoTenant, Invoice, Transaction, MeterReading, NotificationLog, AiConversation, Setting, AuditLog, PaymentLinkLog, User)
+- Kế thừa IdentityDbContext<User, ApplicationRole, Guid>
+- DbSet cho tất cả entities (Property, Room, Customer, Contract, ContractCoTenant, Invoice, Transaction, MeterReading, NotificationLog, AiConversation, Setting, AuditLog, PaymentLinkLog)
 - Override OnModelCreating: ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly)
 - Override SaveChangesAsync: tự động set UpdatedAt = DateTime.UtcNow cho entities có UpdatedAt
 
@@ -168,6 +170,11 @@ Tất cả entity dùng record hoặc class đều được, có XML doc comment
 - EF Core SaveChanges interceptor
 - Với mỗi Added/Modified/Deleted entity: tạo AuditLog record
 - Lấy user info từ ITenantContext
+
+6. Tạo src/RentalOS.Infrastructure/Persistence/Seeders/DatabaseSeeder.cs:
+- Seed Roles: SuperAdmin, Admin, Tenant, User
+- Seed SuperAdmin mặc định nếu chưa có
+- Seed default settings (MoMo, Zalo, Billing, etc.) vào public hoặc tenant schema tùy loại
 
 Không tạo migration file, chỉ cấu hình EF.
 ```
@@ -199,7 +206,12 @@ Không tạo migration file, chỉ cấu hình EF.
 - Method: SendNotification(userId, notification)
 - Group theo tenant: Groups.AddToGroupAsync(tenantSlug)
 
-4. Viết src/RentalOS.API/Program.cs hoàn chỉnh:
+4. Tạo src/RentalOS.Infrastructure/Services/CurrentUserService.cs:
+- ICurrentUserService interface: UserId (Guid?), Email, Role, TenantSlug
+- Implementation lấy data từ ClaimsPrincipal thông qua IHttpContextAccessor
+
+5. Viết src/RentalOS.API/Program.cs hoàn chỉnh:
+- Identity registration: .AddIdentity<User, ApplicationRole>().AddEntityFrameworkStores<ApplicationDbContext>()
 - JWT Authentication (HS256, validate issuer/audience/lifetime)
 - Rate limiting: "auth" 5/min, "api" 100/min, "ai" 20/min
 - CORS: allow Vercel domain + localhost
@@ -215,6 +227,7 @@ Không tạo migration file, chỉ cấu hình EF.
 - TenantMiddleware (sau Authentication, trước Authorization)
 - ExceptionMiddleware (đầu tiên)
 - Health checks: DB + Redis
+- Data Seeding: await app.Services.SeedDatabaseAsync()
 - Map Controllers
 - Map /health endpoint
 ```
@@ -241,7 +254,15 @@ Không tạo migration file, chỉ cấu hình EF.
 2. src/RentalOS.Application/Modules/Auth/Commands/Register/:
 - RegisterCommand: { OwnerName, OwnerEmail, Phone, TenantName, Password }
 - RegisterCommandValidator: email format, password min 8 chars có chữ+số+ký tự đặc biệt, phone VN (bắt đầu 0, 10 số)
-- RegisterCommandHandler: thực hiện đúng 13 bước trong đặc tả (validate → generate slug → hash password → insert tenant → create schema → insert user → insert settings → generate tokens → gửi email async → return)
+- RegisterCommandHandler: thực hiện đúng 13 bước trong đặc tả.
+  Lưu ý quan trọng: 
+  1. Validate email/slug trong Public schema.
+  2. Tạo bản ghi Tenant trong `public.tenants`.
+  3. Tạo Schema riêng `tenant_{slug}` thông qua `ITenantSchemaManager`.
+  4. Sử dụng `UserManager<User>` để tạo user (hash password tự động).
+  5. Gán Role 'owner' cho user mới.
+  6. Insert settings mặc định vào schema mới.
+  7. Trả về JWT chứa tenant_slug, sub, role, email.
   Slug generation: lowercase, bỏ dấu tiếng Việt, replace khoảng trắng với "-", nếu trùng thêm "-{4random digits}"
 
 3. src/RentalOS.Application/Modules/Auth/Commands/Login/:

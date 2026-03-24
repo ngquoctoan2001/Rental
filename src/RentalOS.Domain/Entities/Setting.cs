@@ -9,6 +9,9 @@ public class Setting
     /// <summary>Unique setting key (e.g. "payment.momo").</summary>
     public string Key { get; set; } = string.Empty;
 
+    /// <summary>Group name of the setting.</summary>
+    public string Group { get; set; } = string.Empty;
+
     /// <summary>JSON value for this setting.</summary>
     public string Value { get; set; } = "{}";
 

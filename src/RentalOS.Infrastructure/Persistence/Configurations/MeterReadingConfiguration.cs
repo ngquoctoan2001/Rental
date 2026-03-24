@@ -6,18 +6,13 @@ namespace RentalOS.Infrastructure.Persistence.Configurations;
 
 public class MeterReadingConfiguration : IEntityTypeConfiguration<MeterReading>
 {
-    public void Configure(EntityTypeBuilder<MeterReading> b)
+    public void Configure(EntityTypeBuilder<MeterReading> builder)
     {
-        b.ToTable("meter_readings");
-        b.HasKey(m => m.Id);
-        b.Property(m => m.ReadingDate).HasColumnType("date").IsRequired();
-        b.Property(m => m.ElectricityImage).HasMaxLength(500);
-        b.Property(m => m.WaterImage).HasMaxLength(500);
-        b.Property(m => m.Note).HasMaxLength(200);
+        builder.ToTable("meter_readings");
 
-        b.HasOne(m => m.Room).WithMany().HasForeignKey(m => m.RoomId);
+        builder.HasKey(x => x.Id);
 
-        b.HasIndex(m => m.RoomId);
-        b.HasIndex(m => new { m.RoomId, m.ReadingDate });  // for DESC lookup
+        builder.HasIndex(x => new { x.RoomId, x.ReadingDate })
+            .IsDescending(false, true); // DESC on ReadingDate
     }
 }

@@ -1,13 +1,16 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using RentalOS.Application.Common.Interfaces;
 using RentalOS.Domain.Entities;
+
 
 namespace RentalOS.Infrastructure.Persistence;
 
 /// <summary>Main EF Core context. The active PostgreSQL search_path is set per request by TenantMiddleware.</summary>
 public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) 
-    : IdentityDbContext<ApplicationUser, ApplicationRole, Guid>(options)
+    : IdentityDbContext<User, ApplicationRole, Guid>(options), IApplicationDbContext
 {
+
     // ── Per-tenant tables ────────────────────────────────────────────────────
     public DbSet<Property> Properties => Set<Property>();
     public DbSet<Room> Rooms => Set<Room>();
@@ -22,9 +25,6 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<Setting> Settings => Set<Setting>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<PaymentLinkLog> PaymentLinkLogs => Set<PaymentLinkLog>();
-    public DbSet<Address> Addresses => Set<Address>();
-    public DbSet<MaintenanceTask> MaintenanceTasks => Set<MaintenanceTask>();
-    public DbSet<Review> Reviews => Set<Review>();
 
     // ── Public-schema tables ─────────────────────────────────────────────────
     public DbSet<Tenant> Tenants => Set<Tenant>();

@@ -41,6 +41,8 @@ public class Room : BaseEntity
     /// <summary>JSON array of amenity labels.</summary>
     public string Amenities { get; set; } = "[]";
 
+    public bool IsActive { get; set; } = true;
+
     /// <summary>JSON array of image URLs.</summary>
     public string Images { get; set; } = "[]";
 

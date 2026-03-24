@@ -6,28 +6,21 @@ namespace RentalOS.Infrastructure.Persistence.Configurations;
 
 public class SettingConfiguration : IEntityTypeConfiguration<Setting>
 {
-    public void Configure(EntityTypeBuilder<Setting> b)
+    public void Configure(EntityTypeBuilder<Setting> builder)
     {
-        b.ToTable("settings");
-        b.HasKey(s => s.Id);
-        b.HasIndex(s => s.Key).IsUnique();
-        b.Property(s => s.Key).HasMaxLength(100).IsRequired();
-        b.Property(s => s.Value).HasColumnType("jsonb").IsRequired();
-        b.Property(s => s.UpdatedAt).HasDefaultValueSql("NOW()");
-    }
-}
+        builder.ToTable("settings");
 
-public class AiConversationConfiguration : IEntityTypeConfiguration<AiConversation>
-{
-    public void Configure(EntityTypeBuilder<AiConversation> b)
-    {
-        b.ToTable("ai_conversations");
-        b.HasKey(a => a.Id);
-        b.Property(a => a.Title).HasMaxLength(200);
-        b.Property(a => a.Messages).HasColumnType("jsonb").HasDefaultValueSql("'[]'");
-        b.Property(a => a.MessageCount).HasDefaultValue(0);
+        builder.HasKey(x => x.Id);
 
-        b.HasOne(a => a.User).WithMany().HasForeignKey(a => a.UserId);
-        b.HasIndex(a => a.UserId);
+        builder.Property(x => x.Key)
+            .IsRequired()
+            .HasMaxLength(100);
+
+        builder.Property(x => x.Group)
+            .IsRequired()
+            .HasMaxLength(50);
+
+        builder.HasIndex(x => new { x.Group, x.Key })
+            .IsUnique();
     }
 }

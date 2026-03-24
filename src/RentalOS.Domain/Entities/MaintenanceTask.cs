@@ -14,5 +14,5 @@ public class MaintenanceTask : BaseEntity, IEntity
     public Property? Property { get; set; }
     
     public Guid? AssignedToId { get; set; }
-    public ApplicationUser? AssignedTo { get; set; }
+    public User? AssignedTo { get; set; }
 }

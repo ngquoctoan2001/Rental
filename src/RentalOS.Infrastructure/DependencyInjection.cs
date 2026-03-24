@@ -9,7 +9,9 @@ using RentalOS.Domain.Entities;
 using RentalOS.Infrastructure.Multitenancy;
 using RentalOS.Infrastructure.Persistence;
 using RentalOS.Infrastructure.Persistence.Interceptors;
+using RentalOS.Infrastructure.Services.Storage;
 using RentalOS.Infrastructure.Services;
+
 
 namespace RentalOS.Infrastructure;
 
@@ -32,7 +34,10 @@ public static class DependencyInjection
                    .AddInterceptors(auditInterceptor, connectionInterceptor);
         });
 
-        services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
+        services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
+
+
+        services.AddIdentity<User, ApplicationRole>(options =>
         {
             options.Password.RequireDigit = true;
             options.Password.RequireLowercase = true;
@@ -46,7 +51,7 @@ public static class DependencyInjection
         .AddEntityFrameworkStores<ApplicationDbContext>()
         .AddDefaultTokenProviders();
 
-        services.AddScoped<TenantSchemaManager>(sp => 
+        services.AddScoped<ITenantSchemaManager>(sp => 
             new TenantSchemaManager(connectionString!, sp.GetRequiredService<ILogger<TenantSchemaManager>>()));
 
         services.AddHttpContextAccessor();
@@ -54,6 +59,9 @@ public static class DependencyInjection
         services.AddScoped<IJwtService, JwtService>();
         services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
 
+        services.AddScoped<IR2StorageService, R2StorageService>();
+
         return services;
+
     }
 }

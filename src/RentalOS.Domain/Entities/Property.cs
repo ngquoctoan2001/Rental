@@ -9,6 +9,12 @@ public class Property : BaseEntity
     /// <summary>Full street address.</summary>
     public string Address { get; set; } = string.Empty;
 
+    /// <summary>Type of the property (e.g. "Apartment").</summary>
+    public string PropertyType { get; set; } = string.Empty;
+
+    /// <summary>FK to the owner user.</summary>
+    public Guid OwnerId { get; set; }
+
     /// <summary>Province / city.</summary>
     public string? Province { get; set; }
 

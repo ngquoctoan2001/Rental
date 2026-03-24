@@ -1,5 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Npgsql;
+using RentalOS.Application.Common.Interfaces;
+
 
 namespace RentalOS.Infrastructure.Multitenancy;
 
@@ -7,10 +9,12 @@ namespace RentalOS.Infrastructure.Multitenancy;
 /// Handles PostgreSQL schema creation and DDL for new tenants.
 /// Called during tenant registration: creates schema + all 14 per-tenant tables.
 /// </summary>
-public class TenantSchemaManager(string connectionString, ILogger<TenantSchemaManager> logger)
+public class TenantSchemaManager(string connectionString, Microsoft.Extensions.Logging.ILogger<TenantSchemaManager> logger) : ITenantSchemaManager
 {
     private readonly string _connectionString = connectionString;
-    private readonly ILogger<TenantSchemaManager> _logger = logger;
+    private readonly Microsoft.Extensions.Logging.ILogger<TenantSchemaManager> _logger = logger;
+
+
 
     /// <summary>Creates the per-tenant schema and initialises all 14 base tables.</summary>
     public async Task CreateSchemaAsync(string slug, CancellationToken cancellationToken = default)

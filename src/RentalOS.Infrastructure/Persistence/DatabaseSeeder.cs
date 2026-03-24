@@ -10,7 +10,7 @@ public static class DatabaseSeeder
     public static async Task SeedAsync(IServiceProvider serviceProvider)
     {
         var roleManager = serviceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
-        var userManager = serviceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var userManager = serviceProvider.GetRequiredService<UserManager<User>>();
         var context = serviceProvider.GetRequiredService<ApplicationDbContext>();
 
         // 1. Roles
@@ -28,7 +28,7 @@ public static class DatabaseSeeder
         var adminUser = await userManager.FindByEmailAsync(adminEmail);
         if (adminUser == null)
         {
-            adminUser = new ApplicationUser
+            adminUser = new User
             {
                 UserName = adminEmail,
                 Email = adminEmail,

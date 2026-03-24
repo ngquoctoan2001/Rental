@@ -6,21 +6,21 @@ namespace RentalOS.Infrastructure.Persistence.Configurations;
 
 public class AuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
 {
-    public void Configure(EntityTypeBuilder<AuditLog> b)
+    public void Configure(EntityTypeBuilder<AuditLog> builder)
     {
-        b.ToTable("audit_logs");
-        b.HasKey(a => a.Id);
-        b.Property(a => a.UserName).HasMaxLength(200);
-        b.Property(a => a.Action).HasMaxLength(100).IsRequired();
-        b.Property(a => a.EntityType).HasMaxLength(50);
-        b.Property(a => a.EntityCode).HasMaxLength(100);
-        b.Property(a => a.OldValue).HasColumnType("jsonb");
-        b.Property(a => a.NewValue).HasColumnType("jsonb");
-        b.Property(a => a.IpAddress).HasMaxLength(45);  // IPv6 max length
-        b.Property(a => a.CreatedAt).HasDefaultValueSql("NOW()");
+        builder.ToTable("audit_logs");
 
-        b.HasIndex(a => new { a.UserId, a.CreatedAt });
-        b.HasIndex(a => new { a.EntityType, a.EntityId });
-        b.HasIndex(a => a.CreatedAt);
+        builder.HasKey(x => x.Id);
+
+        builder.Property(x => x.EntityType)
+            .IsRequired()
+            .HasMaxLength(100);
+
+        builder.Property(x => x.Action)
+            .IsRequired()
+            .HasMaxLength(100);
+
+        builder.HasIndex(x => x.CreatedAt)
+            .IsDescending();
     }
 }

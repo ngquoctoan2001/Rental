@@ -1,6 +1,6 @@
 using System.Data.Common;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using RentalOS.Infrastructure.Multitenancy;
+using RentalOS.Application.Common.Interfaces;
 
 namespace RentalOS.Infrastructure.Persistence.Interceptors;
 

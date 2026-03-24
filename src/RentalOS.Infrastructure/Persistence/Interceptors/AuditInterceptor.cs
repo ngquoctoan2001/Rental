@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using RentalOS.Domain.Entities;
-using RentalOS.Infrastructure.Multitenancy;
+using RentalOS.Application.Common.Interfaces;
 using System.Text.Json;
 
 namespace RentalOS.Infrastructure.Persistence.Interceptors;

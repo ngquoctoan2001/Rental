@@ -1,0 +1,9 @@
+﻿c:\Users\Acer\Desktop\Rental\src\RentalOS.API\Program.cs(2,17): error CS0234: The type or namespace name 'OpenApi' does not exist in the namespace 'Microsoft' (are you missing an assembly reference?) [c:\Users\Acer\Desktop\Rental\src\RentalOS.API\RentalOS.API.csproj]
+c:\Users\Acer\Desktop\Rental\src\RentalOS.API\Controllers\PingController.cs(8,29): error CS0246: The type or namespace name 'ITenantContext' could not be found (are you missing a using directive or an assembly reference?) [c:\Users\Acer\Desktop\Rental\src\RentalOS.API\RentalOS.API.csproj]
+c:\Users\Acer\Desktop\Rental\src\RentalOS.API\Controllers\PingController.cs(10,22): error CS0246: The type or namespace name 'ITenantContext' could not be found (are you missing a using directive or an assembly reference?) [c:\Users\Acer\Desktop\Rental\src\RentalOS.API\RentalOS.API.csproj]
+
+Build FAILED.
+    8 Warning(s)
+    3 Error(s)
+
+Time Elapsed 00:00:01.92
