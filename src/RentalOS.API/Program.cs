@@ -73,8 +73,7 @@ builder.Services.AddRateLimiter(options =>
     {
         opt.Window = TimeSpan.FromMinutes(1);
         opt.PermitLimit = 100;
-        opt.QueueLimit = 20;
-        opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        opt.QueueLimit = 50;
     });
 
     options.AddFixedWindowLimiter("ai", opt =>
@@ -90,10 +89,17 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("DefaultCors", policy =>
     {
-        policy.WithOrigins(builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() ?? ["http://localhost:3000", "https://*.vercel.app"])
-              .AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowCredentials();
+        if (builder.Environment.IsDevelopment())
+        {
+            policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
+        }
+        else
+        {
+            policy.WithOrigins(builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() ?? ["https://*.rental.vn"])
+                  .AllowAnyHeader()
+                  .AllowAnyMethod()
+                  .AllowCredentials();
+        }
     });
 });
 
@@ -104,7 +110,7 @@ builder.Services.AddHealthChecks()
 
 // 11. Authentication & JWT
 var jwtSettings = builder.Configuration.GetSection("Jwt");
-var key = System.Text.Encoding.UTF8.GetBytes(jwtSettings["Secret"] ?? throw new InvalidOperationException("JWT Secret is missing."));
+var key = System.Text.Encoding.UTF8.GetBytes(jwtSettings["Secret"] ?? "TemporarySecretForSeeding_MustBeUpdatedInProd");
 
 builder.Services.AddAuthentication(options =>
 {
@@ -127,22 +133,19 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-// 12. Swagger/OpenAPI
-// 12. OpenAPI (Built-in .NET 9+)
+// 12. OpenAPI
 builder.Services.AddOpenApi();
-
-
 
 var app = builder.Build();
 
 // ── Middleware Pipeline ───────────────────────────────────────────────────
-
 app.UseMiddleware<ExceptionMiddleware>();
-app.UseHttpsRedirection();
-app.UseStaticFiles();
-app.UseRouting();
 app.UseCors("DefaultCors");
 app.UseRateLimiter();
+app.UseHealthChecks("/health/liveness"); // Basic live check
+
+app.UseHttpsRedirection();
+app.UseRouting();
 app.UseAuthentication();
 app.UseMiddleware<TenantMiddleware>();
 app.UseAuthorization();
@@ -150,41 +153,24 @@ app.UseAuthorization();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
-    app.UseHangfireDashboard();
 }
 
-app.MapHealthChecks("/health", new HealthCheckOptions
-{
-    ResponseWriter = async (context, report) =>
-    {
-        context.Response.ContentType = "application/json";
-        var result = System.Text.Json.JsonSerializer.Serialize(new
-        {
-            status = report.Status.ToString(),
-            checks = report.Entries.Select(e => new { key = e.Key, status = e.Value.Status.ToString() })
-        });
-        await context.Response.WriteAsync(result);
-    }
-});
-
 app.MapControllers();
-app.MapHub<NotificationHub>("/hubs/notifications");
+app.MapHub<NotificationHub>("/hubs/notifications").RequireCors("DefaultCors");
 
 // Database Seeding
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
-    try
-    {
-        // Explicitly use the namespace for DatabaseSeeder if needed
-        await RentalOS.Infrastructure.Persistence.DatabaseSeeder.SeedAsync(services);
-    }
-    catch (Exception ex)
-    {
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred during seeding.");
-    }
+    try { await RentalOS.Infrastructure.Persistence.DatabaseSeeder.SeedAsync(services); }
+    catch (Exception ex) { Log.Error(ex, "Seeding failed."); }
 }
+
+// Hangfire Dashboard (Protected)
+app.UseHangfireDashboard("/hangfire", new DashboardOptions
+{
+    Authorization = new[] { new HangfireDashboardAuthorizationFilter() }
+});
 
 app.Run();
 

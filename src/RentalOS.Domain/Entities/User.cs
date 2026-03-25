@@ -15,6 +15,9 @@ public class User : IdentityUser<Guid>, IEntity
     public string? InviteToken { get; set; }
     public DateTime? InviteExpiresAt { get; set; }
     public DateTime? LastLoginAt { get; set; }
+
+    /// <summary>Danh sách UUID nhà trọ nhân viên được phép quản lý (Mapping JSONB).</summary>
+    public List<Guid> AssignedPropertyIds { get; set; } = [];
     
     // Audit metadata
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

@@ -74,6 +74,12 @@ public static class DependencyInjection
         services.AddScoped<IInvoicePdfService, InvoicePdfService>();
         services.AddScoped<SendInvoiceNotificationJob>();
 
+        // Notifications
+        services.AddScoped<IZaloService, ZaloService>();
+        services.AddScoped<ISmsService, SmsService>();
+        services.AddScoped<IEmailService, EmailService>();
+        services.AddScoped<INotificationService, NotificationService>();
+
         services.AddHttpClient();
         services.AddScoped<IMoMoService, MoMoService>();
         services.AddScoped<IVNPayService, VNPayService>();
