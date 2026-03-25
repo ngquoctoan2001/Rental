@@ -28,7 +28,7 @@ public class GetRoomMeterReadingsQueryHandler : IRequestHandler<GetRoomMeterRead
             // Month format: YYYY-MM
             if (DateTime.TryParse(request.Month + "-01", out var date))
             {
-                var startOfMonth = new DateTime(date.Year, date.Month, 1);
+                var startOfMonth = DateOnly.FromDateTime(new DateTime(date.Year, date.Month, 1));
                 var endOfMonth = startOfMonth.AddMonths(1);
                 query = query.Where(m => m.ReadingDate >= startOfMonth && m.ReadingDate < endOfMonth);
             }

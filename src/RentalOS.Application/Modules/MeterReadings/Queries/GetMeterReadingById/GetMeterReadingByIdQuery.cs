@@ -33,7 +33,7 @@ public class GetMeterReadingByIdQueryHandler : IRequestHandler<GetMeterReadingBy
             Id = m.Id,
             RoomId = m.RoomId,
             RoomNumber = m.Room.RoomNumber,
-            ReadingDate = m.ReadingDate.ToDateTime(TimeOnly.MinValue),
+            ReadingDate = m.ReadingDate,
             ElectricityReading = m.ElectricityReading,
             WaterReading = m.WaterReading,
             ElectricityImage = m.ElectricityImage,

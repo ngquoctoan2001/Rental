@@ -1,0 +1,24 @@
+﻿  Determining projects to restore...
+C:\Users\Acer\Desktop\Rental\src\RentalOS.Application\RentalOS.Application.csproj : warning NU1903: Package 'AutoMapper' 12.0.1 has a known high severity vulnerability, https://github.com/advisories/GHSA-rvv3-g6hj-g44x
+  All projects are up-to-date for restore.
+C:\Users\Acer\Desktop\Rental\src\RentalOS.Application\RentalOS.Application.csproj : warning NU1903: Package 'AutoMapper' 12.0.1 has a known high severity vulnerability, https://github.com/advisories/GHSA-rvv3-g6hj-g44x
+  RentalOS.Domain -> C:\Users\Acer\Desktop\Rental\src\RentalOS.Domain\bin\Debug\net10.0\RentalOS.Domain.dll
+C:\Users\Acer\Desktop\Rental\src\RentalOS.Application\Modules\Auth\Commands\ChangePassword\ChangePasswordCommand.cs(27,53): warning CS8602: Dereference of a possibly null reference. [C:\Users\Acer\Desktop\Rental\src\RentalOS.Application\RentalOS.Application.csproj]
+C:\Users\Acer\Desktop\Rental\src\RentalOS.Application\Modules\MeterReadings\Queries\GetMeterReadingById\GetMeterReadingByIdQuery.cs(36,27): error CS0029: Cannot implicitly convert type 'System.DateTime' to 'System.DateOnly' [C:\Users\Acer\Desktop\Rental\src\RentalOS.Application\RentalOS.Application.csproj]
+C:\Users\Acer\Desktop\Rental\src\RentalOS.Application\Modules\MeterReadings\Queries\GetMeterReadings\GetMeterReadingsQuery.cs(59,31): error CS0029: Cannot implicitly convert type 'System.DateTime' to 'System.DateOnly' [C:\Users\Acer\Desktop\Rental\src\RentalOS.Application\RentalOS.Application.csproj]
+C:\Users\Acer\Desktop\Rental\src\RentalOS.Application\Modules\Auth\Commands\Login\LoginCommandHandler.cs(36,33): warning EF1002: Method 'ExecuteSqlRawAsync' inserts interpolated strings directly into the SQL, without any protection against SQL injection. Consider using 'ExecuteSqlAsync' instead, which protects against SQL injection, or make sure that the value is sanitized and suppress the warning. [C:\Users\Acer\Desktop\Rental\src\RentalOS.Application\RentalOS.Application.csproj]
+C:\Users\Acer\Desktop\Rental\src\RentalOS.Application\Modules\Auth\Commands\Register\RegisterCommandHandler.cs(77,33): warning EF1002: Method 'ExecuteSqlRawAsync' inserts interpolated strings directly into the SQL, without any protection against SQL injection. Consider using 'ExecuteSqlAsync' instead, which protects against SQL injection, or make sure that the value is sanitized and suppress the warning. [C:\Users\Acer\Desktop\Rental\src\RentalOS.Application\RentalOS.Application.csproj]
+
+Build FAILED.
+
+C:\Users\Acer\Desktop\Rental\src\RentalOS.Application\RentalOS.Application.csproj : warning NU1903: Package 'AutoMapper' 12.0.1 has a known high severity vulnerability, https://github.com/advisories/GHSA-rvv3-g6hj-g44x
+C:\Users\Acer\Desktop\Rental\src\RentalOS.Application\RentalOS.Application.csproj : warning NU1903: Package 'AutoMapper' 12.0.1 has a known high severity vulnerability, https://github.com/advisories/GHSA-rvv3-g6hj-g44x
+C:\Users\Acer\Desktop\Rental\src\RentalOS.Application\Modules\Auth\Commands\ChangePassword\ChangePasswordCommand.cs(27,53): warning CS8602: Dereference of a possibly null reference. [C:\Users\Acer\Desktop\Rental\src\RentalOS.Application\RentalOS.Application.csproj]
+C:\Users\Acer\Desktop\Rental\src\RentalOS.Application\Modules\Auth\Commands\Login\LoginCommandHandler.cs(36,33): warning EF1002: Method 'ExecuteSqlRawAsync' inserts interpolated strings directly into the SQL, without any protection against SQL injection. Consider using 'ExecuteSqlAsync' instead, which protects against SQL injection, or make sure that the value is sanitized and suppress the warning. [C:\Users\Acer\Desktop\Rental\src\RentalOS.Application\RentalOS.Application.csproj]
+C:\Users\Acer\Desktop\Rental\src\RentalOS.Application\Modules\Auth\Commands\Register\RegisterCommandHandler.cs(77,33): warning EF1002: Method 'ExecuteSqlRawAsync' inserts interpolated strings directly into the SQL, without any protection against SQL injection. Consider using 'ExecuteSqlAsync' instead, which protects against SQL injection, or make sure that the value is sanitized and suppress the warning. [C:\Users\Acer\Desktop\Rental\src\RentalOS.Application\RentalOS.Application.csproj]
+C:\Users\Acer\Desktop\Rental\src\RentalOS.Application\Modules\MeterReadings\Queries\GetMeterReadingById\GetMeterReadingByIdQuery.cs(36,27): error CS0029: Cannot implicitly convert type 'System.DateTime' to 'System.DateOnly' [C:\Users\Acer\Desktop\Rental\src\RentalOS.Application\RentalOS.Application.csproj]
+C:\Users\Acer\Desktop\Rental\src\RentalOS.Application\Modules\MeterReadings\Queries\GetMeterReadings\GetMeterReadingsQuery.cs(59,31): error CS0029: Cannot implicitly convert type 'System.DateTime' to 'System.DateOnly' [C:\Users\Acer\Desktop\Rental\src\RentalOS.Application\RentalOS.Application.csproj]
+    5 Warning(s)
+    2 Error(s)
+
+Time Elapsed 00:00:01.59

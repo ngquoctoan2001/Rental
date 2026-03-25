@@ -46,7 +46,7 @@ public class BulkCreateRoomsCommandHandler : IRequestHandler<BulkCreateRoomsComm
         // Use manual transaction if needed, but DbContext.SaveChangesAsync is atomic usually.
         // Spec says "transaction, rollback if error".
         
-        using var transaction = await _context.BeginTransactionAsync(cancellationToken);
+        using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
         try
         {
             foreach (var item in request.Rooms)
