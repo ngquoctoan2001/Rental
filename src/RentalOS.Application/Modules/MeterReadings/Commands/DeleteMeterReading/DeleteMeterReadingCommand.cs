@@ -26,6 +26,31 @@ public class DeleteMeterReadingCommandHandler : IRequestHandler<DeleteMeterReadi
         }
 
         _context.MeterReadings.Remove(entity);
+
+        // Logic: Reset invoice pending nếu reading bị xóa.
+        var billingMonth = new DateOnly(entity.ReadingDate.Year, entity.ReadingDate.Month, 1);
+
+        var invoice = await _context.Invoices
+            .Include(i => i.Contract)
+            .FirstOrDefaultAsync(i => i.Contract.RoomId == entity.RoomId 
+                                 && i.BillingMonth == billingMonth 
+                                 && i.Status == Domain.Enums.InvoiceStatus.Pending, cancellationToken);
+
+        if (invoice != null)
+        {
+            // Reset về old (coi như chưa có chỉ số mới)
+            invoice.ElectricityNew = invoice.ElectricityOld;
+            invoice.WaterNew = invoice.WaterOld;
+            invoice.MeterImageElectricity = null;
+            invoice.MeterImageWater = null;
+            
+            invoice.ElectricityAmount = 0;
+            invoice.WaterAmount = 0;
+            
+            invoice.TotalAmount = invoice.RoomRent + invoice.ServiceFee + invoice.InternetFee + 
+                                  invoice.GarbageFee + invoice.OtherFees - invoice.Discount;
+        }
+
         await _context.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;

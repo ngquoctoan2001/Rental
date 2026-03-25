@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
 using RentalOS.Application.Common.Models;
 using RentalOS.Application.Modules.Rooms.Commands.BulkCreateRooms;
 using RentalOS.Application.Modules.Rooms.Commands.ChangeRoomStatus;
@@ -15,6 +16,7 @@ using RentalOS.Application.Modules.Rooms.Queries.GetRoomMeterReadings;
 using RentalOS.Application.Modules.Rooms.Queries.GetRoomQrCode;
 using RentalOS.Application.Modules.Rooms.Queries.GetRooms;
 using RentalOS.Application.Modules.MeterReadings.Dtos;
+using RentalOS.Application.Modules.Rooms.Commands.UploadRoomImage;
 
 namespace RentalOS.API.Controllers;
 
@@ -94,5 +96,21 @@ public class RoomsController(IMediator mediator) : ControllerBase
     public async Task<ActionResult<List<MeterReadingDto>>> GetRoomMeterReadings(Guid id, [FromQuery] string? month)
     {
         return Ok(await mediator.Send(new GetRoomMeterReadingsQuery(id, month)));
+    }
+
+    [HttpPost("{id}/images")]
+    public async Task<ActionResult<string>> UploadRoomImage(Guid id, IFormFile file)
+    {
+        using var stream = file.OpenReadStream();
+        var command = new UploadRoomImageCommand
+        {
+            RoomId = id,
+            FileStream = stream,
+            FileName = file.FileName,
+            ContentType = file.ContentType
+        };
+
+        var result = await mediator.Send(command);
+        return result.IsSuccess ? Ok(result.Data) : BadRequest(result.ErrorMessage);
     }
 }

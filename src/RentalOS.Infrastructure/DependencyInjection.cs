@@ -10,7 +10,10 @@ using RentalOS.Infrastructure.Multitenancy;
 using RentalOS.Infrastructure.Persistence;
 using RentalOS.Infrastructure.Persistence.Interceptors;
 using RentalOS.Infrastructure.Services.Storage;
-using RentalOS.Infrastructure.Services;
+using RentalOS.Infrastructure.Services.Pdf;
+using RentalOS.Infrastructure.BackgroundJobs;
+using Npgsql;
+using System.Data;
 
 
 namespace RentalOS.Infrastructure;
@@ -20,6 +23,8 @@ public static class DependencyInjection
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         var connectionString = configuration.GetConnectionString("DefaultConnection");
+
+        services.AddScoped<IDbConnection>(sp => new NpgsqlConnection(connectionString));
 
         services.AddScoped<ITenantContext, TenantContext>();
         services.AddScoped<AuditInterceptor>();
@@ -60,6 +65,18 @@ public static class DependencyInjection
         services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
 
         services.AddScoped<IR2StorageService, R2StorageService>();
+        services.AddScoped<IOcrService, OcrService>();
+        
+        services.AddScoped<IBackgroundJobService, BackgroundJobService>();
+        services.AddScoped<IContractPdfService, ContractPdfService>();
+        services.AddScoped<GenerateContractPdfJob>();
+
+        services.AddScoped<IInvoicePdfService, InvoicePdfService>();
+        services.AddScoped<SendInvoiceNotificationJob>();
+
+        services.AddHttpClient();
+        services.AddScoped<IMoMoService, MoMoService>();
+        services.AddScoped<IVNPayService, VNPayService>();
 
         return services;
 

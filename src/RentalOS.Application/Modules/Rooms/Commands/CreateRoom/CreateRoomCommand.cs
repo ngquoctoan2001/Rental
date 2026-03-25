@@ -38,13 +38,19 @@ public class CreateRoomCommandValidator : AbstractValidator<CreateRoomCommand>
             .WithMessage("Mã phòng không được chứa ký tự đặc biệt.");
 
         RuleFor(v => v.BasePrice)
-            .GreaterThanOrEqualTo(100000);
+            .GreaterThanOrEqualTo(100000)
+            .WithMessage("Giá thuê cơ bản phải từ 100,000đ.");
 
         RuleFor(v => v.ElectricityPrice)
-            .GreaterThanOrEqualTo(1000);
+            .GreaterThanOrEqualTo(1000)
+            .WithMessage("Giá điện phải từ 1,000đ.");
+
+        RuleFor(v => v.WaterPrice)
+            .GreaterThanOrEqualTo(1000)
+            .WithMessage("Giá nước phải từ 1,000đ.");
 
         RuleFor(v => v.Amenities)
-            .Must(v => v.All(a => RentalOS.Application.Common.Constants.Amenities.IsValid(a)))
+            .Must(v => v == null || v.All(a => RentalOS.Application.Common.Constants.Amenities.IsValid(a)))
             .WithMessage("Tiện ích không hợp lệ.");
     }
 }

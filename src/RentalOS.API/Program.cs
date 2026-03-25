@@ -15,6 +15,10 @@ using System.Threading.RateLimiting;
 using FluentValidation.AspNetCore;
 using FluentValidation;
 using System.Reflection;
+using QuestPDF.Infrastructure;
+
+// Configure QuestPDF license
+QuestPDF.Settings.License = LicenseType.Community;
 
 var builder = WebApplication.CreateBuilder(args);
 
