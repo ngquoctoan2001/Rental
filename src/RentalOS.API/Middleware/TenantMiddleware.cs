@@ -61,8 +61,19 @@ public class TenantMiddleware(RequestDelegate next)
 
         var schemaName = $"tenant_{tenantSlug.Replace("-", "_")}";
 
-        // Set search_path for the current request
-        await dbContext.Database.ExecuteSqlRawAsync($"SET search_path TO \"{schemaName}\", public");
+        // Validate schemaName: only lowercase letters, digits, and underscores allowed
+        if (!System.Text.RegularExpressions.Regex.IsMatch(schemaName, @"^[a-z][a-z0-9_]*$"))
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            await context.Response.WriteAsJsonAsync(new { error = "Invalid tenant identifier" });
+            return;
+        }
+
+        // Set search_path for the current request.
+        // schemaName is whitelisted via regex above — safe to interpolate.
+        // Build as a plain string variable to avoid EF1002 (not a parameterisable SET command).
+        var setSearchPathSql = $"SET search_path TO \"{schemaName}\", public";
+        await dbContext.Database.ExecuteSqlRawAsync(setSearchPathSql);
 
         // Initialize Scoped TenantContext
         tenantContext.Initialize(tenant.Id, tenantSlug, schemaName, userId, role, plan);

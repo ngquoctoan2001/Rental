@@ -101,3 +101,33 @@ desktop.ini
 *.swp
 *~
 ERRORS.md
+
+# ---- AI Agent / Copilot ----
+.agent/
+.github/copilot-instructions.md
+GEMINI.md
+*.instructions.md
+*.prompt.md
+
+# ---- Docs (internal specs, không commit lên prod) ----
+docs/specs/
+docs/SETUP.md
+
+# ---- Build artifact & error logs ----
+build_errors*.txt
+build_output*.txt
+build_frontend*.txt
+build_out*.txt
+build.log
+stdout.txt
+stderr.txt
+errors_*.txt
+errors_final.txt
+errors_only.txt
+extract_errors.py
+FinalSuccessCheck.txt
+*.tsc_output.txt
+rentalos-web/tsc_output.txt
+rentalos-web/build_out*.txt
+rentalos-web/be*.txt
+rentalos-web/fe_final.txt

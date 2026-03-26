@@ -1,18 +1,20 @@
 using System.Data;
+using System.Data.Common;
 using Dapper;
 using Microsoft.Extensions.Logging;
+using RentalOS.Application.Common.Interfaces;
 
 namespace RentalOS.Infrastructure.Services.Notifications;
 
-public class ZaloService(IDbConnection dbConnection, ILogger<ZaloService> logger) : IZaloService
+public class ZaloService(IDbConnection dbConnection, ITenantContext tenantContext, ILogger<ZaloService> logger) : IZaloService
 {
     public async Task<bool> SendMessageAsync(string phone, string message, Guid tenantId)
     {
         logger.LogInformation("Sending Zalo message to {Phone} for Tenant {TenantId}: {Message}", phone, tenantId, message);
 
         // Mock Zalo API Call
-        await Task.Delay(100); 
-        bool success = true; // Simulating success
+        await Task.Delay(100);
+        bool success = true;
 
         await LogNotification("zalo", phone, message, success, tenantId);
 
@@ -21,16 +23,31 @@ public class ZaloService(IDbConnection dbConnection, ILogger<ZaloService> logger
 
     private async Task LogNotification(string channel, string recipient, string message, bool success, Guid tenantId)
     {
+        var schemaName = tenantContext.SchemaName;
+        if (string.IsNullOrEmpty(schemaName)) return;
+
+        if (dbConnection.State == ConnectionState.Closed)
+            await ((DbConnection)dbConnection).OpenAsync();
+
+        // Set tenant search_path via raw ADO.NET (not parameterisable — avoid DAP005)
+        using (var cmd = dbConnection.CreateCommand())
+        {
+            cmd.CommandText = $"SET search_path TO \"{schemaName}\", public";
+            await ((DbCommand)cmd).ExecuteNonQueryAsync();
+        }
+
         const string sql = @"
             INSERT INTO notification_logs (tenant_id, channel, event_type, recipient, status, created_at)
             VALUES (@tenantId, @channel, 'direct_message', @recipient, @status, NOW())";
-        
-        await dbConnection.ExecuteAsync(sql, new 
-        { 
-            tenantId, 
-            channel, 
-            recipient, 
-            status = success ? "success" : "failed" 
+
+#pragma warning disable DAP005
+        await dbConnection.ExecuteAsync(sql, new
+        {
+            tenantId,
+            channel,
+            recipient,
+            status = success ? "success" : "failed"
         });
+#pragma warning restore DAP005
     }
 }

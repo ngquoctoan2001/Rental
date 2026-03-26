@@ -18,6 +18,7 @@ using RentalOS.Infrastructure.Services.Pdf;
 using RentalOS.Infrastructure.BackgroundJobs;
 using Npgsql;
 using System.Data;
+using StackExchange.Redis;
 
 
 namespace RentalOS.Infrastructure;
@@ -85,9 +86,26 @@ public static class DependencyInjection
         services.AddScoped<INotificationService, NotificationService>();
 
         services.AddHttpClient();
-        services.AddScoped<IMoMoService, MoMoService>();
-        services.AddScoped<IVNPayService, VNPayService>();
+        services.AddScoped<IMoMoService>(sp => new MoMoService(
+            sp.GetRequiredService<IApplicationDbContext>(),
+            sp.GetRequiredService<ITenantContext>(),
+            sp.GetRequiredService<IHttpClientFactory>(),
+            sp.GetService<IConnectionMultiplexer>(),
+            sp.GetRequiredService<IBackgroundJobService>(),
+            sp.GetRequiredService<ILogger<MoMoService>>()
+        ));
+        services.AddScoped<IVNPayService>(sp => new VNPayService(
+            sp.GetRequiredService<IApplicationDbContext>(),
+            sp.GetRequiredService<ITenantContext>(),
+            sp.GetService<IConnectionMultiplexer>(),
+            sp.GetRequiredService<IBackgroundJobService>(),
+            sp.GetRequiredService<ILogger<VNPayService>>()
+        ));
         services.AddScoped<IAiStreamingService, AnthropicService>();
+
+        var redisConnectionString = configuration.GetConnectionString("Redis");
+        if (!string.IsNullOrEmpty(redisConnectionString))
+            services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(redisConnectionString));
 
         return services;
 

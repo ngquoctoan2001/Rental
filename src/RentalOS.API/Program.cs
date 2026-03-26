@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.RateLimiting;
-
+using Microsoft.EntityFrameworkCore;
 using RentalOS.Application;
 
 using RentalOS.Infrastructure;
@@ -43,7 +43,8 @@ builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Renta
 // 5. SignalR
 builder.Services.AddSignalR();
 
-// 6. Redis Cache
+// 6. Caching
+builder.Services.AddMemoryCache();
 builder.Services.AddStackExchangeRedisCache(options =>
 {
     options.Configuration = builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379";
@@ -104,9 +105,11 @@ builder.Services.AddCors(options =>
 });
 
 // 10. Health Checks
-builder.Services.AddHealthChecks()
-    .AddNpgSql(builder.Configuration.GetConnectionString("DefaultConnection")!)
-    .AddRedis(builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379");
+var healthChecks = builder.Services.AddHealthChecks()
+    .AddNpgSql(builder.Configuration.GetConnectionString("DefaultConnection")!);
+var healthRedisConn = builder.Configuration.GetConnectionString("Redis");
+if (!string.IsNullOrEmpty(healthRedisConn))
+    healthChecks.AddRedis(healthRedisConn);
 
 // 11. Authentication & JWT
 var jwtSettings = builder.Configuration.GetSection("Jwt");
@@ -157,6 +160,14 @@ if (app.Environment.IsDevelopment())
 
 app.MapControllers();
 app.MapHub<NotificationHub>("/hubs/notifications").RequireCors("DefaultCors");
+
+// Auto-migrate database on startup
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<RentalOS.Infrastructure.Persistence.ApplicationDbContext>();
+    try { await db.Database.MigrateAsync(); }
+    catch (Exception ex) { Log.Warning(ex, "Auto-migration failed (may already be applied)."); }
+}
 
 // Database Seeding
 using (var scope = app.Services.CreateScope())

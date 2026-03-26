@@ -14,7 +14,7 @@ namespace RentalOS.Infrastructure.Services.Payments;
 public class VNPayService(
     IApplicationDbContext context,
     ITenantContext tenantContext,
-    IConnectionMultiplexer redis,
+    IConnectionMultiplexer? redis,
     IBackgroundJobService backgroundJobService,
     ILogger<VNPayService> logger) : IVNPayService
 {
@@ -82,9 +82,9 @@ public class VNPayService(
         long vnp_Amount = long.Parse(queryParams["vnp_Amount"]) / 100;
 
         // Idempotency check
-        var db = redis.GetDatabase();
+        var db = redis?.GetDatabase();
         var redisKey = $"vnpay_webhook_{vnp_TxnRef}";
-        if (await db.KeyExistsAsync(redisKey))
+        if (db != null && await db.KeyExistsAsync(redisKey))
         {
             return new VNPayWebhookResult { IsSuccess = true, AlreadyProcessed = true };
         }
@@ -154,7 +154,7 @@ public class VNPayService(
 
             await context.SaveChangesAsync(CancellationToken.None);
             
-            await db.StringSetAsync(redisKey, "processed", TimeSpan.FromDays(1));
+            if (db != null) await db.StringSetAsync(redisKey, "processed", TimeSpan.FromDays(1));
         }
 
         return new VNPayWebhookResult { IsSuccess = true };

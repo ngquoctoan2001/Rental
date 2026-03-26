@@ -16,7 +16,7 @@ public class MoMoService(
     IApplicationDbContext context,
     ITenantContext tenantContext,
     IHttpClientFactory httpClientFactory,
-    IConnectionMultiplexer redis,
+    IConnectionMultiplexer? redis,
     IBackgroundJobService backgroundJobService,
     ILogger<MoMoService> logger) : IMoMoService
 {
@@ -102,9 +102,9 @@ public class MoMoService(
         string signature = root.GetProperty("signature").GetString() ?? "";
 
         // Idempotency check with Redis
-        var db = redis.GetDatabase();
+        var db = redis?.GetDatabase();
         var redisKey = $"momo_webhook_{orderId}";
-        if (await db.KeyExistsAsync(redisKey))
+        if (db != null && await db.KeyExistsAsync(redisKey))
         {
             return new MoMoWebhookResult { IsSuccess = true, AlreadyProcessed = true };
         }
@@ -179,7 +179,7 @@ public class MoMoService(
             // backgroundJobService.Enqueue<SendPaymentConfirmationJob>(j => j.ExecuteAsync(invoice.Id, CancellationToken.None));
             
             // Set Redis idempotency
-            await db.StringSetAsync(redisKey, "processed", TimeSpan.FromDays(1));
+            if (db != null) await db.StringSetAsync(redisKey, "processed", TimeSpan.FromDays(1));
         }
 
         return new MoMoWebhookResult { IsSuccess = true };
