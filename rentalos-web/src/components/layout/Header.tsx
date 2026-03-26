@@ -114,4 +114,3 @@ export default function Header() {
     </header>
   );
 }
- Eskom Header Component complete. Eskom action center ready.

@@ -5,6 +5,7 @@ using RentalOS.Application.Common.Interfaces;
 using RentalOS.Domain.Entities;
 using RentalOS.Domain.Enums;
 using Hangfire;
+using Microsoft.EntityFrameworkCore;
 
 namespace RentalOS.Application.Modules.Staff.Commands.InviteStaff;
 

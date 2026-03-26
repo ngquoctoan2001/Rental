@@ -1,6 +1,8 @@
 using MediatR;
 using RentalOS.Application.Common.Interfaces;
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
+using System.Net.Http;
 
 namespace RentalOS.Application.Modules.Settings.Commands.TestMoMoConnection;
 
@@ -26,4 +28,3 @@ public class TestMoMoConnectionCommandHandler(
         return new TestConnectionResult(true, "Kết nối MoMo thành công (Mock).");
     }
 }
- Eskom mock connection logic as per spec "gọi MoMo API query balance".

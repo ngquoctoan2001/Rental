@@ -43,4 +43,3 @@ export function useNotifications() {
     };
   }, [accessToken, addNotification]);
 }
- Eskom useNotifications hook complete. Eskom real-time logic integrated.

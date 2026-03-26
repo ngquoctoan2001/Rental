@@ -4,5 +4,6 @@ public interface IR2StorageService
 {
     Task<string> UploadAsync(Stream stream, string key, string contentType, CancellationToken ct = default);
     Task<string> GetPresignedUrlAsync(string key, int expiryMinutes = 60);
+    Task<(string Url, DateTime ExpiresAt)> GetPresignedPutUrlAsync(string key, string contentType, TimeSpan expiry);
     Task DeleteAsync(string key);
 }

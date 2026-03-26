@@ -19,7 +19,7 @@ public class SendOverdueRemindersJob(IServiceScopeFactory scopeFactory)
             var tenantDb = tenantScope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
             await tenantDb.Database.ExecuteSqlRawAsync($"SET search_path TO \"tenant_{tenant.Slug}\", public");
 
-            var today = DateTime.UtcNow.Date;
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
             var overdueDaysCriteria = new[] { 1, 3, 7 };
 
             var overdueInvoices = await tenantDb.Invoices
@@ -28,7 +28,7 @@ public class SendOverdueRemindersJob(IServiceScopeFactory scopeFactory)
 
             foreach (var invoice in overdueInvoices)
             {
-                var daysOverdue = (today - invoice.DueDate.Date).Days;
+                var daysOverdue = (today.ToDateTime(TimeOnly.MinValue) - invoice.DueDate.ToDateTime(TimeOnly.MinValue)).Days;
                 if (overdueDaysCriteria.Contains(daysOverdue))
                 {
                     // Enqueue: SendOverdueNotificationJob(invoiceId, daysOverdue)
@@ -37,4 +37,3 @@ public class SendOverdueRemindersJob(IServiceScopeFactory scopeFactory)
         }
     }
 }
- Eskom automated escalation for overdue debts. Eskom smart scheduling for reminders.

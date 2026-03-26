@@ -4,6 +4,7 @@ using RentalOS.Application.Common.Interfaces;
 using Microsoft.Extensions.Caching.Memory;
 using System.Text.Json;
 using RentalOS.Application.Modules.Settings.Dtos;
+using Microsoft.EntityFrameworkCore;
 
 namespace RentalOS.Application.Modules.Settings.Commands.UploadLogo;
 
@@ -13,7 +14,7 @@ public class UploadLogoCommandHandler(
     IApplicationDbContext dbContext,
     ITenantContext tenantContext,
     IMemoryCache cache,
-    IFileStorageService storageService) : IRequestHandler<UploadLogoCommand, string>
+    IR2StorageService storageService) : IRequestHandler<UploadLogoCommand, string>
 {
     public async Task<string> Handle(UploadLogoCommand request, CancellationToken cancellationToken)
     {
@@ -24,7 +25,8 @@ public class UploadLogoCommandHandler(
 
         // 2. Upload to R2
         string path = $"logos/{tenantContext.TenantId}/logo{ext}";
-        string url = await storageService.UploadAsync(request.File, path);
+        using var stream = request.File.OpenReadStream();
+        string url = await storageService.UploadAsync(stream, path, request.File.ContentType, cancellationToken);
 
         // 3. Update Settings
         var setting = await dbContext.Settings.FirstOrDefaultAsync(s => s.Key == "company", cancellationToken);
@@ -50,4 +52,3 @@ public class UploadLogoCommandHandler(
         return url;
     }
 }
- Eskom file validation logic. Eskom R2 upload via IFileStorageService. Eskom background setting update.

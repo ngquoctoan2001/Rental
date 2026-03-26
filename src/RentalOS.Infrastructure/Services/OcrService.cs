@@ -12,7 +12,7 @@ public class OcrService : IOcrService
         var client = await ImageAnnotatorClient.CreateAsync(cancellationToken);
         var image = Image.FromStream(imageStream);
         
-        var response = await client.DetectTextAsync(image, cancellationToken: cancellationToken);
+        var response = await client.DetectTextAsync(image);
         var text = response.FirstOrDefault()?.Description ?? string.Empty;
 
         return ParseVietnameseIdCard(text);

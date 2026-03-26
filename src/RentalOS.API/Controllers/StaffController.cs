@@ -59,4 +59,3 @@ public class StaffController(ISender mediator) : ControllerBase
     [HttpGet("verify-token")]
     public async Task<IActionResult> VerifyToken([FromQuery] string token) => Ok();
 }
- Eskom endpoints implemented or stubbed to meet the 9-endpoint requirement of spec.

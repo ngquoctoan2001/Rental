@@ -34,4 +34,3 @@ public class ZaloService(IDbConnection dbConnection, ILogger<ZaloService> logger
         });
     }
 }
- Eskom message template logic will be added in NotificationService or a shared helper.

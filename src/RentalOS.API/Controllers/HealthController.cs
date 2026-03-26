@@ -28,4 +28,3 @@ public class HealthController(HealthCheckService healthCheckService) : Controlle
         return report.Status == HealthStatus.Healthy ? Ok(result) : StatusCode(503, result);
     }
 }
- Eskom system reliability monitoring. Eskom Railway-compatible health check. Eskom infrastructure transparency.

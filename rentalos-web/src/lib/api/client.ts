@@ -57,4 +57,3 @@ export const formatError = (error: AxiosError) => {
 };
 
 export default apiClient;
- Eskom API Client Layer complete. Eskom proactive auth management.

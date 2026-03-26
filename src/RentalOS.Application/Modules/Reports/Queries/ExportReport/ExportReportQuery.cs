@@ -1,4 +1,5 @@
-using System.Data;
+using Microsoft.EntityFrameworkCore;
+
 using ClosedXML.Excel;
 using Dapper;
 using MediatR;
@@ -15,27 +16,27 @@ public class ExportReportResult
     public string ContentType => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 }
 
-public class ExportReportQueryHandler(IDbConnection dbConnection, ITenantContext tenantContext)
+public class ExportReportQueryHandler(IApplicationDbContext dbContext, ITenantContext tenantContext)
     : IRequestHandler<ExportReportQuery, ExportReportResult>
 {
     public async Task<ExportReportResult> Handle(ExportReportQuery request, CancellationToken cancellationToken)
     {
+        var connection = dbContext.Database.GetDbConnection();
         var tenantId = tenantContext.TenantId;
         using var workbook = new XLWorkbook();
         var worksheet = workbook.Worksheets.Add("Report");
 
         if (request.Type.ToLower() == "revenue")
         {
-            await FillRevenueSheet(worksheet, tenantId);
+            await FillRevenueSheet(worksheet, connection, tenantId);
         }
         else if (request.Type.ToLower() == "occupancy")
         {
-            await FillOccupancySheet(worksheet, tenantId);
+            await FillOccupancySheet(worksheet, connection, tenantId);
         }
         else
         {
-            // Default: Transactions or generic
-            await FillTransactionsSheet(worksheet, tenantId);
+            await FillTransactionsSheet(worksheet, connection, tenantId);
         }
 
         using var stream = new MemoryStream();
@@ -48,7 +49,7 @@ public class ExportReportQueryHandler(IDbConnection dbConnection, ITenantContext
         };
     }
 
-    private async Task FillRevenueSheet(IXLWorksheet ws, Guid tenantId)
+    private async Task FillRevenueSheet(IXLWorksheet ws, System.Data.IDbConnection connection, Guid tenantId)
     {
         ws.Cell(1, 1).Value = "Tháng";
         ws.Cell(1, 2).Value = "Doanh thu (VNĐ)";
@@ -59,7 +60,7 @@ public class ExportReportQueryHandler(IDbConnection dbConnection, ITenantContext
             WHERE tenant_id = @tenantId AND direction = 'income' AND is_deleted = false
             GROUP BY Month ORDER BY Month DESC";
         
-        var data = await dbConnection.QueryAsync<dynamic>(sql, new { tenantId });
+        var data = await connection.QueryAsync<dynamic>(sql, new { tenantId });
         int row = 2;
         foreach (var item in data)
         {
@@ -69,7 +70,7 @@ public class ExportReportQueryHandler(IDbConnection dbConnection, ITenantContext
         }
     }
 
-    private async Task FillOccupancySheet(IXLWorksheet ws, Guid tenantId)
+    private async Task FillOccupancySheet(IXLWorksheet ws, System.Data.IDbConnection connection, Guid tenantId)
     {
         ws.Cell(1, 1).Value = "Nhà trọ";
         ws.Cell(1, 2).Value = "Số phòng trống";
@@ -86,7 +87,7 @@ public class ExportReportQueryHandler(IDbConnection dbConnection, ITenantContext
             WHERE p.tenant_id = @tenantId AND p.is_deleted = false AND r.is_deleted = false
             GROUP BY p.name";
 
-        var data = await dbConnection.QueryAsync<dynamic>(sql, new { tenantId });
+        var data = await connection.QueryAsync<dynamic>(sql, new { tenantId });
         int row = 2;
         foreach (var item in data)
         {
@@ -98,7 +99,7 @@ public class ExportReportQueryHandler(IDbConnection dbConnection, ITenantContext
         }
     }
 
-    private async Task FillTransactionsSheet(IXLWorksheet ws, Guid tenantId)
+    private async Task FillTransactionsSheet(IXLWorksheet ws, System.Data.IDbConnection connection, Guid tenantId)
     {
         ws.Cell(1, 1).Value = "Ngày";
         ws.Cell(1, 2).Value = "Loại";
@@ -112,7 +113,7 @@ public class ExportReportQueryHandler(IDbConnection dbConnection, ITenantContext
             WHERE tenant_id = @tenantId AND is_deleted = false
             ORDER BY paid_at DESC LIMIT 1000";
 
-        var data = await dbConnection.QueryAsync<dynamic>(sql, new { tenantId });
+        var data = await connection.QueryAsync<dynamic>(sql, new { tenantId });
         int row = 2;
         foreach (var item in data)
         {

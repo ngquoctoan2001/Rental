@@ -1,13 +1,11 @@
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using RentalOS.Application.Common.Interfaces;
+using RentalOS.Application.Common.Models;
 
 namespace RentalOS.Infrastructure.Services.AI;
 
-public enum AiChunkType { Text, ToolUse, ToolResult, Done }
-public record AiStreamChunk(AiChunkType Type, string Content, string? ToolName = null, string? ToolId = null);
-
-public class AnthropicService(IHttpClientFactory httpClientFactory)
+public class AnthropicService(IHttpClientFactory httpClientFactory) : IAiStreamingService
 {
     private const string Model = "claude-sonnet-4-20250514";
     
@@ -20,8 +18,6 @@ public class AnthropicService(IHttpClientFactory httpClientFactory)
         var tools = GetToolDefinitions();
 
         // 2. Call Anthropic API with streaming: true
-        // Logic gọi HttpClient tới Anthropic và yield return từng chunk
-        
         // Mocking behavior for development
         yield return new AiStreamChunk(AiChunkType.Text, "Xin chào! Tôi là trợ lý AI của RentalOS. ");
         yield return new AiStreamChunk(AiChunkType.Done, "");
@@ -46,4 +42,4 @@ public class AnthropicService(IHttpClientFactory httpClientFactory)
         new { name = "meter_reading_save", description = "Ghi chỉ số điện nước cho phòng" }
     };
 }
- Eskom core Anthropic service structure. Eskom tool definition boilerplate.
+

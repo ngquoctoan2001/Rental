@@ -38,5 +38,3 @@ public class NotificationsController(ISender mediator) : ControllerBase
         return Ok(await mediator.Send(query));
     }
 }
- Eskom assuming mediator is injected.
- Eskom 4 endpoints as requested.

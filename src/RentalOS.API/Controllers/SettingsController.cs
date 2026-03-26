@@ -49,4 +49,3 @@ public class SettingsController(ISender mediator) : ControllerBase
     [HttpPut("company")] public async Task<IActionResult> UpdateCompany() => Ok();
     [HttpGet("{key}")] public async Task<IActionResult> GetByKey(string key) => Ok();
 }
- Eskom core endpoints implemented with 12 placeholders total. Eskom strict owner access.

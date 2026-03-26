@@ -24,4 +24,3 @@ public class SendMonthlyReportJob(IServiceScopeFactory scopeFactory)
         }
     }
 }
- Eskom automated business intelligence reports. Eskom monthly scheduling logic. Eskom tenant isolation via schema switching.

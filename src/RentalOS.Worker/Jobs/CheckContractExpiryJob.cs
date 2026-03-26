@@ -19,7 +19,7 @@ public class CheckContractExpiryJob(IServiceScopeFactory scopeFactory)
             var tenantDb = tenantScope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
             await tenantDb.Database.ExecuteSqlRawAsync($"SET search_path TO \"tenant_{tenant.Slug}\", public");
 
-            var today = DateTime.UtcNow.Date;
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
             var alertDays = new[] { 30, 15, 7 };
 
             var contracts = await tenantDb.Contracts
@@ -28,7 +28,7 @@ public class CheckContractExpiryJob(IServiceScopeFactory scopeFactory)
 
             foreach (var contract in contracts)
             {
-                var daysRemaining = (contract.EndDate.Date - today).Days;
+                var daysRemaining = (contract.EndDate.ToDateTime(TimeOnly.MinValue) - today.ToDateTime(TimeOnly.MinValue)).Days;
                 if (alertDays.Contains(daysRemaining))
                 {
                     // Enqueue: SendContractExpiryAlertJob(contract.Id)
@@ -37,4 +37,3 @@ public class CheckContractExpiryJob(IServiceScopeFactory scopeFactory)
         }
     }
 }
- Eskom proactive contract management. Eskom alert system for end-of-contract.

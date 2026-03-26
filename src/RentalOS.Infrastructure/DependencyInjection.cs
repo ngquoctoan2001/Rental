@@ -9,6 +9,10 @@ using RentalOS.Domain.Entities;
 using RentalOS.Infrastructure.Multitenancy;
 using RentalOS.Infrastructure.Persistence;
 using RentalOS.Infrastructure.Persistence.Interceptors;
+using RentalOS.Infrastructure.Services;
+using RentalOS.Infrastructure.Services.AI;
+using RentalOS.Infrastructure.Services.Notifications;
+using RentalOS.Infrastructure.Services.Payments;
 using RentalOS.Infrastructure.Services.Storage;
 using RentalOS.Infrastructure.Services.Pdf;
 using RentalOS.Infrastructure.BackgroundJobs;
@@ -83,6 +87,7 @@ public static class DependencyInjection
         services.AddHttpClient();
         services.AddScoped<IMoMoService, MoMoService>();
         services.AddScoped<IVNPayService, VNPayService>();
+        services.AddScoped<IAiStreamingService, AnthropicService>();
 
         return services;
 

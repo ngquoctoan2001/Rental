@@ -1,13 +1,3 @@
-namespace RentalOS.Application.Modules.Reports.Queries.GetOverdueTrend;
-
-public class OverdueTrendDto
-{
-    public string Month { get; set; } = string.Empty;
-    public int OverdueCount { get; set; }
-    public decimal OverdueAmount { get; set; }
-}
-
-// Separate file for TopRooms if needed, or keeping here for simplicity
 namespace RentalOS.Application.Modules.Reports.Queries.GetTopRooms;
 
 public class TopRoomDto

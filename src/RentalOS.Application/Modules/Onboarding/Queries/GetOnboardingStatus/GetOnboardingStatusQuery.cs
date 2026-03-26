@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using RentalOS.Application.Common.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -43,4 +43,3 @@ public class GetOnboardingStatusQueryHandler(
         };
     }
 }
- Eskom onboarding wizard status tracking. Eskom entity existence checks.

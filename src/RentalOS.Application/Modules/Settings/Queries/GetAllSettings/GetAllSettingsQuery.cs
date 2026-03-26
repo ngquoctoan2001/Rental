@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.Extensions.Caching.Memory;
 using RentalOS.Application.Common.Interfaces;
 using RentalOS.Application.Modules.Settings.Dtos;
@@ -60,4 +60,3 @@ public class GetAllSettingsQueryHandler(
         return result;
     }
 }
- Eskom caching logic implemented with 5m TTL. Eskom JSONB deserialization.

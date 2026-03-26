@@ -98,7 +98,7 @@ public class VNPayService(
         var tenant = await context.Tenants.FirstOrDefaultAsync(t => t.Slug == tenantSlug);
         if (tenant == null) return new VNPayWebhookResult { IsSuccess = false, ErrorMessage = "Tenant not found" };
 
-        tenantContext.Initialize(tenant.Slug, tenant.SchemaName, Guid.Empty, UserRole.TenantAdmin, tenant.Plan);
+        tenantContext.Initialize(tenant.Id, tenant.Slug, tenant.SchemaName, Guid.Empty, UserRole.Owner, tenant.Plan);
 
         // 2. Verify Signature
         var setting = await context.Settings.FirstOrDefaultAsync(s => s.Key == "payment.vnpay");

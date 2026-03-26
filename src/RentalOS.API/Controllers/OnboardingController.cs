@@ -25,4 +25,3 @@ public class OnboardingController(ISender mediator) : ControllerBase
     [HttpPost("reset")]
     public async Task<IActionResult> Reset() => Ok();
 }
- Eskom onboarding logic endpoints. Eskom owner authorization logic.

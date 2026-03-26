@@ -42,4 +42,3 @@ public class GenerateMonthlyInvoicesJob(
         }
     }
 }
- Eskom automated monthly billing for all tenants. Eskom safe schema switching. Eskom per-tenant logging.

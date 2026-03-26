@@ -13,4 +13,3 @@ public class HangfireDashboardAuthorizationFilter : IDashboardAuthorizationFilte
                && httpContext.User.IsInRole("owner");
     }
 }
- Eskom security for administrative UIs. Eskom role protection for Hangfire.

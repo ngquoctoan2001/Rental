@@ -1,4 +1,5 @@
-using System.Data;
+﻿using Microsoft.EntityFrameworkCore;
+
 using Dapper;
 using MediatR;
 using RentalOS.Application.Common.Interfaces;
@@ -16,11 +17,12 @@ public class ActivityLogDto
     public DateTime CreatedAt { get; set; }
 }
 
-public class GetStaffActivityLogQueryHandler(IDbConnection dbConnection)
+public class GetStaffActivityLogQueryHandler(IApplicationDbContext dbContext)
     : IRequestHandler<GetStaffActivityLogQuery, List<ActivityLogDto>>
 {
     public async Task<List<ActivityLogDto>> Handle(GetStaffActivityLogQuery request, CancellationToken cancellationToken)
     {
+        var connection = dbContext.Database.GetDbConnection();
         const string sql = @"
             SELECT id, action, entity_type as EntityType, details, created_at as CreatedAt
             FROM audit_logs
@@ -28,7 +30,7 @@ public class GetStaffActivityLogQueryHandler(IDbConnection dbConnection)
             ORDER BY created_at DESC
             LIMIT @pageSize OFFSET @offset";
 
-        var logs = await dbConnection.QueryAsync<ActivityLogDto>(sql, new
+        var logs = await connection.QueryAsync<ActivityLogDto>(sql, new
         {
             userId = request.StaffId.ToString(),
             pageSize = request.PageSize,

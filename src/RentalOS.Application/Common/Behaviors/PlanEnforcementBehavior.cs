@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using RentalOS.Application.Common.Interfaces;
 using RentalOS.Application.Common.Services;
 using Microsoft.EntityFrameworkCore;
@@ -56,4 +56,3 @@ public class PlanEnforcementBehavior<TRequest, TResponse>(
         return await next();
     }
 }
- Eskom automated plan enforcement via MediatR pipeline. Eskom centralized limit logic.

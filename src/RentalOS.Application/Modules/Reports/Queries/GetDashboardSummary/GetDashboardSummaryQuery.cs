@@ -1,4 +1,5 @@
-using System.Data;
+﻿using Microsoft.EntityFrameworkCore;
+
 using Dapper;
 using MediatR;
 using RentalOS.Application.Common.Interfaces;
@@ -7,11 +8,12 @@ namespace RentalOS.Application.Modules.Reports.Queries.GetDashboardSummary;
 
 public record GetDashboardSummaryQuery : IRequest<DashboardSummaryDto>;
 
-public class GetDashboardSummaryQueryHandler(IDbConnection dbConnection, ITenantContext tenantContext) 
+public class GetDashboardSummaryQueryHandler(IApplicationDbContext dbContext, ITenantContext tenantContext) 
     : IRequestHandler<GetDashboardSummaryQuery, DashboardSummaryDto>
 {
     public async Task<DashboardSummaryDto> Handle(GetDashboardSummaryQuery request, CancellationToken cancellationToken)
     {
+        var connection = dbContext.Database.GetDbConnection();
         var tenantId = tenantContext.TenantId;
         var dashboard = new DashboardSummaryDto();
 
@@ -25,7 +27,7 @@ public class GetDashboardSummaryQueryHandler(IDbConnection dbConnection, ITenant
             FROM rooms 
             WHERE tenant_id = @tenantId AND is_deleted = false";
         
-        var roomStats = await dbConnection.QuerySingleOrDefaultAsync<RoomStatsDto>(roomSql, new { tenantId });
+        var roomStats = await connection.QuerySingleOrDefaultAsync<RoomStatsDto>(roomSql, new { tenantId });
         if (roomStats != null)
         {
             dashboard.Rooms = roomStats;
@@ -48,7 +50,7 @@ public class GetDashboardSummaryQueryHandler(IDbConnection dbConnection, ITenant
             FROM transactions 
             WHERE tenant_id = @tenantId AND direction = 'income' AND is_deleted = false";
 
-        var revStats = await dbConnection.QuerySingleOrDefaultAsync<RevenueStatsDto>(revenueSql, 
+        var revStats = await connection.QuerySingleOrDefaultAsync<RevenueStatsDto>(revenueSql, 
             new { tenantId, firstDayThisMonth, firstDayLastMonth, lastDayLastMonth });
         
         if (revStats != null)
@@ -70,7 +72,7 @@ public class GetDashboardSummaryQueryHandler(IDbConnection dbConnection, ITenant
             FROM invoices 
             WHERE tenant_id = @tenantId AND is_deleted = false";
 
-        var invStats = await dbConnection.QuerySingleOrDefaultAsync<InvoiceStatsDto>(invoiceSql, new { tenantId });
+        var invStats = await connection.QuerySingleOrDefaultAsync<InvoiceStatsDto>(invoiceSql, new { tenantId });
         if (invStats != null) dashboard.Invoices = invStats;
 
         // 4. Contract Stats
@@ -84,7 +86,7 @@ public class GetDashboardSummaryQueryHandler(IDbConnection dbConnection, ITenant
             FROM contracts 
             WHERE tenant_id = @tenantId AND is_deleted = false";
 
-        var conStats = await dbConnection.QuerySingleOrDefaultAsync<ContractStatsDto>(contractSql, new { tenantId, date30, date7 });
+        var conStats = await connection.QuerySingleOrDefaultAsync<ContractStatsDto>(contractSql, new { tenantId, date30, date7 });
         if (conStats != null) dashboard.Contracts = conStats;
 
         // 5. Build Alerts

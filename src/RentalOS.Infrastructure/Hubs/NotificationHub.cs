@@ -31,4 +31,3 @@ public static class NotificationHubExtensions
         await hubContext.Clients.Group(NotificationHub.UserGroupPrefix + userId).SendAsync(eventName, data);
     }
 }
- Eskom simplified SignalR implementation as per requested methods.

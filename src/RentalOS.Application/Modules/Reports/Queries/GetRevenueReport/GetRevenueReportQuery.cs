@@ -1,4 +1,5 @@
-using System.Data;
+﻿using Microsoft.EntityFrameworkCore;
+
 using Dapper;
 using MediatR;
 using RentalOS.Application.Common.Interfaces;
@@ -13,11 +14,12 @@ public record GetRevenueReportQuery(
     string GroupBy = "month" // month, property, method
 ) : IRequest<RevenueReportDto>;
 
-public class GetRevenueReportQueryHandler(IDbConnection dbConnection, ITenantContext tenantContext)
+public class GetRevenueReportQueryHandler(IApplicationDbContext dbContext, ITenantContext tenantContext)
     : IRequestHandler<GetRevenueReportQuery, RevenueReportDto>
 {
     public async Task<RevenueReportDto> Handle(GetRevenueReportQuery request, CancellationToken cancellationToken)
     {
+        var connection = dbContext.Database.GetDbConnection();
         var tenantId = tenantContext.TenantId;
         var (fromDate, toDate) = GetDateRange(request.Period, request.From, request.To);
         
@@ -36,7 +38,7 @@ public class GetRevenueReportQueryHandler(IDbConnection dbConnection, ITenantCon
             AND paid_at >= @fromDate AND paid_at <= @toDate
             AND (@propertyId IS NULL OR property_id = @propertyId)";
 
-        var summary = await dbConnection.QuerySingleOrDefaultAsync<dynamic>(summarySql, new { tenantId, fromDate, toDate, propertyId = request.PropertyId });
+        var summary = await connection.QuerySingleOrDefaultAsync<dynamic>(summarySql, new { tenantId, fromDate, toDate, propertyId = request.PropertyId });
         report.Summary.TotalRevenue = summary.totalrevenue;
 
         // Collection Rate (Simplified: Collected vs Invoiced in period)
@@ -46,7 +48,7 @@ public class GetRevenueReportQueryHandler(IDbConnection dbConnection, ITenantCon
             AND created_at >= @fromDate AND created_at <= @toDate
             AND (@propertyId IS NULL OR contract_id IN (SELECT id FROM contracts WHERE property_id = @propertyId))";
         
-        var totalInvoiced = await dbConnection.ExecuteScalarAsync<decimal>(invoiceSql, new { tenantId, fromDate, toDate, propertyId = request.PropertyId });
+        var totalInvoiced = await connection.ExecuteScalarAsync<decimal>(invoiceSql, new { tenantId, fromDate, toDate, propertyId = request.PropertyId });
         if (totalInvoiced > 0)
         {
             report.Summary.CollectionRate = Math.Round((double)report.Summary.TotalRevenue / (double)totalInvoiced * 100, 1);
@@ -64,7 +66,7 @@ public class GetRevenueReportQueryHandler(IDbConnection dbConnection, ITenantCon
             GROUP BY TO_CHAR(paid_at, 'YYYY-MM')
             ORDER BY Month";
         
-        var byMonth = await dbConnection.QueryAsync<RevenueByMonthDto>(byMonthSql, new { tenantId, fromDate, toDate, propertyId = request.PropertyId });
+        var byMonth = await connection.QueryAsync<RevenueByMonthDto>(byMonthSql, new { tenantId, fromDate, toDate, propertyId = request.PropertyId });
         report.ByMonth = byMonth.ToList();
 
         // 3. By Property
@@ -79,7 +81,7 @@ public class GetRevenueReportQueryHandler(IDbConnection dbConnection, ITenantCon
             AND (@propertyId IS NULL OR t.property_id = @propertyId)
             GROUP BY p.name";
         
-        var byProperty = await dbConnection.QueryAsync<RevenueByPropertyDto>(byPropertySql, new { tenantId, fromDate, toDate, propertyId = request.PropertyId });
+        var byProperty = await connection.QueryAsync<RevenueByPropertyDto>(byPropertySql, new { tenantId, fromDate, toDate, propertyId = request.PropertyId });
         report.ByProperty = byProperty.ToList();
 
         // 4. By Method
@@ -93,7 +95,7 @@ public class GetRevenueReportQueryHandler(IDbConnection dbConnection, ITenantCon
             AND (@propertyId IS NULL OR property_id = @propertyId)
             GROUP BY method";
         
-        var byMethod = await dbConnection.QueryAsync<KeyValuePair<string, decimal>>(byMethodSql, new { tenantId, fromDate, toDate, propertyId = request.PropertyId });
+        var byMethod = await connection.QueryAsync<KeyValuePair<string, decimal>>(byMethodSql, new { tenantId, fromDate, toDate, propertyId = request.PropertyId });
         report.ByMethod = byMethod.ToDictionary(x => x.Key, x => x.Value);
 
         return report;

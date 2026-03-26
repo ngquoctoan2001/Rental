@@ -1,7 +1,7 @@
 using MediatR;
 using RentalOS.Application.Common.Interfaces;
+using RentalOS.Application.Common.Models;
 using RentalOS.Application.Common.Services;
-using RentalOS.Infrastructure.Services.AI;
 using RentalOS.Application.Modules.AI.Services;
 using System.Runtime.CompilerServices;
 
@@ -12,9 +12,9 @@ public record AiChatCommand(string? ConversationId, string Message) : IRequest<I
 public class AiChatCommandHandler(
     IApplicationDbContext dbContext,
     ITenantContext tenantContext,
-    AnthropicService anthropic,
-    AiToolHandler toolHandler,
-    IPlanService planService) : IRequestHandler<AiChatCommand, IAsyncEnumerable<AiStreamChunk>>
+    IPlanService planService,
+    IAiStreamingService aiService,
+    AiToolHandler toolHandler) : IRequestHandler<AiChatCommand, IAsyncEnumerable<AiStreamChunk>>
 {
     public async Task<IAsyncEnumerable<AiStreamChunk>> Handle(AiChatCommand request, CancellationToken cancellationToken)
     {
@@ -30,14 +30,12 @@ public class AiChatCommandHandler(
     private async IAsyncEnumerable<AiStreamChunk> StreamResponse(AiChatCommand request, [EnumeratorCancellation] CancellationToken ct)
     {
         // logic xử lý conversation history & Anthropic stream
-        await foreach (var chunk in anthropic.StreamChatAsync(new List<object>(), "System Prompt", ct))
+        await foreach (var chunk in aiService.StreamChatAsync(new List<object>(), "System Prompt", ct))
         {
             if (chunk.Type == AiChunkType.ToolUse)
             {
                 yield return new AiStreamChunk(AiChunkType.Text, $"\n[AI đang sử dụng công cụ: {chunk.ToolName}...]\n");
                 var toolResult = await toolHandler.ExecuteToolAsync(chunk.ToolName!, chunk.Content);
-                // Sau khi có toolResult, thông thường sẽ gọi Anthropic 1 lần nữa để summarize kết quả
-                // Ở đây yield kết quả direct cho UI
                 yield return new AiStreamChunk(AiChunkType.ToolResult, toolResult);
             }
             else
@@ -47,4 +45,4 @@ public class AiChatCommandHandler(
         }
     }
 }
- Eskom SSE streaming loop with tool use interception. Eskom feature authorization check. Eskom IAsyncEnumerable result.
+

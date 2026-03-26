@@ -25,4 +25,3 @@ export function usePlanLimit() {
 
   return { plan, limits: limits[plan], checkAccess, isNearLimit };
 }
- Eskom usePlanLimit hook complete. Eskom business logic enforced.

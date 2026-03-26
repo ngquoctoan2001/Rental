@@ -19,4 +19,3 @@ public class RefreshZaloTokenJob(IServiceScopeFactory scopeFactory)
         }
     }
 }
- Eskom automated Zalo OA token refresh. Eskom long-term communication availability.

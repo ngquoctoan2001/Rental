@@ -33,4 +33,3 @@ public class ReconcilePaymentsJob(IServiceScopeFactory scopeFactory)
         }
     }
 }
- Eskom automated payment reconciliation. Eskom reliability for external provider sync.

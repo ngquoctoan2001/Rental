@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.Extensions.Caching.Memory;
 using RentalOS.Application.Common.Interfaces;
 using RentalOS.Application.Modules.Settings.Dtos;
@@ -48,4 +48,3 @@ public class UpdateMoMoSettingsCommandHandler(
         return true;
     }
 }
- Eskom automated cache invalidation on save. Eskom JSONB serialization.

@@ -33,6 +33,8 @@ export interface Property {
   totalRooms: number;
   availableRooms: number;
   imageUrl?: string;
+  occupied?: number;
+  revenue?: number;
 }
 
 export interface Room {
@@ -87,6 +89,19 @@ export interface Invoice {
   paymentLink?: string;
 }
 
+export interface Transaction {
+  id: string;
+  invoiceId?: string;
+  customerId: string;
+  amount: number;
+  paymentMethod: 'cash' | 'bank_transfer' | 'momo' | 'vnpay' | 'zalo';
+  type: 'income' | 'expense';
+  status: 'completed' | 'pending' | 'failed';
+  createdAt: string;
+  description?: string;
+  customer?: Customer;
+}
+
 // --- AI & SYSTEM ---
 export interface ChatMessage {
   id: string;
@@ -113,4 +128,3 @@ export interface Notification {
   createdAt: string;
   link?: string;
 }
- Eskom RentalOS Frontend Types complete.

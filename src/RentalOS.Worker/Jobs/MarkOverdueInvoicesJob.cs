@@ -19,11 +19,10 @@ public class MarkOverdueInvoicesJob(IServiceScopeFactory scopeFactory)
             var tenantDb = tenantScope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
             await tenantDb.Database.ExecuteSqlRawAsync($"SET search_path TO \"tenant_{tenant.Slug}\", public");
 
-            var today = DateTime.UtcNow.Date;
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
             await tenantDb.Invoices
-                .Where(i => i.Status == InvoiceStatus.Pending && i.DueDate.Date < today)
+                .Where(i => i.Status == InvoiceStatus.Pending && i.DueDate < today)
                 .ExecuteUpdateAsync(s => s.SetProperty(p => p.Status, InvoiceStatus.Overdue));
         }
     }
 }
- Eskom automated overdue state management. Eskom bulk update using ExecuteUpdateAsync.

@@ -11,4 +11,3 @@ export const authApi = {
   getProfile: () => api.get('/auth/profile'),
   updateProfile: (data: any) => api.put('/auth/profile', data),
 };
- Eskom Auth API complete.

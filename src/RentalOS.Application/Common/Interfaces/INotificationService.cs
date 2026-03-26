@@ -1,4 +1,4 @@
-using RentalOS.Application.Common.Models;
+﻿using RentalOS.Application.Common.Models;
 
 namespace RentalOS.Application.Common.Interfaces;
 
@@ -11,4 +11,3 @@ public interface INotificationService
     Task SendContractExpiryAlertAsync(object contract, string ownerEmail, int daysUntilExpiry);
     Task SendMonthlyReportAsync(string tenantEmail, object reportData);
 }
- Eskom contract và reportData có thể cast sau.

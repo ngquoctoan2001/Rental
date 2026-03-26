@@ -1,4 +1,5 @@
-using System.Data;
+﻿using Microsoft.EntityFrameworkCore;
+
 using Dapper;
 using MediatR;
 using RentalOS.Application.Common.Interfaces;
@@ -17,11 +18,12 @@ public class MonthlySummaryDto
     public int TerminatedContracts { get; set; }
 }
 
-public class GetMonthlySummaryQueryHandler(IDbConnection dbConnection, ITenantContext tenantContext)
+public class GetMonthlySummaryQueryHandler(IApplicationDbContext dbContext, ITenantContext tenantContext)
     : IRequestHandler<GetMonthlySummaryQuery, MonthlySummaryDto>
 {
     public async Task<MonthlySummaryDto> Handle(GetMonthlySummaryQuery request, CancellationToken cancellationToken)
     {
+        var connection = dbContext.Database.GetDbConnection();
         var tenantId = tenantContext.TenantId;
         var month = request.Month; // YYYY-MM
 
@@ -35,6 +37,6 @@ public class GetMonthlySummaryQueryHandler(IDbConnection dbConnection, ITenantCo
                 (SELECT COUNT(*) FROM contracts WHERE tenant_id = @tenantId AND TO_CHAR(updated_at, 'YYYY-MM') = @month AND status = 'terminated' AND is_deleted = false) as TerminatedContracts
         ";
 
-        return await dbConnection.QuerySingleAsync<MonthlySummaryDto>(sql, new { tenantId, month });
+        return await connection.QuerySingleAsync<MonthlySummaryDto>(sql, new { tenantId, month });
     }
 }

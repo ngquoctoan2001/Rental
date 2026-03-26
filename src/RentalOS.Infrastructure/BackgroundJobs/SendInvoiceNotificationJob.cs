@@ -43,6 +43,6 @@ public class SendInvoiceNotificationJob(
             NewValue = JsonSerializer.Serialize(new { channel, message })
         });
 
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(CancellationToken.None);
     }
 }

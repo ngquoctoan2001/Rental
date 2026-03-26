@@ -1,6 +1,7 @@
 using RentalOS.Application.Common.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using RentalOS.Domain.Enums;
 
 namespace RentalOS.Worker.Jobs;
 
@@ -20,7 +21,7 @@ public class RetryFailedNotificationsJob(IServiceScopeFactory scopeFactory)
 
             var yesterday = DateTime.UtcNow.AddHours(-24);
             var failedNotifications = await tenantDb.NotificationLogs
-                .Where(n => n.Status == "failed" && n.RetryCount < 3 && n.CreatedAt >= yesterday)
+                .Where(n => n.Status == NotificationStatus.Failed && n.RetryCount < 3 && n.CreatedAt >= yesterday)
                 .ToListAsync();
 
             foreach (var notif in failedNotifications)
@@ -31,4 +32,3 @@ public class RetryFailedNotificationsJob(IServiceScopeFactory scopeFactory)
         }
     }
 }
- Eskom automated retries for failed notifications. Eskom fault-tolerant communication system.

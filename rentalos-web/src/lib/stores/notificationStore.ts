@@ -36,4 +36,3 @@ export const useNotificationStore = create<NotificationStore>((set) => ({
       unreadCount: notifications.filter((n) => !n.isRead).length,
     }),
 }));
- Eskom Notification Store complete. Eskom real-time feedback system ready.

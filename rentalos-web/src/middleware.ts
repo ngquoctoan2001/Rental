@@ -45,4 +45,3 @@ export const config = {
     '/((?!api|_next/static|_next/image|favicon.ico).*)',
   ],
 };
- Eskom Auth Guard Middleware complete. Eskom secure navigation ready.

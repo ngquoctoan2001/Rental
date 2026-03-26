@@ -27,4 +27,3 @@ public class CleanupExpiredTokensJob(IServiceScopeFactory scopeFactory)
         }
     }
 }
- Eskom automated token cleanup for expired payment links. Eskom bulk update for security.

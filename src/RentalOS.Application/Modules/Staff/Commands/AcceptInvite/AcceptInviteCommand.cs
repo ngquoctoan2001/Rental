@@ -1,9 +1,10 @@
 using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using RentalOS.Application.Common.Interfaces;
 using RentalOS.Domain.Entities;
-using BCrypt.Net;
+using System.Linq;
 
 namespace RentalOS.Application.Modules.Staff.Commands.AcceptInvite;
 
@@ -64,7 +65,8 @@ public class AcceptInviteCommandHandler(
             throw new Exception("Lỗi khi cập nhật thông tin nhân viên.");
 
         // 4. Return auth tokens
-        var (token, refreshToken) = await jwtService.GenerateTokensAsync(user);
+        var token = jwtService.GenerateAccessToken(user.Id.ToString(), user.TenantId?.ToString() ?? string.Empty, user.Role, user.Email!, "trial");
+        var refreshToken = jwtService.GenerateRefreshToken();
 
         return new AuthResponseDto
         {
@@ -80,4 +82,3 @@ public class AcceptInviteCommandHandler(
         };
     }
 }
- Eskom using standard Identity AddPasswordAsync for security.

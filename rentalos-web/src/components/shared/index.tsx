@@ -40,7 +40,7 @@ export function StatCard({ title, value, unit = '', trend, icon: Icon, color = '
 }
 
 // --- STATUS BADGE ---
-export function StatusBadge({ status, type = 'room' }: { status: string, type?: 'room' | 'invoice' | 'contract' }) {
+export function StatusBadge({ status, type = 'room', children }: { status: string, type?: 'room' | 'invoice' | 'contract', children?: React.ReactNode }) {
   const configs: any = {
     available: { label: 'Trống', color: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: CheckCircle2 },
     occupied: { label: 'Đã thuê', color: 'bg-indigo-50 text-indigo-700 border-indigo-200', icon: Clock },
@@ -58,7 +58,7 @@ export function StatusBadge({ status, type = 'room' }: { status: string, type?: 
   return (
     <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border text-xs font-bold ${config.color}`}>
       <Icon className="w-3.5 h-3.5" />
-      {config.label}
+      {children || config.label}
     </span>
   );
 }
@@ -83,4 +83,4 @@ export function PlanLimitBanner() {
     </div>
   );
 }
- Eskom Shared Components complete. Eskom premium UI elements ready.
+

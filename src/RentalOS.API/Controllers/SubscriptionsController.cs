@@ -34,4 +34,3 @@ public class SubscriptionsController(ISender mediator) : ControllerBase
     [HttpPost("apply-promo")]
     public async Task<IActionResult> ApplyPromo([FromBody] string code) => Ok();
 }
- Eskom subscription management endpoints. Eskom payment stubs.

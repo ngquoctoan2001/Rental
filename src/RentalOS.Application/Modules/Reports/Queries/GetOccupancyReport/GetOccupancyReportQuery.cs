@@ -1,4 +1,5 @@
-using System.Data;
+﻿using Microsoft.EntityFrameworkCore;
+
 using Dapper;
 using MediatR;
 using RentalOS.Application.Common.Interfaces;
@@ -7,11 +8,12 @@ namespace RentalOS.Application.Modules.Reports.Queries.GetOccupancyReport;
 
 public record GetOccupancyReportQuery(Guid? PropertyId) : IRequest<OccupancyReportDto>;
 
-public class GetOccupancyReportQueryHandler(IDbConnection dbConnection, ITenantContext tenantContext)
+public class GetOccupancyReportQueryHandler(IApplicationDbContext dbContext, ITenantContext tenantContext)
     : IRequestHandler<GetOccupancyReportQuery, OccupancyReportDto>
 {
     public async Task<OccupancyReportDto> Handle(GetOccupancyReportQuery request, CancellationToken cancellationToken)
     {
+        var connection = dbContext.Database.GetDbConnection();
         var tenantId = tenantContext.TenantId;
         var report = new OccupancyReportDto();
 
@@ -24,7 +26,7 @@ public class GetOccupancyReportQueryHandler(IDbConnection dbConnection, ITenantC
             WHERE tenant_id = @tenantId AND is_deleted = false
             AND (@propertyId IS NULL OR property_id = @propertyId)";
 
-        var current = await dbConnection.QuerySingleOrDefaultAsync<OccupancyDetailDto>(currentSql, new { tenantId, request.PropertyId });
+        var current = await connection.QuerySingleOrDefaultAsync<OccupancyDetailDto>(currentSql, new { tenantId, request.PropertyId });
         if (current != null)
         {
             report.Current = current;
@@ -44,7 +46,7 @@ public class GetOccupancyReportQueryHandler(IDbConnection dbConnection, ITenantC
                 WHERE p.tenant_id = @tenantId AND p.is_deleted = false AND r.is_deleted = false
                 GROUP BY p.name";
             
-            var byProperty = await dbConnection.QueryAsync<OccupancyByPropertyDto>(byPropertySql, new { tenantId });
+            var byProperty = await connection.QueryAsync<OccupancyByPropertyDto>(byPropertySql, new { tenantId });
             foreach (var prop in byProperty)
             {
                 if (prop.Total > 0) prop.Rate = Math.Round((double)prop.Occupied / prop.Total * 100, 1);

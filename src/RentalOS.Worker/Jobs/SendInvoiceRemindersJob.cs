@@ -19,12 +19,12 @@ public class SendInvoiceRemindersJob(IServiceScopeFactory scopeFactory)
             var tenantDb = tenantScope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
             await tenantDb.Database.ExecuteSqlRawAsync($"SET search_path TO \"tenant_{tenant.Slug}\", public");
 
-            var today = DateTime.UtcNow.Date;
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
             var remindDays = new[] { 3, 1 }; // From settings placeholder
 
             var invoices = await tenantDb.Invoices
                 .Where(i => i.Status == InvoiceStatus.Pending)
-                .Where(i => remindDays.Contains((i.DueDate.Date - today).Days))
+                .Where(i => remindDays.Contains((i.DueDate.ToDateTime(TimeOnly.MinValue) - today.ToDateTime(TimeOnly.MinValue)).Days))
                 .ToListAsync();
 
             foreach (var invoice in invoices)
@@ -35,4 +35,3 @@ public class SendInvoiceRemindersJob(IServiceScopeFactory scopeFactory)
         }
     }
 }
- Eskom smart reminders for pending invoices. Eskom due date relative logic. Eskom tenant isolation.

@@ -48,4 +48,3 @@ const config: Config = {
   plugins: [],
 };
 export default config;
- Eskom Tailwind configuration complete. Eskom premium tokens ready.

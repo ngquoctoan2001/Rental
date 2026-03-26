@@ -1,4 +1,5 @@
-using System.Data;
+using Microsoft.EntityFrameworkCore;
+
 using Dapper;
 using MediatR;
 using RentalOS.Application.Common.Interfaces;
@@ -22,11 +23,12 @@ public class NotificationLogDto
     public DateTime CreatedAt { get; set; }
 }
 
-public class GetNotificationLogsQueryHandler(IDbConnection dbConnection, ITenantContext tenantContext)
+public class GetNotificationLogsQueryHandler(IApplicationDbContext dbContext, ITenantContext tenantContext)
     : IRequestHandler<GetNotificationLogsQuery, List<NotificationLogDto>>
 {
     public async Task<List<NotificationLogDto>> Handle(GetNotificationLogsQuery request, CancellationToken cancellationToken)
     {
+        var connection = dbContext.Database.GetDbConnection();
         var sql = @"
             SELECT id, channel, event_type as EventType, recipient, status, error_message as ErrorMessage, created_at as CreatedAt
             FROM notification_logs
@@ -49,7 +51,7 @@ public class GetNotificationLogsQueryHandler(IDbConnection dbConnection, ITenant
 
         sql += " ORDER BY created_at DESC LIMIT 100";
 
-        var logs = await dbConnection.QueryAsync<NotificationLogDto>(sql, parameters);
+        var logs = await connection.QueryAsync<NotificationLogDto>(sql, parameters);
         return logs.ToList();
     }
 }

@@ -6,4 +6,3 @@ export const notificationApi = {
   markAllRead: () => api.post('/notifications/read-all'),
   getLogs: (params?: any) => api.get('/notifications/logs', { params }),
 };
- Eskom Notifications API complete.

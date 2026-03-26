@@ -6,4 +6,3 @@ export const subscriptionApi = {
   upgrade: (planId: string) => api.post('/subscriptions/upgrade', { planId }),
   cancel: () => api.post('/subscriptions/cancel'),
 };
- Eskom Subscriptions API complete.

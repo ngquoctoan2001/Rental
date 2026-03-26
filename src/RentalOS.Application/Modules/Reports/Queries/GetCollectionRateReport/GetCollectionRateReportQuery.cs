@@ -1,4 +1,5 @@
-using System.Data;
+using Microsoft.EntityFrameworkCore;
+
 using Dapper;
 using MediatR;
 using RentalOS.Application.Common.Interfaces;
@@ -7,11 +8,12 @@ namespace RentalOS.Application.Modules.Reports.Queries.GetCollectionRateReport;
 
 public record GetCollectionRateReportQuery(Guid? PropertyId, DateTime? From, DateTime? To) : IRequest<CollectionRateDto>;
 
-public class GetCollectionRateReportQueryHandler(IDbConnection dbConnection, ITenantContext tenantContext)
+public class GetCollectionRateReportQueryHandler(IApplicationDbContext dbContext, ITenantContext tenantContext)
     : IRequestHandler<GetCollectionRateReportQuery, CollectionRateDto>
 {
     public async Task<CollectionRateDto> Handle(GetCollectionRateReportQuery request, CancellationToken cancellationToken)
     {
+        var connection = dbContext.Database.GetDbConnection();
         var tenantId = tenantContext.TenantId;
         var fromDate = request.From ?? DateTime.Today.AddMonths(-6);
         var toDate = request.To ?? DateTime.Today.AddDays(1).AddSeconds(-1);
@@ -45,7 +47,7 @@ public class GetCollectionRateReportQueryHandler(IDbConnection dbConnection, ITe
             LEFT JOIN TransactionStats t ON i.Month = t.Month
             ORDER BY i.Month";
 
-        var details = await dbConnection.QueryAsync<CollectionRateByMonthDto>(sql, new { tenantId, fromDate, toDate, propertyId = request.PropertyId });
+        var details = await connection.QueryAsync<CollectionRateByMonthDto>(sql, new { tenantId, fromDate, toDate, propertyId = request.PropertyId });
         
         var result = new CollectionRateDto();
         foreach (var item in details)

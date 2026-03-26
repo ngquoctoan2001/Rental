@@ -4,6 +4,7 @@ namespace RentalOS.Application.Common.Interfaces;
 
 public interface ITenantContext
 {
+    Guid TenantId { get; }
     string? TenantSlug { get; }
     string? SchemaName { get; }
     Guid UserId { get; }
@@ -11,5 +12,5 @@ public interface ITenantContext
     PlanType PlanType { get; }
     bool IsInitialized { get; }
 
-    void Initialize(string tenantSlug, string schemaName, Guid userId, UserRole role, PlanType plan);
+    void Initialize(Guid tenantId, string tenantSlug, string schemaName, Guid userId, UserRole role, PlanType plan);
 }

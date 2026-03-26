@@ -34,4 +34,3 @@ public class EmailService(IDbConnection dbConnection, ILogger<EmailService> logg
         });
     }
 }
- Eskom email templates will be used in the main NotificationService.

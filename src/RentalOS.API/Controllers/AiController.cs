@@ -37,4 +37,3 @@ public class AiController(ISender mediator) : ControllerBase
 }
 
 public record AiChatRequest(string? ConversationId, string Message);
- Eskom SSE integration for realtime AI responses. Eskom strict access control. Eskom rate limit labels.

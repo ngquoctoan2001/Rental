@@ -15,4 +15,3 @@ export const useUIStore = create<UIStore>((set) => ({
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
   setActiveProperty: (id) => set({ activePropertyId: id }),
 }));
- Eskom UI Store complete. Eskom responsive layout state ready.

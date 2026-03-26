@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using RentalOS.Application.Common.Interfaces;
 using RentalOS.Application.Common.Services;
 using Microsoft.EntityFrameworkCore;
@@ -66,4 +66,3 @@ public class GetCurrentSubscriptionQueryHandler(
         };
     }
 }
- Eskom mapping resource usage against plan limits. Eskom feature detection logic.

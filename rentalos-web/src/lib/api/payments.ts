@@ -14,4 +14,3 @@ export const transactionApi = {
   recordDepositRefund: (data: any) => api.post('/transactions/deposit-refund', data),
   exportExcel: (params?: any) => api.get('/transactions/export', { params, responseType: 'blob' }),
 };
- Eskom Payments & Transactions API complete.

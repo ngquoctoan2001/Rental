@@ -1,4 +1,5 @@
-using System.Data;
+﻿using Microsoft.EntityFrameworkCore;
+
 using Dapper;
 using MediatR;
 using RentalOS.Application.Common.Interfaces;
@@ -7,11 +8,12 @@ namespace RentalOS.Application.Modules.Reports.Queries.GetTopRooms;
 
 public record GetTopRoomsQuery(int Top = 10) : IRequest<List<TopRoomDto>>;
 
-public class GetTopRoomsQueryHandler(IDbConnection dbConnection, ITenantContext tenantContext)
+public class GetTopRoomsQueryHandler(IApplicationDbContext dbContext, ITenantContext tenantContext)
     : IRequestHandler<GetTopRoomsQuery, List<TopRoomDto>>
 {
     public async Task<List<TopRoomDto>> Handle(GetTopRoomsQuery request, CancellationToken cancellationToken)
     {
+        var connection = dbContext.Database.GetDbConnection();
         var tenantId = tenantContext.TenantId;
 
         const string sql = @"
@@ -49,7 +51,7 @@ public class GetTopRoomsQueryHandler(IDbConnection dbConnection, ITenantContext 
             ORDER BY TotalRevenue DESC
             LIMIT @top";
 
-        var result = await dbConnection.QueryAsync<TopRoomDto>(correctSql, new { tenantId, top = request.Top });
+        var result = await connection.QueryAsync<TopRoomDto>(correctSql, new { tenantId, top = request.Top });
         return result.ToList();
     }
 }

@@ -1,7 +1,2 @@
+// Stub file - actual implementations are in separate files (EmailService.cs, ZaloService.cs, SmsService.cs)
 namespace RentalOS.Infrastructure.Services.Notifications;
-
-public class ZaloService { /* TODO: Zalo OA messaging */ }
-
-public class SmsService { /* TODO: VNPT SMS */ }
-
-public class EmailService { /* TODO: SendGrid */ }

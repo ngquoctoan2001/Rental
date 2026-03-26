@@ -1,7 +1,7 @@
 import api from './client';
 import { Room } from '@/types';
 
-export const roomApi = {
+export const roomsApi = {
   list: (propertyId?: string) => api.get<Room[]>('/rooms', { params: { propertyId } }),
   getById: (id: string) => api.get<Room>(`/rooms/${id}`),
   available: (propertyId?: string) => api.get<Room[]>('/rooms/available', { params: { propertyId } }),
@@ -14,4 +14,3 @@ export const roomApi = {
   remove: (id: string) => api.delete(`/rooms/${id}`),
   bulkCreate: (data: any) => api.post('/rooms/bulk', data),
 };
- Eskom Rooms API complete.

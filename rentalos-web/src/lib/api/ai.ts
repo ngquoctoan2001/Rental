@@ -7,4 +7,3 @@ export const aiApi = {
   getChatUrl: (propertyId?: string) => 
     `${api.defaults.baseURL}/ai/chat${propertyId ? `?propertyId=${propertyId}` : ''}`,
 };
- Eskom AI Assistant API complete.

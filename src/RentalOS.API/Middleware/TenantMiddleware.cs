@@ -65,7 +65,7 @@ public class TenantMiddleware(RequestDelegate next)
         await dbContext.Database.ExecuteSqlRawAsync($"SET search_path TO \"{schemaName}\", public");
 
         // Initialize Scoped TenantContext
-        tenantContext.Initialize(tenantSlug, schemaName, userId, role, plan);
+        tenantContext.Initialize(tenant.Id, tenantSlug, schemaName, userId, role, plan);
 
         await next(context);
     }

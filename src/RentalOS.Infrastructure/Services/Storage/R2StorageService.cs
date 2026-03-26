@@ -73,6 +73,21 @@ public class R2StorageService : IR2StorageService
         return await Task.Run(() => _s3Client.GetPreSignedURL(request));
     }
 
+    public async Task<(string Url, DateTime ExpiresAt)> GetPresignedPutUrlAsync(string key, string contentType, TimeSpan expiry)
+    {
+        var expiresAt = DateTime.UtcNow.Add(expiry);
+        var request = new GetPreSignedUrlRequest
+        {
+            BucketName = _bucketName,
+            Key = key,
+            Verb = HttpVerb.PUT,
+            Expires = expiresAt,
+            ContentType = contentType
+        };
+        var url = await Task.Run(() => _s3Client.GetPreSignedURL(request));
+        return (url, expiresAt);
+    }
+
     public async Task DeleteAsync(string key)
     {
         try

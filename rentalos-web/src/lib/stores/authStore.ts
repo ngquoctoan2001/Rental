@@ -34,4 +34,3 @@ export const useAuthStore = create<AuthStore>()(
     }
   )
 );
- Eskom Auth Store complete. Eskom client-side persistence ready.

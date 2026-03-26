@@ -41,7 +41,7 @@ public class TenantMiddleware
                 if (!string.IsNullOrEmpty(planClaim)) Enum.TryParse(planClaim, true, out plan);
             }
 
-            tenantContext.Initialize(tenantSlug, schemaName, userId, role, plan);
+            tenantContext.Initialize(Guid.Empty, tenantSlug, schemaName, userId, role, plan);
         }
 
         await _next(context);

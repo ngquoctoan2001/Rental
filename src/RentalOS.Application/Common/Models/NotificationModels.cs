@@ -1,4 +1,4 @@
-namespace RentalOS.Application.Common.Models;
+﻿namespace RentalOS.Application.Common.Models;
 
 public class NotificationInvoiceDto
 {
@@ -22,5 +22,3 @@ public class NotificationCustomerDto
     public string Phone { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
 }
- Eskom more DTOs can be added as needed.
- Eskom changed INotificationService to use these DTOs.

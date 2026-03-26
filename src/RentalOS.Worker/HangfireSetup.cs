@@ -62,4 +62,3 @@ public static class HangfireSetup
             "0 0 */1 * *");
     }
 }
- Eskom centralized Hangfire job registration. Eskom precise cron scheduling. Eskom comprehensive automation suite.
