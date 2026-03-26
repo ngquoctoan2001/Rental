@@ -30,7 +30,9 @@ public class SendInvoiceCommandHandler(
             return Result<Unit>.Fail("INVOICE_CANCELLED", "Không thể gửi hóa đơn đã bị hủy.");
 
         // Enqueue Hangfire job
+#pragma warning disable CS4014 // Hangfire serializes the expression, not awaiting by design
         backgroundJobService.Enqueue<SendInvoiceNotificationJob>(j => j.Execute(invoice.Id, request.Channel));
+#pragma warning restore CS4014
 
         // Cập nhật ngày gửi
         invoice.SentAt = DateTime.UtcNow;

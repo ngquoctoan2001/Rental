@@ -1,3 +1,4 @@
+#pragma warning disable CS9113 // Parameter is reserved for future use
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
@@ -15,7 +16,7 @@ public class VNPayService(
     IApplicationDbContext context,
     ITenantContext tenantContext,
     IConnectionMultiplexer? redis,
-    IBackgroundJobService backgroundJobService,
+    IBackgroundJobService _backgroundJobService,
     ILogger<VNPayService> logger) : IVNPayService
 {
     public async Task<string> CreatePaymentAsync(Invoice invoice, string returnUrl)
@@ -98,7 +99,7 @@ public class VNPayService(
         var tenant = await context.Tenants.FirstOrDefaultAsync(t => t.Slug == tenantSlug);
         if (tenant == null) return new VNPayWebhookResult { IsSuccess = false, ErrorMessage = "Tenant not found" };
 
-        tenantContext.Initialize(tenant.Id, tenant.Slug, tenant.SchemaName, Guid.Empty, UserRole.Owner, tenant.Plan);
+        tenantContext.Initialize(tenant.Id, tenant.Slug, tenant.SchemaName, Guid.Empty, RentalOS.Domain.Enums.UserRole.Owner, tenant.Plan);
 
         // 2. Verify Signature
         var setting = await context.Settings.FirstOrDefaultAsync(s => s.Key == "payment.vnpay");

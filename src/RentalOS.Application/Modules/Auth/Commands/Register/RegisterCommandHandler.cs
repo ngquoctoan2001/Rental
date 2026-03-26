@@ -72,10 +72,8 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, AuthResul
         // 6 & 7. Create Schema and run DDL
         await _schemaManager.CreateSchemaAsync(slug, cancellationToken);
 
-        // 8. Create User in NEW schema
-        // We need to switch search_path to the new schema
-        await _context.Database.ExecuteSqlRawAsync($"SET search_path TO \"{tenant.SchemaName}\"");
-
+        // 8. Create User in PUBLIC schema via Identity (UserManager uses PascalCase EF columns
+        //    that live in public.users — do NOT switch search_path for Identity operations).
         var user = new User
         {
             UserName = request.OwnerEmail,

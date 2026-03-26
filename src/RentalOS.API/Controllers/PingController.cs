@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using RentalOS.Application.Common.Interfaces;
-using RentalOS.Infrastructure.Multitenancy;
 
 namespace RentalOS.API.Controllers;
 

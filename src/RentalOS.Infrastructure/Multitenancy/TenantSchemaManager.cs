@@ -43,6 +43,31 @@ public class TenantSchemaManager(string connectionString, Microsoft.Extensions.L
     /// <summary>Returns the full DDL SQL script for 14 per-tenant tables within the given schema.</summary>
     public static string GetTenantDdlScript(string schemaName) => _tenantDdlTemplate.Replace("{SCHEMA}", schemaName);
 
+    /// <summary>Applies incremental schema patches to an existing tenant schema.</summary>
+    public async Task PatchSchemaAsync(string slug, CancellationToken cancellationToken = default)
+    {
+        var schemaName = $"tenant_{slug.Replace("-", "_")}";
+        var patchSql = $"""
+            SET search_path TO "{schemaName}";
+
+            -- Patch: add is_active to rooms if missing
+            DO $$ BEGIN
+              IF NOT EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_schema = '{schemaName}' AND table_name = 'rooms' AND column_name = 'is_active'
+              ) THEN
+                ALTER TABLE rooms ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT true;
+              END IF;
+            END $$;
+            """;
+
+        await using var conn = new NpgsqlConnection(_connectionString);
+        await conn.OpenAsync(cancellationToken);
+        await using var cmd = new NpgsqlCommand(patchSql, conn);
+        await cmd.ExecuteNonQueryAsync(cancellationToken);
+        _logger.LogInformation("Patched schema for tenant {Slug}", slug);
+    }
+
     private const string _tenantDdlTemplate = """
         CREATE SCHEMA IF NOT EXISTS "{SCHEMA}";
         SET search_path TO "{SCHEMA}";
@@ -103,12 +128,23 @@ public class TenantSchemaManager(string connectionString, Microsoft.Extensions.L
           notes               TEXT,
           maintenance_note    TEXT,
           maintenance_since   DATE,
+          is_active           BOOLEAN NOT NULL DEFAULT true,
           created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
           updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
           UNIQUE(property_id, room_number)
         );
         CREATE INDEX IF NOT EXISTS idx_rooms_property ON rooms(property_id);
         CREATE INDEX IF NOT EXISTS idx_rooms_status ON rooms(status);
+
+        -- Patch: add is_active to rooms if missing (existing tenants)
+        DO $$ BEGIN
+          IF NOT EXISTS (
+            SELECT 1 FROM information_schema.columns
+            WHERE table_schema = '{SCHEMA}' AND table_name = 'rooms' AND column_name = 'is_active'
+          ) THEN
+            ALTER TABLE rooms ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT true;
+          END IF;
+        END $$;
 
         -- Bảng 6: customers
         CREATE TABLE IF NOT EXISTS customers (

@@ -1,4 +1,5 @@
-﻿using MediatR;
+#pragma warning disable CS9113 // Parameter is reserved for future use
+using MediatR;
 using RentalOS.Application.Common.Interfaces;
 using RentalOS.Application.Modules.Customers.Queries.SearchCustomers;
 using RentalOS.Application.Modules.Properties.Queries.GetPropertyStats;
@@ -8,7 +9,7 @@ using System.Text.Json;
 
 namespace RentalOS.Application.Modules.AI.Services;
 
-public class AiToolHandler(ISender mediator, ITenantContext tenantContext)
+public class AiToolHandler(ISender mediator, ITenantContext _tenantContext)
 {
     public async Task<string> ExecuteToolAsync(string toolName, string toolInputJson)
     {
@@ -20,12 +21,12 @@ public class AiToolHandler(ISender mediator, ITenantContext tenantContext)
         object? result = toolName switch
         {
             "room_list" => await mediator.Send(new GetRoomsQuery()),
-            "room_create" => "Vui lòng xác nhận tạo phòng mới với thông tin: " + toolInputJson, // Require confirmation
+            "room_create" => "Vui l�ng x�c nh?n t?o ph�ng m?i v?i th�ng tin: " + toolInputJson, // Require confirmation
             "customer_search" => await mediator.Send(new SearchCustomersQuery(root.GetProperty("query").GetString()!)),
             "revenue_report" => await mediator.Send(new GetRevenueReportQuery(root.GetProperty("month").GetString() ?? "this_month")),
             "room_status_overview" => await mediator.Send(new GetPropertyStatsQuery(Guid.Empty)),
-            // ... các tool còn lại mapping tương tự
-            _ => "Tool không hỗ trợ hoặc đang phát triển."
+            // ... c�c tool c�n l?i mapping tuong t?
+            _ => "Tool kh�ng h? tr? ho?c dang ph�t tri?n."
         };
 
         return JsonSerializer.Serialize(result);

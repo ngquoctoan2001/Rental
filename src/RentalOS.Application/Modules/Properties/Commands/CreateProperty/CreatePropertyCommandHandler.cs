@@ -16,7 +16,7 @@ public class CreatePropertyCommandHandler(
         // Kiểm tra plan limit
         var currentCount = await context.Properties.CountAsync(p => p.IsActive, cancellationToken);
         
-        bool canCreate = tenantContext.PlanType switch
+        bool canCreate = tenantContext.Plan switch
         {
             PlanType.Trial => currentCount < 1,
             PlanType.Starter => currentCount < 1,

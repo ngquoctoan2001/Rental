@@ -23,19 +23,21 @@ export default function InvoicesPage() {
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
 
   // Queries
-  const { data: invoices = [], isLoading: isInvoicesLoading } = useQuery({
+  const { data: invoices = [], isLoading: isInvoicesLoading } = useQuery<Invoice[]>({
     queryKey: ['invoices', selectedMonth],
     queryFn: async () => {
       const resp = await invoicesApi.list({ month: selectedMonth });
-      return resp.data;
+      const body = resp.data as Invoice[] | { items: Invoice[] };
+      return Array.isArray(body) ? body : body.items ?? [];
     }
   });
 
-  const { data: contracts = [] } = useQuery({
+  const { data: contracts = [] } = useQuery<Contract[]>({
     queryKey: ['contracts-active'],
     queryFn: async () => {
       const resp = await contractsApi.list({ status: 'active' });
-      return resp.data;
+      const body = resp.data as Contract[] | { items: Contract[] };
+      return Array.isArray(body) ? body : body.items ?? [];
     }
   });
 

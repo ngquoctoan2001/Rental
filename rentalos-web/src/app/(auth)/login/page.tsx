@@ -34,9 +34,12 @@ export default function LoginPage() {
         tenantSlug: data.tenantSlug 
       });
       setAuth(response.data);
+      // Set cookie so Next.js middleware can detect authentication
+      document.cookie = `accessToken=${response.data.accessToken}; path=/; max-age=3600; SameSite=Lax`;
       router.push('/');
     } catch (err: any) {
-      setError(err.message || 'Email hoặc mật khẩu không chính xác');
+      const msg = err.response?.data?.message || err.response?.data?.title || err.message || 'Email hoặc mật khẩu không chính xác';
+      setError(msg);
     } finally {
       setLoading(false);
     }

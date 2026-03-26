@@ -12,7 +12,8 @@ export interface Tenant {
   id: string;
   name: string;
   slug: string;
-  plan: 'starter' | 'pro' | 'business' | 'expired';
+  plan: string;
+  trialEndsAt?: string;
   logoUrl?: string;
 }
 
@@ -21,7 +22,6 @@ export interface AuthResult {
   tenant: Tenant;
   accessToken: string;
   refreshToken: string;
-  expiresAt: string;
 }
 
 // --- CORE BUSINESS ---

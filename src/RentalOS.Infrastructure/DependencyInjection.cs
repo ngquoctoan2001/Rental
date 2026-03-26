@@ -47,7 +47,7 @@ public static class DependencyInjection
         services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
 
 
-        services.AddIdentity<User, ApplicationRole>(options =>
+        services.AddIdentity<RentalOS.Domain.Entities.User, RentalOS.Domain.Entities.ApplicationRole>(options =>
         {
             options.Password.RequireDigit = true;
             options.Password.RequireLowercase = true;
@@ -91,7 +91,6 @@ public static class DependencyInjection
             sp.GetRequiredService<ITenantContext>(),
             sp.GetRequiredService<IHttpClientFactory>(),
             sp.GetService<IConnectionMultiplexer>(),
-            sp.GetRequiredService<IBackgroundJobService>(),
             sp.GetRequiredService<ILogger<MoMoService>>()
         ));
         services.AddScoped<IVNPayService>(sp => new VNPayService(

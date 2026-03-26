@@ -25,28 +25,26 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthResultDto>
 
     public async Task<AuthResultDto> Handle(LoginCommand request, CancellationToken cancellationToken)
     {
-        // 1. Find tenant
+        // 1. Find tenant in public schema
         var tenant = await _context.Tenants
             .FirstOrDefaultAsync(t => t.Slug == request.TenantSlug && t.IsActive, cancellationToken);
 
-            
-        if (tenant == null) throw new Exception("Không tìm thấy nhà trọ hoặc đã bị vô hiệu hóa.");
+        if (tenant == null) throw new UnauthorizedAccessException("Không tìm thấy nhà trọ hoặc đã bị vô hiệu hóa.");
 
-        // 2. SET search_path
-        await _context.Database.ExecuteSqlRawAsync($"SET search_path TO \"{tenant.SchemaName}\"");
-
-        // 3. Find user
+        // 2. Find user in public.users — Identity tables always live in the public schema.
+        //    Do NOT switch search_path here; the tenant DDL users table uses snake_case columns
+        //    which are incompatible with EF/Identity PascalCase queries.
         var user = await _userManager.FindByEmailAsync(request.Email);
         if (user == null || !user.IsActive)
-        {
-            throw new Exception("Email không tồn tại hoặc tài khoản bị khóa.");
-        }
+            throw new UnauthorizedAccessException("Email không tồn tại hoặc tài khoản bị khóa.");
+
+        // 3. Ensure user belongs to the requested tenant
+        if (user.TenantId != tenant.Id)
+            throw new UnauthorizedAccessException("Tài khoản không thuộc nhà trọ này.");
 
         // 4. Verify password
         if (!await _userManager.CheckPasswordAsync(user, request.Password))
-        {
-            throw new Exception("Mật khẩu không chính xác.");
-        }
+            throw new UnauthorizedAccessException("Mật khẩu không chính xác.");
 
         // 5. Update last login
         user.LastLoginAt = DateTime.UtcNow;

@@ -25,7 +25,12 @@ export const useAuthStore = create<AuthStore>()(
         accessToken: data.accessToken,
         refreshToken: data.refreshToken
       }),
-      logout: () => set({ user: null, tenant: null, accessToken: null, refreshToken: null }),
+      logout: () => {
+        if (typeof document !== 'undefined') {
+          document.cookie = 'accessToken=; path=/; max-age=0';
+        }
+        set({ user: null, tenant: null, accessToken: null, refreshToken: null });
+      },
       isAuthenticated: () => !!get().accessToken,
     }),
     {

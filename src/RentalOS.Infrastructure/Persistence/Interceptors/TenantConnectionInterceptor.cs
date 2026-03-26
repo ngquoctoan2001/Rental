@@ -12,23 +12,19 @@ public sealed class TenantConnectionInterceptor(ITenantContext tenantContext) : 
 {
     private readonly ITenantContext _tenantContext = tenantContext;
 
-    public override InterceptionResult ConnectionOpening(
-        DbConnection connection, 
-        ConnectionEventData eventData, 
-        InterceptionResult result)
+    public override void ConnectionOpened(
+        DbConnection connection,
+        ConnectionEndEventData eventData)
     {
         SetSchema(connection);
-        return result;
     }
 
-    public override async ValueTask<InterceptionResult> ConnectionOpeningAsync(
-        DbConnection connection, 
-        ConnectionEventData eventData, 
-        InterceptionResult result, 
+    public override async Task ConnectionOpenedAsync(
+        DbConnection connection,
+        ConnectionEndEventData eventData,
         CancellationToken cancellationToken = default)
     {
         await SetSchemaAsync(connection, cancellationToken);
-        return result;
     }
 
     private void SetSchema(DbConnection connection)

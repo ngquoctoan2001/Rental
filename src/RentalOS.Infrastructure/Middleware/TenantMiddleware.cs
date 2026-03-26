@@ -22,9 +22,28 @@ public class TenantMiddleware
     {
         var tenantSlug = context.Request.Headers["X-Tenant-Slug"].ToString();
 
+        // If X-Tenant-Slug is missing, try to resolve from invoice token in URL
+        if (string.IsNullOrEmpty(tenantSlug) && context.Request.Path.Value != null && 
+            context.Request.Path.Value.Contains("/api/invoice/detail/", StringComparison.OrdinalIgnoreCase))
+        {
+            var pathParts = context.Request.Path.Value.Split('/');
+            var token = pathParts.Last();
+            
+            if (!string.IsNullOrEmpty(token))
+            {
+                var dbContext = context.RequestServices.GetRequiredService<IApplicationDbContext>();
+                var tenant = await dbContext.FindTenantByInvoiceTokenAsync(token);
+                if (tenant != null)
+                {
+                    tenantSlug = tenant.Slug;
+                }
+            }
+        }
+
         if (!string.IsNullOrEmpty(tenantSlug))
         {
             var schemaName = $"tenant_{tenantSlug.Replace("-", "_")}";
+            // Default identity values for public access
             var userId = Guid.Empty;
             var role = RentalOS.Domain.Enums.UserRole.Staff;
             var plan = RentalOS.Domain.Enums.PlanType.Trial;

@@ -98,7 +98,9 @@ public class RenewContractCommandHandler(
             await transaction.CommitAsync(cancellationToken);
 
             // 6. Enqueue PDF job for new contract
+#pragma warning disable CS4014 // Hangfire serializes the expression, not awaiting by design
             backgroundJobService.Enqueue<GenerateContractPdfJob>(j => j.Execute(newContract.Id));
+#pragma warning restore CS4014
 
             return Result<Guid>.Ok(newContract.Id);
         }

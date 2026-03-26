@@ -34,11 +34,11 @@ export default function Sidebar() {
   return (
     <>
       {/* Mobile Backdrop */}
-      {!sidebarOpen && (
+      {sidebarOpen && (
         <div className="fixed inset-0 bg-slate-900/50 z-40 lg:hidden" onClick={() => toggleSidebar()} />
       )}
 
-      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-slate-900 text-slate-300 transform transition-transform duration-300 ease-in-out ${sidebarOpen ? '-translate-x-full lg:translate-x-0 lg:w-0' : 'translate-x-0'}`}>
+      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-slate-900 text-slate-300 transform transition-transform duration-300 ease-in-out ${!sidebarOpen ? '-translate-x-full lg:translate-x-0 lg:w-0' : 'translate-x-0'}`}>
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="h-16 flex items-center px-6 bg-slate-950">

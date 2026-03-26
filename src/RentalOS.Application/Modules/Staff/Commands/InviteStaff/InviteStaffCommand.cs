@@ -1,3 +1,4 @@
+#pragma warning disable CS9113 // Parameter is reserved for future use
 using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
@@ -24,7 +25,7 @@ public class InviteStaffCommandHandler(
     UserManager<User> userManager,
     ITenantContext tenantContext,
     IApplicationDbContext dbContext,
-    IBackgroundJobClient backgroundJobClient) : IRequestHandler<InviteStaffCommand, Guid>
+    IBackgroundJobClient _backgroundJobClient) : IRequestHandler<InviteStaffCommand, Guid>
 {
     public async Task<Guid> Handle(InviteStaffCommand request, CancellationToken cancellationToken)
     {

@@ -26,7 +26,7 @@ public class ContractConfiguration : IEntityTypeConfiguration<Contract>
             .IsUnique();
 
         builder.HasIndex(x => x.EndDate)
-            .HasFilter("\"Status\" = 0");
+            .HasFilter("\"status\" = 'Active'");
 
         builder.HasMany(x => x.CoTenants)
             .WithOne(x => x.Contract)

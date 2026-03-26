@@ -1,21 +1,17 @@
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using RentalOS.Application;
-
 using RentalOS.Infrastructure;
-using RentalOS.Infrastructure.Persistence;
 using RentalOS.API.Middleware;
 using RentalOS.API.Hubs;
 using Serilog;
 using Hangfire;
 using Hangfire.PostgreSql;
-using Microsoft.AspNetCore.Diagnostics.HealthChecks;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
-using System.Threading.RateLimiting;
 using FluentValidation.AspNetCore;
 using FluentValidation;
 using System.Reflection;
 using QuestPDF.Infrastructure;
+using Scalar.AspNetCore;
 
 // Configure QuestPDF license
 QuestPDF.Settings.License = LicenseType.Community;
@@ -92,7 +88,10 @@ builder.Services.AddCors(options =>
     {
         if (builder.Environment.IsDevelopment())
         {
-            policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
+            policy.WithOrigins("http://localhost:3000")
+                  .AllowAnyHeader()
+                  .AllowAnyMethod()
+                  .AllowCredentials();
         }
         else
         {
@@ -134,21 +133,35 @@ builder.Services.AddAuthentication(options =>
         ValidAudience = jwtSettings["Audience"],
         ClockSkew = TimeSpan.Zero
     };
+    // SignalR sends the token as ?access_token= query param (can't set headers on WebSocket/SSE)
+    options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"];
+            if (!string.IsNullOrEmpty(accessToken) &&
+                context.HttpContext.Request.Path.StartsWithSegments("/hubs"))
+            {
+                context.Token = accessToken;
+            }
+            return Task.CompletedTask;
+        }
+    };
 });
 
-// 12. OpenAPI
+// 12. Swagger / OpenAPI
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
 // ── Middleware Pipeline ───────────────────────────────────────────────────
 app.UseMiddleware<ExceptionMiddleware>();
-app.UseCors("DefaultCors");
 app.UseRateLimiter();
 app.UseHealthChecks("/health/liveness"); // Basic live check
 
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection(); // Disabled for local HTTP dev
 app.UseRouting();
+app.UseCors("DefaultCors"); // Must be between UseRouting and UseAuthentication
 app.UseAuthentication();
 app.UseMiddleware<TenantMiddleware>();
 app.UseAuthorization();
@@ -156,6 +169,11 @@ app.UseAuthorization();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.MapScalarApiReference(options =>
+    {
+        options.Title = "RentalOS API";
+        options.AddPreferredSecuritySchemes("Bearer");
+    });
 }
 
 app.MapControllers();

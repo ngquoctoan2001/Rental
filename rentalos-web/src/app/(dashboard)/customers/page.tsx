@@ -23,11 +23,12 @@ export default function CustomersPage() {
   const [isOcrLoading, setIsOcrLoading] = useState(false);
 
   // Queries
-  const { data: customers = [], isLoading } = useQuery({
+  const { data: customers = [], isLoading } = useQuery<Customer[]>({
     queryKey: ['customers'],
     queryFn: async () => {
       const resp = await customersApi.list();
-      return resp.data;
+      const body = resp.data as Customer[] | { items: Customer[] };
+      return Array.isArray(body) ? body : body.items ?? [];
     }
   });
 

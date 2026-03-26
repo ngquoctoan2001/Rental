@@ -30,7 +30,7 @@ public class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
 
         builder.HasIndex(x => new { x.ContractId, x.BillingMonth })
             .IsUnique()
-            .HasFilter("\"Status\" != 'Cancelled'");
+            .HasFilter("\"status\" != 'Cancelled'");
 
         builder.HasMany(x => x.Transactions)
             .WithOne(x => x.Invoice)

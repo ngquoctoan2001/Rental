@@ -17,7 +17,9 @@ public class SendInvoiceRemindersJob(IServiceScopeFactory scopeFactory)
         {
             using var tenantScope = scopeFactory.CreateScope();
             var tenantDb = tenantScope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
-            await tenantDb.Database.ExecuteSqlRawAsync($"SET search_path TO \"tenant_{tenant.Slug}\", public");
+            #pragma warning disable EF1003 // Slug is from trusted DB source, SET search_path cannot use parameters
+
+            await tenantDb.Database.ExecuteSqlRawAsync("SET search_path TO \"tenant_" + tenant.Slug.Replace("\"", "") + "\", public");
 
             var today = DateOnly.FromDateTime(DateTime.UtcNow);
             var remindDays = new[] { 3, 1 }; // From settings placeholder

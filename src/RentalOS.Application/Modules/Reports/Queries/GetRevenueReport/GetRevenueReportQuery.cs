@@ -39,7 +39,7 @@ public class GetRevenueReportQueryHandler(IApplicationDbContext dbContext, ITena
             AND (@propertyId IS NULL OR property_id = @propertyId)";
 
         var summary = await connection.QuerySingleOrDefaultAsync<dynamic>(summarySql, new { tenantId, fromDate, toDate, propertyId = request.PropertyId });
-        report.Summary.TotalRevenue = summary.totalrevenue;
+        report.Summary.TotalRevenue = summary?.totalrevenue ?? 0m;
 
         // Collection Rate (Simplified: Collected vs Invoiced in period)
         const string invoiceSql = @"

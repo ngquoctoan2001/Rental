@@ -10,10 +10,37 @@ public class TenantMiddleware(RequestDelegate next)
     public async Task InvokeAsync(HttpContext context, ApplicationDbContext dbContext, RentalOS.Application.Common.Interfaces.ITenantContext tenantContext)
     {
         var path = context.Request.Path.Value?.ToLower() ?? string.Empty;
+        Console.WriteLine($"[TenantMiddleware] Request Path: {path}");
 
-        // Skip public endpoints
+
+        // Skip public endpoints OR handle special public endpoints that need tenant context
         if (IsPublicEndpoint(path))
         {
+            // Special case: public invoice endpoint needs to find the tenant by token
+            if (path.StartsWith("/api/v1/public/invoice/"))
+            {
+                var token = path.Split('/').Last();
+                if (!string.IsNullOrEmpty(token))
+                {
+                    var publicTenant = await dbContext.FindTenantByInvoiceTokenAsync(token);
+                    if (publicTenant != null)
+                    {
+                        var publicSchemaName = publicTenant.SchemaName;
+                        var publicSetSearchPathSql = $"SET search_path TO \"{publicSchemaName}\", public";
+                        await dbContext.Database.ExecuteSqlRawAsync(publicSetSearchPathSql);
+                        
+                        // Initialize tenant context with minimal info (no user)
+                        tenantContext.Initialize(publicTenant.Id, publicTenant.Slug, publicSchemaName, Guid.Empty, RentalOS.Domain.Enums.UserRole.Staff, RentalOS.Domain.Enums.PlanType.Trial);
+                    }
+                    else
+                    {
+                        context.Response.StatusCode = StatusCodes.Status404NotFound;
+                        await context.Response.WriteAsJsonAsync(new { error = "Payment link not found or expired" });
+                        return;
+                    }
+                }
+            }
+
             await next(context);
             return;
         }
@@ -53,10 +80,10 @@ public class TenantMiddleware(RequestDelegate next)
         var roleClaim = context.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value 
                         ?? context.User.FindFirst("role")?.Value;
         
-        var role = Enum.TryParse<UserRole>(roleClaim, true, out var r) ? r : UserRole.Staff;
+        var role = Enum.TryParse<RentalOS.Domain.Enums.UserRole>(roleClaim, true, out var r) ? r : RentalOS.Domain.Enums.UserRole.Staff;
         
         var planClaim = context.User.FindFirst("plan")?.Value;
-        var plan = Enum.TryParse<PlanType>(planClaim, true, out var p) ? p : PlanType.Trial;
+        var plan = Enum.TryParse<RentalOS.Domain.Enums.PlanType>(planClaim, true, out var p) ? p : RentalOS.Domain.Enums.PlanType.Trial;
 
 
         var schemaName = $"tenant_{tenantSlug.Replace("-", "_")}";
@@ -83,11 +110,18 @@ public class TenantMiddleware(RequestDelegate next)
 
     private static bool IsPublicEndpoint(string path)
     {
-        return path.StartsWith("/auth/") || 
+        return path.StartsWith("/api/v1/auth/") || 
+               path.StartsWith("/auth/") || 
                path.StartsWith("/pay/") || 
+               path.StartsWith("/api/v1/public/") ||
                path.Contains("/payments/") && (path.EndsWith("/webhook") || path.EndsWith("/return")) ||
                path == "/health" || 
-               path.StartsWith("/swagger");
+               path == "/health/liveness" ||
+               path.StartsWith("/openapi") ||
+               path.StartsWith("/scalar") ||
+               path.StartsWith("/swagger") ||
+               path.StartsWith("/hangfire") ||
+               path.StartsWith("/hubs/");
     }
 }
 

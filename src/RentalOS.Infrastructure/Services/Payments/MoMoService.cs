@@ -17,7 +17,6 @@ public class MoMoService(
     ITenantContext tenantContext,
     IHttpClientFactory httpClientFactory,
     IConnectionMultiplexer? redis,
-    IBackgroundJobService backgroundJobService,
     ILogger<MoMoService> logger) : IMoMoService
 {
     private const string MoMoSandboxUrl = "https://test-payment.momo.vn/v2/gateway/api/create";
@@ -119,7 +118,7 @@ public class MoMoService(
         if (tenant == null) return new MoMoWebhookResult { IsSuccess = false, ErrorMessage = "Không tìm thấy tenant" };
 
         // Switch context to tenant schema
-        tenantContext.Initialize(tenant.Id, tenant.Slug, tenant.SchemaName, Guid.Empty, UserRole.Owner, tenant.Plan);
+        tenantContext.Initialize(tenant.Id, tenant.Slug, tenant.SchemaName, Guid.Empty, RentalOS.Domain.Enums.UserRole.Owner, tenant.Plan);
 
         // 2. Verify Signature
         var setting = await context.Settings.FirstOrDefaultAsync(s => s.Key == "payment.momo");

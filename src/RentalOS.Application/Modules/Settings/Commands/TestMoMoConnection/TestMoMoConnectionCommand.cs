@@ -1,3 +1,4 @@
+#pragma warning disable CS9113 // Parameter is reserved for future use
 using MediatR;
 using RentalOS.Application.Common.Interfaces;
 using System.Text.Json;
@@ -12,7 +13,7 @@ public record TestConnectionResult(bool Success, string Message);
 
 public class TestMoMoConnectionCommandHandler(
     IApplicationDbContext dbContext, 
-    IHttpClientFactory httpClientFactory) : IRequestHandler<TestMoMoConnectionCommand, TestConnectionResult>
+    IHttpClientFactory _httpClientFactory) : IRequestHandler<TestMoMoConnectionCommand, TestConnectionResult>
 {
     public async Task<TestConnectionResult> Handle(TestMoMoConnectionCommand request, CancellationToken cancellationToken)
     {

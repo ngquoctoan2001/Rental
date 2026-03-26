@@ -13,6 +13,7 @@ import {
 } from 'recharts';
 import { useQuery } from '@tanstack/react-query';
 import { propertiesApi } from '@/lib/api';
+import { Property } from '@/types';
 
 const MOCK_PROPERTIES = [
   { 
@@ -54,11 +55,12 @@ const MOCK_REVENUE_HISTORY = [
 ];
 
 export default function PropertiesPage() {
-  const { data: properties = [], isLoading } = useQuery({
+  const { data: properties = [], isLoading } = useQuery<Property[]>({
     queryKey: ['properties'],
     queryFn: async () => {
       const resp = await propertiesApi.list();
-      return resp.data;
+      const body = resp.data as Property[] | { items: Property[] };
+      return Array.isArray(body) ? body : body.items ?? [];
     }
   });
 

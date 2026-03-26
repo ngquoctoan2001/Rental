@@ -1,3 +1,4 @@
+#pragma warning disable CS9113 // Parameter is reserved for future use
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using RentalOS.Application.Common.Interfaces;
@@ -5,7 +6,7 @@ using RentalOS.Application.Common.Models;
 
 namespace RentalOS.Infrastructure.Services.AI;
 
-public class AnthropicService(IHttpClientFactory httpClientFactory) : IAiStreamingService
+public class AnthropicService(IHttpClientFactory _httpClientFactory) : IAiStreamingService
 {
     private const string Model = "claude-sonnet-4-20250514";
     

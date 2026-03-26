@@ -9,17 +9,17 @@ public class TenantContext : ITenantContext
     public string? TenantSlug { get; private set; }
     public string? SchemaName { get; private set; }
     public Guid UserId { get; private set; }
-    public UserRole UserRole { get; private set; }
-    public PlanType PlanType { get; private set; }
+    public RentalOS.Domain.Enums.UserRole Role { get; private set; }
+    public RentalOS.Domain.Enums.PlanType Plan { get; private set; }
     public bool IsInitialized => !string.IsNullOrEmpty(TenantSlug);
 
-    public void Initialize(Guid tenantId, string tenantSlug, string schemaName, Guid userId, UserRole role, PlanType plan)
+    public void Initialize(Guid tenantId, string tenantSlug, string schemaName, Guid userId, RentalOS.Domain.Enums.UserRole role, RentalOS.Domain.Enums.PlanType plan)
     {
         TenantId = tenantId;
         TenantSlug = tenantSlug;
         SchemaName = schemaName;
         UserId = userId;
-        UserRole = role;
-        PlanType = plan;
+        Role = role;
+        Plan = plan;
     }
 }

@@ -24,7 +24,7 @@ public class ChangePasswordCommandHandler : IRequestHandler<ChangePasswordComman
 
     public async Task<bool> Handle(ChangePasswordCommand request, CancellationToken cancellationToken)
     {
-        var user = await _userManager.FindByIdAsync(_currentUserService.UserId.ToString());
+        var user = await _userManager.FindByIdAsync(_currentUserService.UserId?.ToString() ?? "");
         if (user == null) return false;
 
         var result = await _userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);

@@ -27,7 +27,9 @@ public class GenerateMonthlyInvoicesJob(
                 var tenantDb = tenantScope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
                 
                 // Switch schema logic (via middleware-like or direct command)
-                await tenantDb.Database.ExecuteSqlRawAsync($"SET search_path TO \"tenant_{tenant.Slug}\", public");
+                #pragma warning disable EF1003 // Slug is from trusted DB source, SET search_path cannot use parameters
+
+                await tenantDb.Database.ExecuteSqlRawAsync("SET search_path TO \"tenant_" + tenant.Slug.Replace("\"", "") + "\", public");
 
                 // logic tạo hóa đơn: iterate contracts -> check meter readings -> create invoice
                 logger.LogInformation("Đang xử lý tenant {Slug}...", tenant.Slug);

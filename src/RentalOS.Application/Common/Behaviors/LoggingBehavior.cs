@@ -11,7 +11,7 @@ public class LoggingBehavior<TRequest, TResponse>(ILogger<LoggingBehavior<TReque
     {
         var name = typeof(TRequest).Name;
         logger.LogInformation("Handling {Name}: {@Request}", name, request);
-        var response = await next(cancellationToken);
+        var response = await next();
         logger.LogInformation("Handled {Name}", name);
         return response;
     }

@@ -5,7 +5,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace RentalOS.Infrastructure.Persistence.Migrations
+namespace RentalOS.Infrastructure.Migrations
 {
     /// <inheritdoc />
     public partial class InitialCreate : Migration
@@ -804,7 +804,7 @@ namespace RentalOS.Infrastructure.Persistence.Migrations
                 name: "IX_contracts_EndDate",
                 table: "contracts",
                 column: "EndDate",
-                filter: "\"Status\" = 0");
+                filter: "\"status\" = 'Active'");
 
             migrationBuilder.CreateIndex(
                 name: "IX_contracts_RoomId",
@@ -831,7 +831,7 @@ namespace RentalOS.Infrastructure.Persistence.Migrations
                 table: "invoices",
                 columns: new[] { "ContractId", "BillingMonth" },
                 unique: true,
-                filter: "\"Status\" != 'Cancelled'");
+                filter: "\"status\" != 'Cancelled'");
 
             migrationBuilder.CreateIndex(
                 name: "IX_invoices_InvoiceCode",

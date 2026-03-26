@@ -19,11 +19,12 @@ export default function TransactionsPage() {
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
 
   // Queries
-  const { data: transactions = [], isLoading } = useQuery({
+  const { data: transactions = [], isLoading } = useQuery<Transaction[]>({
     queryKey: ['transactions', dateRange],
     queryFn: async () => {
       const resp = await transactionsApi.list();
-      return resp.data;
+      const body = resp.data as Transaction[] | { items: Transaction[] };
+      return Array.isArray(body) ? body : body.items ?? [];
     }
   });
 

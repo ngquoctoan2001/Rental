@@ -21,27 +21,30 @@ export default function ContractsPage() {
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
 
   // Queries
-  const { data: contracts = [], isLoading } = useQuery({
+  const { data: contracts = [], isLoading } = useQuery<Contract[]>({
     queryKey: ['contracts'],
     queryFn: async () => {
       const resp = await contractsApi.list();
-      return resp.data;
+      const body = resp.data as Contract[] | { items: Contract[] };
+      return Array.isArray(body) ? body : body.items ?? [];
     }
   });
 
-  const { data: rooms = [] } = useQuery({
+  const { data: rooms = [] } = useQuery<Room[]>({
     queryKey: ['rooms-available'],
     queryFn: async () => {
       const resp = await roomsApi.list();
-      return resp.data;
+      const body = resp.data as Room[] | { items: Room[] };
+      return Array.isArray(body) ? body : body.items ?? [];
     }
   });
 
-  const { data: customers = [] } = useQuery({
+  const { data: customers = [] } = useQuery<Customer[]>({
     queryKey: ['customers'],
     queryFn: async () => {
       const resp = await customersApi.list();
-      return resp.data;
+      const body = resp.data as Customer[] | { items: Customer[] };
+      return Array.isArray(body) ? body : body.items ?? [];
     }
   });
 

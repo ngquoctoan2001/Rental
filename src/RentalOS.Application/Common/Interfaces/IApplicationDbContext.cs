@@ -6,7 +6,7 @@ namespace RentalOS.Application.Common.Interfaces;
 public interface IApplicationDbContext
 {
     DbSet<Tenant> Tenants { get; }
-    DbSet<User> Users { get; }
+    DbSet<User> ApplicationUsers { get; }
     DbSet<ApplicationRole> Roles { get; }
     DbSet<Property> Properties { get; }
     DbSet<Room> Rooms { get; }
@@ -25,5 +25,5 @@ public interface IApplicationDbContext
     
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
     Microsoft.EntityFrameworkCore.Infrastructure.DatabaseFacade Database { get; }
-
+    Task<Tenant?> FindTenantByInvoiceTokenAsync(string token);
 }

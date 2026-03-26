@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using RentalOS.Application.Common.Interfaces;
 using RentalOS.Application.Common.Services;
 using Microsoft.EntityFrameworkCore;
@@ -46,7 +46,7 @@ public class GetCurrentSubscriptionQueryHandler(
 
         return new SubscriptionDetailsDto
         {
-            Plan = tenant.Plan,
+            Plan = tenantContext.Plan,
             ExpiresAt = expiresAt,
             DaysLeft = Math.Max(0, daysLeft),
             Usage = new UsageDto

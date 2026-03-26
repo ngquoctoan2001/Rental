@@ -9,7 +9,7 @@ using RentalOS.Infrastructure.Persistence;
 
 #nullable disable
 
-namespace RentalOS.Infrastructure.Persistence.Migrations
+namespace RentalOS.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
     partial class ApplicationDbContextModelSnapshot : ModelSnapshot
@@ -130,52 +130,65 @@ namespace RentalOS.Infrastructure.Persistence.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<string>("City")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("city");
 
                     b.Property<string>("Country")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
-                        .HasDefaultValue("Vietnam");
+                        .HasDefaultValue("Vietnam")
+                        .HasColumnName("country");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
 
                     b.Property<Guid?>("PropertyId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("property_id");
 
                     b.Property<string>("State")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("state");
 
                     b.Property<string>("Street")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("street");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
 
                     b.Property<Guid?>("UserId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
 
                     b.Property<string>("ZipCode")
                         .IsRequired()
                         .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("zip_code");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("p_k_addresses");
 
-                    b.HasIndex("PropertyId");
+                    b.HasIndex("PropertyId")
+                        .HasDatabaseName("i_x_addresses_property_id");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("i_x_addresses_user_id");
 
                     b.ToTable("addresses", (string)null);
                 });
@@ -184,34 +197,44 @@ namespace RentalOS.Infrastructure.Persistence.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
 
                     b.Property<DateTime?>("LastMessageAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_message_at");
 
                     b.Property<int>("MessageCount")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("message_count");
 
                     b.Property<string>("Messages")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("messages");
 
                     b.Property<string>("Title")
                         .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("title");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
 
                     b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("p_k_ai_conversations");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("i_x_ai_conversations_user_id");
 
                     b.ToTable("ai_conversations", (string)null);
                 });
@@ -250,49 +273,63 @@ namespace RentalOS.Infrastructure.Persistence.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<string>("Action")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("action");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
 
                     b.Property<string>("EntityCode")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("entity_code");
 
                     b.Property<Guid?>("EntityId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("entity_id");
 
                     b.Property<string>("EntityType")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("entity_type");
 
                     b.Property<string>("IpAddress")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("ip_address");
 
                     b.Property<string>("NewValue")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("new_value");
 
                     b.Property<string>("OldValue")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("old_value");
 
                     b.Property<string>("UserAgent")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("user_agent");
 
                     b.Property<Guid?>("UserId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
 
                     b.Property<string>("UserName")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("user_name");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("p_k_audit_logs");
 
                     b.HasIndex("CreatedAt")
-                        .IsDescending();
+                        .IsDescending()
+                        .HasDatabaseName("i_x_audit_logs_created_at");
 
                     b.ToTable("audit_logs", (string)null);
                 });
@@ -301,121 +338,163 @@ namespace RentalOS.Infrastructure.Persistence.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<int>("BillingDate")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("billing_date");
 
                     b.Property<string>("ContractCode")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("contract_code");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
 
                     b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
 
                     b.Property<Guid>("CustomerId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("customer_id");
 
                     b.Property<decimal>("DepositAmount")
                         .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("deposit_amount");
 
                     b.Property<int>("DepositMonths")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("deposit_months");
 
                     b.Property<bool>("DepositPaid")
-                        .HasColumnType("boolean");
+                        .HasColumnType("boolean")
+                        .HasColumnName("deposit_paid");
 
                     b.Property<DateTime?>("DepositPaidAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deposit_paid_at");
 
                     b.Property<decimal?>("DepositRefunded")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("deposit_refunded");
 
                     b.Property<decimal?>("ElectricityPrice")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("electricity_price");
 
                     b.Property<DateOnly>("EndDate")
-                        .HasColumnType("date");
+                        .HasColumnType("date")
+                        .HasColumnName("end_date");
 
                     b.Property<decimal?>("GarbageFee")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("garbage_fee");
 
                     b.Property<decimal?>("InternetFee")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("internet_fee");
 
                     b.Property<int>("MaxOccupants")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("max_occupants");
 
                     b.Property<decimal>("MonthlyRent")
                         .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("monthly_rent");
 
                     b.Property<int>("PaymentDueDays")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("payment_due_days");
 
                     b.Property<string>("PdfUrl")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("pdf_url");
 
                     b.Property<Guid>("RoomId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("room_id");
 
                     b.Property<decimal?>("ServiceFee")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("service_fee");
 
                     b.Property<DateTime?>("SignedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("signed_at");
 
                     b.Property<bool>("SignedByCustomer")
-                        .HasColumnType("boolean");
+                        .HasColumnType("boolean")
+                        .HasColumnName("signed_by_customer");
 
                     b.Property<DateOnly>("StartDate")
-                        .HasColumnType("date");
+                        .HasColumnType("date")
+                        .HasColumnName("start_date");
 
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("status");
 
                     b.Property<string>("TemplateId")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("template_id");
 
                     b.Property<DateTime?>("TerminatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("terminated_at");
 
                     b.Property<string>("TerminationReason")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("termination_reason");
 
-                    b.Property<int?>("TerminationType")
-                        .HasColumnType("integer");
+                    b.Property<string>("TerminationType")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("termination_type");
 
                     b.Property<string>("Terms")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("terms");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
 
                     b.Property<Guid?>("UserId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
 
                     b.Property<decimal?>("WaterPrice")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("water_price");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("p_k_contracts");
 
                     b.HasIndex("ContractCode")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("i_x_contracts_contract_code");
 
-                    b.HasIndex("CustomerId");
+                    b.HasIndex("CustomerId")
+                        .HasDatabaseName("i_x_contracts_customer_id");
 
                     b.HasIndex("EndDate")
-                        .HasFilter("\"Status\" = 0");
+                        .HasDatabaseName("i_x_contracts_end_date")
+                        .HasFilter("\"status\" = 'Active'");
 
-                    b.HasIndex("RoomId");
+                    b.HasIndex("RoomId")
+                        .HasDatabaseName("i_x_contracts_room_id");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("i_x_contracts_user_id");
 
                     b.ToTable("contracts", (string)null);
                 });
@@ -424,35 +503,46 @@ namespace RentalOS.Infrastructure.Persistence.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<Guid>("ContractId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("contract_id");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
 
                     b.Property<Guid>("CustomerId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("customer_id");
 
                     b.Property<bool>("IsPrimary")
-                        .HasColumnType("boolean");
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_primary");
 
                     b.Property<DateOnly?>("MovedInAt")
-                        .HasColumnType("date");
+                        .HasColumnType("date")
+                        .HasColumnName("moved_in_at");
 
                     b.Property<DateOnly?>("MovedOutAt")
-                        .HasColumnType("date");
+                        .HasColumnType("date")
+                        .HasColumnName("moved_out_at");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("p_k_contract_co_tenants");
 
-                    b.HasIndex("CustomerId");
+                    b.HasIndex("CustomerId")
+                        .HasDatabaseName("i_x_contract_co_tenants_customer_id");
 
                     b.HasIndex("ContractId", "CustomerId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("i_x_contract_co_tenants_contract_id_customer_id");
 
                     b.ToTable("contract_co_tenants", (string)null);
                 });
@@ -461,88 +551,115 @@ namespace RentalOS.Infrastructure.Persistence.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<string>("BlacklistReason")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("blacklist_reason");
 
                     b.Property<DateTime?>("BlacklistedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("blacklisted_at");
 
                     b.Property<Guid?>("BlacklistedBy")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("blacklisted_by");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
 
                     b.Property<string>("CurrentAddress")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("current_address");
 
                     b.Property<DateOnly?>("DateOfBirth")
-                        .HasColumnType("date");
+                        .HasColumnType("date")
+                        .HasColumnName("date_of_birth");
 
                     b.Property<string>("Email")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("email");
 
                     b.Property<string>("EmergencyContactName")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("emergency_contact_name");
 
                     b.Property<string>("EmergencyContactPhone")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("emergency_contact_phone");
 
                     b.Property<string>("EmergencyContactRelationship")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("emergency_contact_relationship");
 
                     b.Property<string>("FullName")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("full_name");
 
                     b.Property<string>("Gender")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("gender");
 
                     b.Property<string>("Hometown")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("hometown");
 
                     b.Property<string>("IdCardImageBack")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("id_card_image_back");
 
                     b.Property<string>("IdCardImageFront")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("id_card_image_front");
 
                     b.Property<string>("IdCardNumber")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("id_card_number");
 
                     b.Property<bool>("IsBlacklisted")
-                        .HasColumnType("boolean");
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_blacklisted");
 
                     b.Property<string>("Notes")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("notes");
 
                     b.Property<string>("Occupation")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("occupation");
 
                     b.Property<string>("Phone")
                         .IsRequired()
                         .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("phone");
 
                     b.Property<string>("PortraitImage")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("portrait_image");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
 
                     b.Property<string>("Workplace")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("workplace");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("p_k_customers");
 
-                    b.HasIndex("IdCardNumber");
+                    b.HasIndex("IdCardNumber")
+                        .HasDatabaseName("i_x_customers_id_card_number");
 
-                    b.HasIndex("Phone");
+                    b.HasIndex("Phone")
+                        .HasDatabaseName("i_x_customers_phone");
 
                     b.ToTable("customers", (string)null);
                 });
@@ -551,128 +668,170 @@ namespace RentalOS.Infrastructure.Persistence.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<DateOnly>("BillingMonth")
-                        .HasColumnType("date");
+                        .HasColumnType("date")
+                        .HasColumnName("billing_month");
 
                     b.Property<Guid>("ContractId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("contract_id");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
 
                     b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
 
                     b.Property<decimal>("Discount")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("discount");
 
                     b.Property<string>("DiscountNote")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("discount_note");
 
                     b.Property<DateOnly>("DueDate")
-                        .HasColumnType("date");
+                        .HasColumnType("date")
+                        .HasColumnName("due_date");
 
                     b.Property<decimal>("ElectricityAmount")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("electricity_amount");
 
                     b.Property<int>("ElectricityNew")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("electricity_new");
 
                     b.Property<int>("ElectricityOld")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("electricity_old");
 
                     b.Property<decimal>("ElectricityPrice")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("electricity_price");
 
                     b.Property<decimal>("GarbageFee")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("garbage_fee");
 
                     b.Property<decimal>("InternetFee")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("internet_fee");
 
                     b.Property<string>("InvoiceCode")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("invoice_code");
 
                     b.Property<bool>("IsAutoGenerated")
-                        .HasColumnType("boolean");
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_auto_generated");
 
                     b.Property<string>("MeterImageElectricity")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("meter_image_electricity");
 
                     b.Property<string>("MeterImageWater")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("meter_image_water");
 
                     b.Property<string>("Notes")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("notes");
 
                     b.Property<decimal>("OtherFees")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("other_fees");
 
                     b.Property<string>("OtherFeesNote")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("other_fees_note");
 
                     b.Property<DateTime?>("PaidAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("paid_at");
 
                     b.Property<decimal?>("PartialPaidAmount")
                         .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("partial_paid_amount");
 
                     b.Property<DateTime?>("PaymentLinkExpiresAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("payment_link_expires_at");
 
                     b.Property<string>("PaymentLinkToken")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("payment_link_token");
 
                     b.Property<string>("PdfUrl")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("pdf_url");
 
                     b.Property<decimal>("RoomRent")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("room_rent");
 
                     b.Property<DateTime?>("SentAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("sent_at");
 
                     b.Property<decimal>("ServiceFee")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("service_fee");
 
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("status");
 
                     b.Property<decimal>("TotalAmount")
                         .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("total_amount");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
 
                     b.Property<decimal>("WaterAmount")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("water_amount");
 
                     b.Property<int>("WaterNew")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("water_new");
 
                     b.Property<int>("WaterOld")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("water_old");
 
                     b.Property<decimal>("WaterPrice")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("water_price");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("p_k_invoices");
 
                     b.HasIndex("InvoiceCode")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("i_x_invoices_invoice_code");
 
                     b.HasIndex("PaymentLinkToken")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("i_x_invoices_payment_link_token");
 
                     b.HasIndex("ContractId", "BillingMonth")
                         .IsUnique()
-                        .HasFilter("\"Status\" != 'Cancelled'");
+                        .HasDatabaseName("i_x_invoices_contract_id_billing_month")
+                        .HasFilter("\"status\" != 'Cancelled'");
 
                     b.ToTable("invoices", (string)null);
                 });
@@ -681,45 +840,57 @@ namespace RentalOS.Infrastructure.Persistence.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<Guid?>("AssignedToId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("assigned_to_id");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
 
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("description");
 
                     b.Property<string>("Priority")
                         .IsRequired()
                         .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("priority");
 
                     b.Property<Guid>("PropertyId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("property_id");
 
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
 
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("title");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("p_k_maintenance_tasks");
 
-                    b.HasIndex("AssignedToId");
+                    b.HasIndex("AssignedToId")
+                        .HasDatabaseName("i_x_maintenance_tasks_assigned_to_id");
 
-                    b.HasIndex("PropertyId");
+                    b.HasIndex("PropertyId")
+                        .HasDatabaseName("i_x_maintenance_tasks_property_id");
 
                     b.ToTable("maintenance_tasks", (string)null);
                 });
@@ -728,42 +899,55 @@ namespace RentalOS.Infrastructure.Persistence.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
 
                     b.Property<string>("ElectricityImage")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("electricity_image");
 
                     b.Property<int>("ElectricityReading")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("electricity_reading");
 
                     b.Property<string>("Note")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("note");
 
                     b.Property<DateOnly>("ReadingDate")
-                        .HasColumnType("date");
+                        .HasColumnType("date")
+                        .HasColumnName("reading_date");
 
                     b.Property<Guid?>("RecordedBy")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("recorded_by");
 
                     b.Property<Guid>("RoomId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("room_id");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
 
                     b.Property<string>("WaterImage")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("water_image");
 
                     b.Property<int>("WaterReading")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("water_reading");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("p_k_meter_readings");
 
                     b.HasIndex("RoomId", "ReadingDate")
-                        .IsDescending(false, true);
+                        .IsDescending(false, true)
+                        .HasDatabaseName("i_x_meter_readings_room_id_reading_date");
 
                     b.ToTable("meter_readings", (string)null);
                 });
@@ -772,63 +956,86 @@ namespace RentalOS.Infrastructure.Persistence.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
-                    b.Property<int>("Channel")
-                        .HasColumnType("integer");
+                    b.Property<string>("Channel")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("channel");
 
                     b.Property<string>("Content")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("content");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
 
                     b.Property<Guid?>("EntityId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("entity_id");
 
                     b.Property<string>("EntityType")
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("entity_type");
 
                     b.Property<string>("ErrorMessage")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("error_message");
 
                     b.Property<string>("EventType")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("event_type");
 
                     b.Property<string>("ProviderRef")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("provider_ref");
 
                     b.Property<string>("RecipientEmail")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("recipient_email");
 
                     b.Property<string>("RecipientName")
                         .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("recipient_name");
 
                     b.Property<string>("RecipientPhone")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("recipient_phone");
 
                     b.Property<int>("RetryCount")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("retry_count");
 
                     b.Property<DateTime?>("SentAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("sent_at");
 
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("status");
 
                     b.Property<string>("Subject")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("subject");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("p_k_notification_logs");
 
-                    b.HasIndex("CreatedAt");
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("i_x_notification_logs_created_at");
 
                     b.ToTable("notification_logs", (string)null);
                 });
@@ -837,27 +1044,35 @@ namespace RentalOS.Infrastructure.Persistence.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<string>("Action")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("action");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
 
                     b.Property<Guid>("InvoiceId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("invoice_id");
 
                     b.Property<string>("IpAddress")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("ip_address");
 
                     b.Property<string>("UserAgent")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("user_agent");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("p_k_payment_link_logs");
 
-                    b.HasIndex("InvoiceId");
+                    b.HasIndex("InvoiceId")
+                        .HasDatabaseName("i_x_payment_link_logs_invoice_id");
 
                     b.ToTable("payment_link_logs", (string)null);
                 });
@@ -866,66 +1081,85 @@ namespace RentalOS.Infrastructure.Persistence.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<string>("Address")
                         .IsRequired()
                         .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("address");
 
                     b.Property<string>("CoverImage")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("cover_image");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
 
                     b.Property<string>("Description")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("description");
 
                     b.Property<string>("District")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("district");
 
                     b.Property<string>("Images")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("images");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
 
                     b.Property<decimal?>("Lat")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("lat");
 
                     b.Property<decimal?>("Lng")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("lng");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("name");
 
                     b.Property<Guid>("OwnerId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("owner_id");
 
                     b.Property<string>("PropertyType")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("property_type");
 
                     b.Property<string>("Province")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("province");
 
                     b.Property<int>("TotalFloors")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("total_floors");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
 
                     b.Property<string>("Ward")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("ward");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("p_k_properties");
 
-                    b.HasIndex("OwnerId");
+                    b.HasIndex("OwnerId")
+                        .HasDatabaseName("i_x_properties_owner_id");
 
                     b.ToTable("properties", (string)null);
                 });
@@ -934,33 +1168,43 @@ namespace RentalOS.Infrastructure.Persistence.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<string>("Comment")
                         .IsRequired()
                         .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("comment");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
 
                     b.Property<Guid>("PropertyId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("property_id");
 
                     b.Property<int>("Rating")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("rating");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
 
                     b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("p_k_reviews");
 
-                    b.HasIndex("PropertyId");
+                    b.HasIndex("PropertyId")
+                        .HasDatabaseName("i_x_reviews_property_id");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("i_x_reviews_user_id");
 
                     b.ToTable("reviews", (string)null);
                 });
@@ -969,75 +1213,99 @@ namespace RentalOS.Infrastructure.Persistence.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<string>("Amenities")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("amenities");
 
                     b.Property<decimal?>("AreaSqm")
                         .HasPrecision(10, 2)
-                        .HasColumnType("numeric(10,2)");
+                        .HasColumnType("numeric(10,2)")
+                        .HasColumnName("area_sqm");
 
                     b.Property<decimal>("BasePrice")
                         .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("base_price");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
 
                     b.Property<decimal>("ElectricityPrice")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("electricity_price");
 
                     b.Property<int>("Floor")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("floor");
 
                     b.Property<decimal>("GarbageFee")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("garbage_fee");
 
                     b.Property<string>("Images")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("images");
 
                     b.Property<decimal>("InternetFee")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("internet_fee");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
 
                     b.Property<string>("MaintenanceNote")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("maintenance_note");
 
                     b.Property<DateOnly?>("MaintenanceSince")
-                        .HasColumnType("date");
+                        .HasColumnType("date")
+                        .HasColumnName("maintenance_since");
 
                     b.Property<string>("Notes")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("notes");
 
                     b.Property<Guid>("PropertyId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("property_id");
 
                     b.Property<string>("RoomNumber")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("room_number");
 
                     b.Property<decimal>("ServiceFee")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("service_fee");
 
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("status");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
 
                     b.Property<decimal>("WaterPrice")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("water_price");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("p_k_rooms");
 
                     b.HasIndex("PropertyId", "RoomNumber")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("i_x_rooms_property_id_room_number");
 
                     b.ToTable("rooms", (string)null);
                 });
@@ -1046,32 +1314,40 @@ namespace RentalOS.Infrastructure.Persistence.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<string>("Group")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("group");
 
                     b.Property<string>("Key")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("key");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
 
                     b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
 
                     b.Property<string>("Value")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("value");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("p_k_settings");
 
                     b.HasIndex("Group", "Key")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("i_x_settings_group_key");
 
                     b.ToTable("settings", (string)null);
                 });
@@ -1187,62 +1463,90 @@ namespace RentalOS.Infrastructure.Persistence.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<decimal>("Amount")
                         .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("amount");
 
-                    b.Property<int>("Category")
-                        .HasColumnType("integer");
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("category");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
 
-                    b.Property<int>("Direction")
-                        .HasColumnType("integer");
+                    b.Property<string>("Direction")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("direction");
 
                     b.Property<Guid?>("InvoiceId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("invoice_id");
 
-                    b.Property<int>("Method")
-                        .HasColumnType("integer");
+                    b.Property<string>("Method")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("method");
 
                     b.Property<string>("Note")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("note");
 
                     b.Property<DateTime>("PaidAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("paid_at");
 
                     b.Property<string>("ProviderRef")
                         .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("provider_ref");
 
                     b.Property<string>("ProviderResponse")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("provider_response");
 
                     b.Property<string>("ReceiptUrl")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("receipt_url");
 
                     b.Property<Guid?>("RecordedBy")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("recorded_by");
 
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("status");
 
                     b.Property<string>("TransactionCode")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("transaction_code");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("p_k_transactions");
 
-                    b.HasIndex("InvoiceId");
+                    b.HasIndex("InvoiceId")
+                        .HasDatabaseName("i_x_transactions_invoice_id");
 
-                    b.HasIndex("PaidAt");
+                    b.HasIndex("PaidAt")
+                        .HasDatabaseName("i_x_transactions_paid_at");
 
-                    b.HasIndex("ProviderRef");
+                    b.HasIndex("ProviderRef")
+                        .HasDatabaseName("i_x_transactions_provider_ref");
 
                     b.ToTable("transactions", (string)null);
                 });
@@ -1420,12 +1724,14 @@ namespace RentalOS.Infrastructure.Persistence.Migrations
                     b.HasOne("RentalOS.Domain.Entities.Property", "Property")
                         .WithMany("Addresses")
                         .HasForeignKey("PropertyId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasConstraintName("f_k_addresses_properties_property_id");
 
                     b.HasOne("RentalOS.Domain.Entities.User", "User")
                         .WithMany("Addresses")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasConstraintName("f_k_addresses_users_user_id");
 
                     b.Navigation("Property");
 
@@ -1438,7 +1744,8 @@ namespace RentalOS.Infrastructure.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("f_k_ai_conversations_users_user_id");
 
                     b.Navigation("User");
                 });
@@ -1449,17 +1756,20 @@ namespace RentalOS.Infrastructure.Persistence.Migrations
                         .WithMany("Contracts")
                         .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("f_k_contracts_customers_customer_id");
 
                     b.HasOne("RentalOS.Domain.Entities.Room", "Room")
                         .WithMany("Contracts")
                         .HasForeignKey("RoomId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("f_k_contracts_rooms_room_id");
 
                     b.HasOne("RentalOS.Domain.Entities.User", null)
                         .WithMany("ManagedContracts")
-                        .HasForeignKey("UserId");
+                        .HasForeignKey("UserId")
+                        .HasConstraintName("f_k_contracts_users_user_id");
 
                     b.Navigation("Customer");
 
@@ -1472,13 +1782,15 @@ namespace RentalOS.Infrastructure.Persistence.Migrations
                         .WithMany("CoTenants")
                         .HasForeignKey("ContractId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("f_k_contract_co_tenants_contracts_contract_id");
 
                     b.HasOne("RentalOS.Domain.Entities.Customer", "Customer")
                         .WithMany("CoTenantEntries")
                         .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("f_k_contract_co_tenants_customers_customer_id");
 
                     b.Navigation("Contract");
 
@@ -1491,7 +1803,8 @@ namespace RentalOS.Infrastructure.Persistence.Migrations
                         .WithMany("Invoices")
                         .HasForeignKey("ContractId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("f_k_invoices_contracts_contract_id");
 
                     b.Navigation("Contract");
                 });
@@ -1501,13 +1814,15 @@ namespace RentalOS.Infrastructure.Persistence.Migrations
                     b.HasOne("RentalOS.Domain.Entities.User", "AssignedTo")
                         .WithMany("AssignedTasks")
                         .HasForeignKey("AssignedToId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("f_k_maintenance_tasks_users_assigned_to_id");
 
                     b.HasOne("RentalOS.Domain.Entities.Property", "Property")
                         .WithMany()
                         .HasForeignKey("PropertyId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("f_k_maintenance_tasks_properties_property_id");
 
                     b.Navigation("AssignedTo");
 
@@ -1520,7 +1835,8 @@ namespace RentalOS.Infrastructure.Persistence.Migrations
                         .WithMany("MeterReadings")
                         .HasForeignKey("RoomId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("f_k_meter_readings_rooms_room_id");
 
                     b.Navigation("Room");
                 });
@@ -1531,7 +1847,8 @@ namespace RentalOS.Infrastructure.Persistence.Migrations
                         .WithMany("PaymentLinkLogs")
                         .HasForeignKey("InvoiceId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("f_k_payment_link_logs_invoices_invoice_id");
 
                     b.Navigation("Invoice");
                 });
@@ -1542,13 +1859,15 @@ namespace RentalOS.Infrastructure.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("PropertyId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("f_k_reviews_properties_property_id");
 
                     b.HasOne("RentalOS.Domain.Entities.User", "User")
                         .WithMany("Reviews")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("f_k_reviews_users_user_id");
 
                     b.Navigation("Property");
 
@@ -1561,7 +1880,8 @@ namespace RentalOS.Infrastructure.Persistence.Migrations
                         .WithMany("Rooms")
                         .HasForeignKey("PropertyId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("f_k_rooms_properties_property_id");
 
                     b.Navigation("Property");
                 });
@@ -1582,7 +1902,8 @@ namespace RentalOS.Infrastructure.Persistence.Migrations
                     b.HasOne("RentalOS.Domain.Entities.Invoice", "Invoice")
                         .WithMany("Transactions")
                         .HasForeignKey("InvoiceId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("f_k_transactions_invoices_invoice_id");
 
                     b.Navigation("Invoice");
                 });
