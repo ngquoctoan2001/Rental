@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { 
   UserPlus, Search, Filter, MoreVertical, Phone, Mail, 
   MapPin, CreditCard, ShieldAlert, History, FileText, 
-  Upload, Camera, CheckCircle2, AlertCircle
+  Upload, Camera, CheckCircle2, AlertCircle, FileUp
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -21,6 +21,14 @@ export default function CustomersPage() {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [addStep, setAddStep] = useState<'method' | 'ocr' | 'form'>('method');
   const [isOcrLoading, setIsOcrLoading] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [importResult, setImportResult] = useState<{ imported: number; skipped: number; errors: string[] } | null>(null);
+  const [form, setForm] = useState({
+    fullName: '', idCardNumber: '', phoneNumber: '',
+    email: '', address: '', notes: '',
+  });
+
+  const resetForm = () => setForm({ fullName: '', idCardNumber: '', phoneNumber: '', email: '', address: '', notes: '' });
 
   // Queries
   const { data: customers = [], isLoading } = useQuery<Customer[]>({
@@ -45,7 +53,16 @@ export default function CustomersPage() {
       queryClient.invalidateQueries({ queryKey: ['customers'] });
       setIsAddModalOpen(false);
       setAddStep('method');
+      resetForm();
     }
+  });
+
+  const importCsvMutation = useMutation({
+    mutationFn: (file: File) => customersApi.importCsv(file),
+    onSuccess: (resp) => {
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+      setImportResult(resp.data as any);
+    },
   });
 
   const handleOpenDetail = (customer: Customer) => {
@@ -53,14 +70,25 @@ export default function CustomersPage() {
     setIsDetailModalOpen(true);
   };
 
-  const handleSimulateOcr = () => {
+  const handleOcrUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
     setIsOcrLoading(true);
-    // Simulate OCR delay
-    setTimeout(() => {
-      setIsOcrLoading(false);
+    try {
+      const resp = await customersApi.ocrIdCard(file);
+      const ocr = resp.data as any;
+      setForm(f => ({
+        ...f,
+        fullName: ocr.fullName ?? f.fullName,
+        idCardNumber: ocr.idCardNumber ?? f.idCardNumber,
+        address: ocr.address ?? ocr.hometown ?? f.address,
+      }));
       setAddStep('form');
-      // Mocked auto-filled data will be in the form state
-    }, 2000);
+    } catch {
+      setAddStep('form'); // fall through to manual form on error
+    } finally {
+      setIsOcrLoading(false);
+    }
   };
 
   return (
@@ -71,16 +99,25 @@ export default function CustomersPage() {
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Khách thuê</h1>
           <p className="text-slate-500 mt-1">Quản lý danh sách người thuê và thông tin định danh.</p>
         </div>
-        <button 
-          onClick={() => {
-            setAddStep('method');
-            setIsAddModalOpen(true);
-          }}
-          className="flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 hover:scale-[1.02] active:scale-[0.98]"
-        >
-          <UserPlus className="w-5 h-5" />
-          Thêm khách mới
-        </button>
+        <div className="flex gap-3 flex-wrap">
+          <button
+            onClick={() => { setImportResult(null); setIsImportModalOpen(true); }}
+            className="flex items-center justify-center gap-2 px-5 py-3 bg-slate-100 text-slate-700 rounded-2xl font-bold hover:bg-slate-200 transition-all"
+          >
+            <FileUp className="w-5 h-5" />
+            Nhập CSV
+          </button>
+          <button 
+            onClick={() => {
+              setAddStep('method');
+              setIsAddModalOpen(true);
+            }}
+            className="flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 hover:scale-[1.02] active:scale-[0.98]"
+          >
+            <UserPlus className="w-5 h-5" />
+            Thêm khách mới
+          </button>
+        </div>
       </div>
 
       {/* Stats Summary */}
@@ -262,7 +299,7 @@ export default function CustomersPage() {
                   <p className="text-sm text-slate-500 mt-2 mb-6 text-balance">Hệ thống hỗ trợ ảnh .jpg, .png. Đảm bảo ảnh rõ nét để AI nhận diện chính xác nhất.</p>
                   <label className="inline-flex items-center px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold cursor-pointer hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-100">
                     Chọn ảnh từ máy tính
-                    <input type="file" className="hidden" onChange={handleSimulateOcr} />
+                    <input type="file" accept="image/*" className="hidden" onChange={handleOcrUpload} />
                   </label>
                   <button onClick={() => setAddStep('method')} className="block w-full mt-4 text-sm text-slate-400 hover:text-slate-600">Quay lại</button>
                 </>
@@ -272,31 +309,31 @@ export default function CustomersPage() {
         )}
 
         {addStep === 'form' && (
-          <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); createMutation.mutate({}); }}>
+          <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); createMutation.mutate(form); }}>
              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-sm font-bold text-slate-700 ml-1">Họ và tên</label>
-                <input required className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 outline-none" placeholder="Nguyễn Văn A" />
+                <input required value={form.fullName} onChange={e => setForm(f => ({ ...f, fullName: e.target.value }))} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 outline-none" placeholder="Nguyễn Văn A" />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-bold text-slate-700 ml-1">Số CMND/CCCD</label>
-                <input required className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 outline-none" placeholder="012345678901" />
+                <input required value={form.idCardNumber} onChange={e => setForm(f => ({ ...f, idCardNumber: e.target.value }))} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 outline-none" placeholder="012345678901" />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-bold text-slate-700 ml-1">Số điện thoại</label>
-                <input required className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 outline-none" placeholder="0901234567" />
+                <input required value={form.phoneNumber} onChange={e => setForm(f => ({ ...f, phoneNumber: e.target.value }))} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 outline-none" placeholder="0901234567" />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-bold text-slate-700 ml-1">Email (Nếu có)</label>
-                <input className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 outline-none" placeholder="nguyenvana@gmail.com" />
+                <input value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 outline-none" placeholder="nguyenvana@gmail.com" />
               </div>
               <div className="md:col-span-2 space-y-2">
                 <label className="text-sm font-bold text-slate-700 ml-1">Địa chỉ thường trú</label>
-                <input className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 outline-none" placeholder="P.12, Q.Bình Thạnh, TP.HCM" />
+                <input value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 outline-none" placeholder="P.12, Q.Bình Thạnh, TP.HCM" />
               </div>
               <div className="md:col-span-2 space-y-2">
                 <label className="text-sm font-bold text-slate-700 ml-1">Ghi chú</label>
-                <textarea rows={3} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 outline-none resize-none" placeholder="Thêm lưu ý về khách hàng này..." />
+                <textarea rows={3} value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 outline-none resize-none" placeholder="Thêm lưu ý về khách hàng này..." />
               </div>
             </div>
             <div className="flex gap-4 pt-4">
@@ -316,6 +353,71 @@ export default function CustomersPage() {
             </div>
           </form>
         )}
+      </Modal>
+
+      {/* Import CSV Modal */}
+      <Modal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        title="Nhập khách thuê từ CSV"
+        size="md"
+      >
+        <div className="space-y-6">
+          {!importResult ? (
+            <>
+              <div className="bg-slate-50 border border-dashed border-slate-300 rounded-2xl p-6 text-center">
+                <FileUp className="w-10 h-10 text-slate-400 mx-auto mb-3" />
+                <p className="text-sm font-bold text-slate-600 mb-1">Chọn file CSV để nhập</p>
+                <p className="text-xs text-slate-400 mb-4">Định dạng: FullName, PhoneNumber, IdCardNumber, Email, Address</p>
+                <label className="cursor-pointer inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition-colors">
+                  <Upload className="w-4 h-4" />
+                  {importCsvMutation.isPending ? 'Đang nhập...' : 'Chọn file'}
+                  <input
+                    type="file"
+                    accept=".csv,text/csv"
+                    className="hidden"
+                    disabled={importCsvMutation.isPending}
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) importCsvMutation.mutate(f); }}
+                  />
+                </label>
+              </div>
+              <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 text-xs text-amber-700">
+                <p className="font-bold mb-1">Lưu ý định dạng file CSV:</p>
+                <code className="block bg-white rounded p-2 text-slate-600 font-mono">
+                  FullName,PhoneNumber,IdCardNumber,Email,Address<br/>
+                  Nguyễn Văn A,0901234567,012345678901,a@mail.com,HCM
+                </code>
+              </div>
+            </>
+          ) : (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-emerald-50 rounded-2xl p-4 text-center">
+                  <p className="text-3xl font-black text-emerald-700">{importResult.imported}</p>
+                  <p className="text-sm text-emerald-500 font-bold">Nhập thành công</p>
+                </div>
+                <div className="bg-amber-50 rounded-2xl p-4 text-center">
+                  <p className="text-3xl font-black text-amber-700">{importResult.skipped}</p>
+                  <p className="text-sm text-amber-500 font-bold">Bỏ qua</p>
+                </div>
+              </div>
+              {importResult.errors.length > 0 && (
+                <div className="bg-rose-50 rounded-xl p-4 max-h-40 overflow-y-auto">
+                  <p className="text-xs font-bold text-rose-600 mb-2">Chi tiết lỗi:</p>
+                  {importResult.errors.map((err, i) => (
+                    <p key={i} className="text-xs text-rose-500">{err}</p>
+                  ))}
+                </div>
+              )}
+              <button
+                onClick={() => setIsImportModalOpen(false)}
+                className="w-full py-3 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-colors"
+              >
+                Đóng
+              </button>
+            </div>
+          )}
+        </div>
       </Modal>
 
       {/* Detail Modal */}

@@ -75,7 +75,7 @@ public class OcrService : IOcrService
 
     private DateOnly? ParseDate(string value)
     {
-        if (DateOnly.TryParseExact(value, "dd/mm/yyyy", out var date)) return date;
+        if (DateOnly.TryParseExact(value, "dd/MM/yyyy", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var date)) return date;
         return null;
     }
 }

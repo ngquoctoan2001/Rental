@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
 import { 
   Check, X, Zap, Crown, Star, Shield, 
   Users, Building2, LayoutGrid, Sparkles,
-  ArrowRight, Heart
+  ArrowRight, Heart, Loader2
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { subscriptionApi } from '@/lib/api/subscriptions';
 
 const PLANS = [
   {
@@ -55,6 +56,19 @@ const PLANS = [
 ];
 
 export default function SubscribePage() {
+  const { data: subscription } = useQuery({
+    queryKey: ['subscription'],
+    queryFn: () => subscriptionApi.getCurrent().then((r: any) => r.data ?? r),
+  });
+
+  const upgradeMutation = useMutation({
+    mutationFn: (planId: string) => subscriptionApi.upgrade(planId),
+    onSuccess: (resp: any) => {
+      const paymentUrl = resp?.data?.paymentUrl ?? resp?.paymentUrl;
+      if (paymentUrl) window.location.href = paymentUrl;
+    },
+  });
+
   return (
     <div className="space-y-12 pb-20">
       <div className="text-center space-y-4 max-w-2xl mx-auto pt-8">
@@ -66,7 +80,8 @@ export default function SubscribePage() {
         {PLANS.map(plan => {
           const Icon = plan.icon;
           const isPro = plan.id === 'pro';
-          
+          const isCurrent = plan.id === currentPlan;
+
           return (
             <motion.div
               key={plan.id}
@@ -109,12 +124,17 @@ export default function SubscribePage() {
                  ))}
               </div>
 
-              <button className={`w-full py-5 rounded-[1.5rem] font-black text-lg transition-all active:scale-95 ${
-                plan.current 
-                ? 'bg-slate-100 text-slate-400 cursor-not-allowed italic' 
-                : 'bg-indigo-600 text-white shadow-xl shadow-indigo-200 hover:bg-indigo-700'
-              }`}>
-                {plan.button}
+              <button
+                disabled={isCurrent || upgradeMutation.isPending}
+                onClick={() => !isCurrent && upgradeMutation.mutate(plan.id)}
+                className={`w-full py-5 rounded-[1.5rem] font-black text-lg transition-all active:scale-95 flex items-center justify-center gap-2 ${
+                  isCurrent
+                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed italic' 
+                  : 'bg-indigo-600 text-white shadow-xl shadow-indigo-200 hover:bg-indigo-700 disabled:opacity-70'
+                }`}
+              >
+                {upgradeMutation.isPending && !isCurrent && <Loader2 className="w-5 h-5 animate-spin" />}
+                {isCurrent ? 'Gói hiện tại' : plan.button}
               </button>
             </motion.div>
           );

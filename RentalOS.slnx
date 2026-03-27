@@ -6,4 +6,8 @@
     <Project Path="src/RentalOS.Infrastructure/RentalOS.Infrastructure.csproj" />
     <Project Path="src/RentalOS.Worker/RentalOS.Worker.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/RentalOS.UnitTests/RentalOS.UnitTests.csproj" />
+    <Project Path="tests/RentalOS.IntegrationTests/RentalOS.IntegrationTests.csproj" />
+  </Folder>
 </Solution>

@@ -7,7 +7,7 @@ using RentalOS.Domain.Entities;
 
 namespace RentalOS.Infrastructure.Services.Pdf;
 
-public class InvoicePdfService(IApplicationDbContext context) : IInvoicePdfService
+public class InvoicePdfService(IApplicationDbContext context, IR2StorageService storageService) : IInvoicePdfService
 {
     public async Task<string> GenerateAndUploadInvoicePdfAsync(Guid invoiceId, CancellationToken cancellationToken = default)
     {
@@ -23,9 +23,10 @@ public class InvoicePdfService(IApplicationDbContext context) : IInvoicePdfServi
 
         var pdfBytes = GeneratePdfBytes(invoice);
 
-        // Giả lập upload R2
-        string fileName = $"invoices/{invoiceId}/invoice.pdf";
-        string pdfUrl = $"https://storage.rentalos.vn/{fileName}";
+        // Upload to Cloudflare R2
+        string key = $"invoices/{invoiceId}/invoice.pdf";
+        using var stream = new MemoryStream(pdfBytes);
+        string pdfUrl = await storageService.UploadAsync(stream, key, "application/pdf", cancellationToken);
 
         invoice.PdfUrl = pdfUrl;
         await context.SaveChangesAsync(cancellationToken);

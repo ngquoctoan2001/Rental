@@ -6,4 +6,6 @@ export const contractsApi = {
   create: (data: any) => api.post('/contracts', data),
   update: (id: string, data: any) => api.put(`/contracts/${id}`, data),
   terminate: (id: string) => api.post(`/contracts/${id}/terminate`),
+  sign: (id: string) => api.post(`/contracts/${id}/sign`),
+  renew: (id: string, data?: any) => api.post(`/contracts/${id}/renew`, data ?? {}),
 };

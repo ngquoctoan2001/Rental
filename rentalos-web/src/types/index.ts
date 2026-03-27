@@ -71,6 +71,7 @@ export interface Contract {
   depositAmount: number;
   monthlyPrice: number;
   status: 'active' | 'expiring' | 'terminated' | 'draft';
+  signedByCustomer?: boolean;
   room?: Room;
   customer?: Customer;
 }

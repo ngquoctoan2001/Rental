@@ -82,7 +82,12 @@ public static class DependencyInjection
         // Notifications
         services.AddScoped<IZaloService, ZaloService>();
         services.AddScoped<ISmsService, SmsService>();
-        services.AddScoped<IEmailService, EmailService>();
+        services.AddScoped<IEmailService>(sp => new EmailService(
+            sp.GetRequiredService<IDbConnection>(),
+            sp.GetRequiredService<ITenantContext>(),
+            sp.GetRequiredService<IConfiguration>(),
+            sp.GetRequiredService<ILogger<EmailService>>()
+        ));
         services.AddScoped<INotificationService, NotificationService>();
 
         services.AddHttpClient();

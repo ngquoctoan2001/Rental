@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { 
   FilePlus, Search, Filter, Calendar, User, Home, 
   DollarSign, Clock, AlertTriangle, FileCheck, FileX,
-  ChevronRight, Download, RefreshCw, FileText
+  ChevronRight, Download, RefreshCw, FileText, Save
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { contractsApi, roomsApi, customersApi } from '@/lib/api';
@@ -12,13 +12,23 @@ import { DataTable } from '@/components/shared/DataTable';
 import { SlideOver } from '@/components/shared/SlideOver';
 import { StatusBadge } from '@/components/shared';
 import { Contract, Room, Customer } from '@/types';
-import { format } from 'date-fns';
+import { format, addMonths } from 'date-fns';
 import { vi } from 'date-fns/locale';
+
+const emptyForm = {
+  customerId: '',
+  roomId: '',
+  startDate: format(new Date(), 'yyyy-MM-dd'),
+  months: 12,
+  monthlyPrice: '',
+  depositAmount: '',
+};
 
 export default function ContractsPage() {
   const queryClient = useQueryClient();
   const [isSlideOverOpen, setIsSlideOverOpen] = useState(false);
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
+  const [form, setForm] = useState({ ...emptyForm });
 
   // Queries
   const { data: contracts = [], isLoading } = useQuery<Contract[]>({
@@ -47,6 +57,49 @@ export default function ContractsPage() {
       return Array.isArray(body) ? body : body.items ?? [];
     }
   });
+
+  // Mutations
+  const createMutation = useMutation({
+    mutationFn: (data: any) => contractsApi.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['contracts'] });
+      queryClient.invalidateQueries({ queryKey: ['rooms'] });
+      setIsSlideOverOpen(false);
+      setForm({ ...emptyForm });
+    },
+  });
+
+  const signMutation = useMutation({
+    mutationFn: (id: string) => contractsApi.sign(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['contracts'] }),
+  });
+
+  const terminateMutation = useMutation({
+    mutationFn: (id: string) => contractsApi.terminate(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['contracts'] });
+      setSelectedContract(null);
+    },
+  });
+
+  // Derived values
+  const selectedRoom = rooms.find(r => r.id === form.roomId);
+  const endDate = form.startDate
+    ? format(addMonths(new Date(form.startDate), Number(form.months) || 12), 'dd/MM/yyyy')
+    : '—';
+
+  const handleCreate = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.customerId || !form.roomId) return;
+    createMutation.mutate({
+      customerId: form.customerId,
+      roomId: form.roomId,
+      startDate: form.startDate,
+      months: Number(form.months),
+      monthlyRent: Number(form.monthlyPrice) || selectedRoom?.basePrice || 0,
+      depositAmount: Number(form.depositAmount) || 0,
+    });
+  };
 
   // Columns definition
   const columns = [
@@ -179,13 +232,17 @@ export default function ContractsPage() {
         title="Thiết lập hợp đồng mới"
         width="max-w-xl"
       >
-        <div className="space-y-8">
+        <form onSubmit={handleCreate} className="space-y-8">
           <div className="space-y-6">
              <div className="space-y-2">
               <label className="text-sm font-bold text-slate-700 ml-1 flex items-center gap-2">
-                <User className="w-4 h-4 text-indigo-500" /> Khách thuê
+                <User className="w-4 h-4 text-indigo-500" /> Khách thuê *
               </label>
-              <select className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 outline-none appearance-none bg-white">
+              <select
+                required
+                value={form.customerId}
+                onChange={e => setForm(f => ({ ...f, customerId: e.target.value }))}
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 outline-none appearance-none bg-white">
                 <option value="">Chọn khách thuê từ danh sách...</option>
                 {customers.map(c => <option key={c.id} value={c.id}>{c.fullName} - {c.phoneNumber}</option>)}
               </select>
@@ -193,9 +250,20 @@ export default function ContractsPage() {
 
             <div className="space-y-2">
               <label className="text-sm font-bold text-slate-700 ml-1 flex items-center gap-2">
-                <Home className="w-4 h-4 text-indigo-500" /> Chọn phòng
+                <Home className="w-4 h-4 text-indigo-500" /> Chọn phòng *
               </label>
-              <select className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 outline-none appearance-none bg-white">
+              <select
+                required
+                value={form.roomId}
+                onChange={e => {
+                  const room = rooms.find(r => r.id === e.target.value);
+                  setForm(f => ({
+                    ...f,
+                    roomId: e.target.value,
+                    monthlyPrice: room ? String(room.basePrice) : f.monthlyPrice,
+                  }));
+                }}
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 outline-none appearance-none bg-white">
                 <option value="">Chọn phòng còn trống...</option>
                 {rooms.filter(r => r.status === 'available').map(r => (
                   <option key={r.id} value={r.id}>Phòng {r.roomNumber} - {r.basePrice.toLocaleString()}đ</option>
@@ -208,13 +276,24 @@ export default function ContractsPage() {
                 <label className="text-sm font-bold text-slate-700 ml-1 flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-indigo-500" /> Ngày bắt đầu
                 </label>
-                <input type="date" className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 outline-none" />
+                <input
+                  type="date"
+                  value={form.startDate}
+                  onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 outline-none"
+                />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-bold text-slate-700 ml-1 flex items-center gap-2">
                   <Clock className="w-4 h-4 text-indigo-500" /> Kỳ hạn (tháng)
                 </label>
-                <input type="number" defaultValue={12} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 outline-none" />
+                <input
+                  type="number"
+                  min={1}
+                  value={form.months}
+                  onChange={e => setForm(f => ({ ...f, months: Number(e.target.value) }))}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 outline-none"
+                />
               </div>
             </div>
 
@@ -224,7 +303,13 @@ export default function ContractsPage() {
                   <DollarSign className="w-4 h-4 text-indigo-500" /> Giá thuê hàng tháng
                 </label>
                 <div className="relative">
-                  <input type="number" className="w-full pl-4 pr-10 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 outline-none" />
+                  <input
+                    type="number"
+                    min={0}
+                    value={form.monthlyPrice}
+                    onChange={e => setForm(f => ({ ...f, monthlyPrice: e.target.value }))}
+                    className="w-full pl-4 pr-10 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 outline-none"
+                  />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">đ</span>
                 </div>
               </div>
@@ -233,7 +318,13 @@ export default function ContractsPage() {
                   <DollarSign className="w-4 h-4 text-indigo-500" /> Tiền cọc
                 </label>
                 <div className="relative">
-                  <input type="number" className="w-full pl-4 pr-10 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 outline-none" />
+                  <input
+                    type="number"
+                    min={0}
+                    value={form.depositAmount}
+                    onChange={e => setForm(f => ({ ...f, depositAmount: e.target.value }))}
+                    className="w-full pl-4 pr-10 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 outline-none"
+                  />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">đ</span>
                 </div>
               </div>
@@ -245,27 +336,39 @@ export default function ContractsPage() {
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-slate-500">Ngày kết thúc dự kiến:</span>
-                <span className="font-bold text-slate-700">12/03/2027</span>
+                <span className="font-bold text-slate-700">{endDate}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500">Tổng tiền cọc:</span>
-                <span className="font-bold text-indigo-600">3.500.000đ</span>
+                <span className="font-bold text-indigo-600">
+                  {Number(form.depositAmount || 0).toLocaleString('vi-VN')}đ
+                </span>
               </div>
             </div>
           </div>
 
-          <div className="flex gap-4 pt-6">
+          <div className="flex gap-4 pt-2">
             <button 
+              type="button"
               className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-colors"
               onClick={() => setIsSlideOverOpen(false)}
             >
               Hủy
             </button>
-            <button className="flex-[2] py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100">
+            <button
+              type="submit"
+              disabled={createMutation.isPending}
+              className="flex-[2] py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 disabled:opacity-60 flex items-center justify-center gap-2"
+            >
+              {createMutation.isPending ? (
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Save className="w-5 h-5" />
+              )}
               Ký kết hợp đồng
             </button>
           </div>
-        </div>
+        </form>
       </SlideOver>
 
       {/* Detail SlideOver or Modal */}
@@ -364,11 +467,22 @@ export default function ContractsPage() {
             </div>
 
             <div className="flex gap-4 pt-10 mt-10 border-t border-slate-100">
-              <button className="flex-1 py-4 bg-rose-50 text-rose-600 rounded-3xl font-bold hover:bg-rose-100 transition-colors flex items-center justify-center gap-2">
+              <button
+                onClick={() => { if (confirm('Thanh lý hợp đồng này?')) terminateMutation.mutate(selectedContract.id); }}
+                disabled={terminateMutation.isPending}
+                className="flex-1 py-4 bg-rose-50 text-rose-600 rounded-3xl font-bold hover:bg-rose-100 transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
+              >
                 <FileX className="w-5 h-5" /> Thanh lý HĐ
               </button>
+              <button
+                onClick={() => { if (!selectedContract.signedByCustomer && confirm('Xác nhận khách đã ký hợp đồng?')) signMutation.mutate(selectedContract.id); }}
+                disabled={signMutation.isPending || selectedContract.signedByCustomer}
+                className="flex-1 py-4 bg-emerald-50 text-emerald-700 rounded-3xl font-bold hover:bg-emerald-100 transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
+              >
+                <FileCheck className="w-5 h-5" /> {selectedContract.signedByCustomer ? 'Đã ký' : 'Xác nhận ký'}
+              </button>
               <button className="flex-1 py-4 bg-indigo-600 text-white rounded-3xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center justify-center gap-2">
-                <FileCheck className="w-5 h-5" /> Gia hạn HĐ
+                <RefreshCw className="w-5 h-5" /> Gia hạn HĐ
               </button>
             </div>
           </div>

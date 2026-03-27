@@ -17,6 +17,7 @@ using RentalOS.Application.Modules.Rooms.Queries.GetRoomQrCode;
 using RentalOS.Application.Modules.Rooms.Queries.GetRooms;
 using RentalOS.Application.Modules.MeterReadings.Dtos;
 using RentalOS.Application.Modules.Rooms.Commands.UploadRoomImage;
+using RentalOS.Application.Modules.Rooms.Commands.ImportRoomsCsv;
 
 namespace RentalOS.API.Controllers;
 
@@ -112,5 +113,14 @@ public class RoomsController(IMediator mediator) : ControllerBase
 
         var result = await mediator.Send(command);
         return result.IsSuccess ? Ok(result.Data) : BadRequest(result.ErrorMessage);
+    }
+
+    [HttpPost("import-csv")]
+    public async Task<ActionResult<ImportRoomsCsvResult>> ImportCsv([FromQuery] Guid propertyId, IFormFile file)
+    {
+        using var reader = new System.IO.StreamReader(file.OpenReadStream());
+        var csvContent = await reader.ReadToEndAsync();
+        var result = await mediator.Send(new ImportRoomsCsvCommand { PropertyId = propertyId, CsvContent = csvContent });
+        return Ok(result);
     }
 }

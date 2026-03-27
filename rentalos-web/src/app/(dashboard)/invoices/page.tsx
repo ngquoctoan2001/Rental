@@ -4,11 +4,11 @@ import { useState } from 'react';
 import { 
   FileText, Search, CreditCard, Send, CheckCircle2, 
   AlertCircle, Calendar, Zap, Droplets, ArrowRight,
-  Calculator, Download, Copy, Trash2, Clock
+  Calculator, Download, Copy, Trash2, Clock, Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { invoicesApi, contractsApi } from '@/lib/api';
+import { invoicesApi, contractsApi, transactionsApi } from '@/lib/api';
 import { Modal } from '@/components/shared/Modal';
 import { DataTable } from '@/components/shared/DataTable';
 import { StatusBadge, StatCard } from '@/components/shared';
@@ -39,6 +39,24 @@ export default function InvoicesPage() {
       const body = resp.data as Contract[] | { items: Contract[] };
       return Array.isArray(body) ? body : body.items ?? [];
     }
+  });
+
+  // Mutations
+  const bulkGenerateMutation = useMutation({
+    mutationFn: () => invoicesApi.bulkGenerate({ month: selectedMonth }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['invoices'] }),
+  });
+
+  const cashPaymentMutation = useMutation({
+    mutationFn: (invoiceId: string) => transactionsApi.recordCash({ invoiceId, method: 'cash' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      setIsDetailOpen(false);
+    },
+  });
+
+  const sendInvoiceMutation = useMutation({
+    mutationFn: (invoiceId: string) => invoicesApi.send(invoiceId),
   });
 
   const stats = {
@@ -124,8 +142,12 @@ export default function InvoicesPage() {
             <option value="2026-02">Tháng 02/2026</option>
             <option value="2026-01">Tháng 01/2026</option>
           </select>
-          <button className="flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100">
-            <Calculator className="w-5 h-5" />
+          <button
+            onClick={() => { if (confirm(`Tạo hóa đơn tháng ${selectedMonth} cho tất cả hợp đồng đang hoạt động?`)) bulkGenerateMutation.mutate(); }}
+            disabled={bulkGenerateMutation.isPending}
+            className="flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 disabled:opacity-60"
+          >
+            {bulkGenerateMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Calculator className="w-5 h-5" />}
             Tạo hóa đơn loạt
           </button>
         </div>
@@ -314,13 +336,23 @@ export default function InvoicesPage() {
               <button className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-colors flex items-center justify-center gap-2">
                 <Download className="w-4 h-4" /> Bản in PDF
               </button>
-              <button className="flex-1 py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center justify-center gap-2">
-                <Send className="w-4 h-4" /> Gửi nhắc nợ
+              <button
+                onClick={() => sendInvoiceMutation.mutate(selectedInvoice.id)}
+                disabled={sendInvoiceMutation.isPending}
+                className="flex-1 py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center justify-center gap-2 disabled:opacity-60"
+              >
+                {sendInvoiceMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                Gửi nhắc nợ
               </button>
             </div>
             
-            <button className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-extrabold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-100 flex items-center justify-center gap-3 mt-4 text-lg">
-              <CheckCircle2 className="w-6 h-6" /> Xác nhận THU TIỀN MẶT
+            <button
+              onClick={() => { if (confirm('Xác nhận đã nhận tiền mặt?')) cashPaymentMutation.mutate(selectedInvoice.id); }}
+              disabled={cashPaymentMutation.isPending || selectedInvoice.status === 'paid'}
+              className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-extrabold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-100 flex items-center justify-center gap-3 mt-4 text-lg disabled:opacity-60"
+            >
+              {cashPaymentMutation.isPending ? <Loader2 className="w-6 h-6 animate-spin" /> : <CheckCircle2 className="w-6 h-6" />}
+              {selectedInvoice.status === 'paid' ? 'ĐÃ THANH TOÁN' : 'Xác nhận THU TIỀN MẶT'}
             </button>
           </div>
         )}

@@ -13,4 +13,9 @@ export const roomsApi = {
   changeStatus: (id: string, status: string) => api.patch(`/rooms/${id}/status`, { status }),
   remove: (id: string) => api.delete(`/rooms/${id}`),
   bulkCreate: (data: any) => api.post('/rooms/bulk', data),
+  importCsv: (propertyId: string, file: File) => {
+    const fd = new FormData();
+    fd.append('file', file);
+    return api.post('/rooms/import-csv', fd, { params: { propertyId }, headers: { 'Content-Type': 'multipart/form-data' } });
+  },
 };

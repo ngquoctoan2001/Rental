@@ -11,6 +11,7 @@ using RentalOS.Application.Modules.Customers.Queries.GetCustomerContracts;
 using RentalOS.Application.Modules.Customers.Queries.GetCustomerInvoices;
 using RentalOS.Application.Modules.Customers.Queries.GetCustomers;
 using RentalOS.Application.Modules.Customers.Queries.SearchCustomers;
+using RentalOS.Application.Modules.Customers.Commands.ImportCustomersCsv;
 using System.Security.Claims;
 
 namespace RentalOS.API.Controllers;
@@ -112,6 +113,15 @@ public class CustomersController(IMediator mediator) : ControllerBase
     {
         var result = await mediator.Send(new GetCustomerInvoicesQuery(id));
         return result.IsSuccess ? Ok(result.Data) : BadRequest(result.ErrorMessage);
+    }
+
+    [HttpPost("import-csv")]
+    public async Task<ActionResult<ImportCustomersCsvResult>> ImportCsv(IFormFile file)
+    {
+        using var reader = new System.IO.StreamReader(file.OpenReadStream());
+        var csvContent = await reader.ReadToEndAsync();
+        var result = await mediator.Send(new ImportCustomersCsvCommand { CsvContent = csvContent });
+        return Ok(result);
     }
 }
 

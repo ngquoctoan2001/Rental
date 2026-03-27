@@ -3,17 +3,24 @@
 import { useState } from 'react';
 import { 
   Building2, Home, Sparkles, ArrowRight, Check, 
-  MapPin, User, LayoutGrid, Rocket, Info
+  MapPin, User, LayoutGrid, Rocket, Info, Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
+import { useMutation } from '@tanstack/react-query';
+import { onboardingApi } from '@/lib/api';
 
 export default function OnboardingPage() {
   const [step, setStep] = useState(1);
   const router = useRouter();
 
+  const completeMutation = useMutation({
+    mutationFn: () => onboardingApi.complete(),
+    onSuccess: () => router.push('/'),
+  });
+
   const nextStep = () => setStep(s => s + 1);
-  const finish = () => router.push('/');
+  const finish = () => completeMutation.mutate();
 
   return (
     <div className="min-h-screen bg-slate-900 flex items-center justify-center p-6 relative overflow-hidden">
@@ -151,11 +158,13 @@ export default function OnboardingPage() {
                </div>
                <button 
                 onClick={finish}
-                className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black text-lg shadow-xl shadow-indigo-100"
+                disabled={completeMutation.isPending}
+                className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black text-lg shadow-xl shadow-indigo-100 flex items-center justify-center gap-3 disabled:opacity-70"
                >
+                {completeMutation.isPending && <Loader2 className="w-5 h-5 animate-spin" />}
                  Vào Dashboard ngay
                </button>
-               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest animate-pulse">Redirecting in 3s...</p>
+               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest animate-pulse">Nhấn để vào ngay...</p>
             </motion.div>
           )}
         </AnimatePresence>

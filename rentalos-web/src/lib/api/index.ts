@@ -11,3 +11,4 @@ export * from './settings';
 export * from './subscriptions';
 export * from './ai';
 export * from './properties';
+export * from './onboarding';

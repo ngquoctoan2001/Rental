@@ -7,7 +7,7 @@ using RentalOS.Domain.Entities;
 
 namespace RentalOS.Infrastructure.Services.Pdf;
 
-public class ContractPdfService(IApplicationDbContext context) : IContractPdfService
+public class ContractPdfService(IApplicationDbContext context, IR2StorageService storageService) : IContractPdfService
 {
     public async Task<string> GenerateAndUploadContractPdfAsync(Guid contractId, CancellationToken cancellationToken = default)
     {
@@ -22,10 +22,10 @@ public class ContractPdfService(IApplicationDbContext context) : IContractPdfSer
         // Generate PDF bytes using QuestPDF
         var pdfBytes = GeneratePdfBytes(contract);
 
-        // TODO: Upload to Cloudflare R2
-        // For now, we simulate the upload and return a dummy URL
-        string fileName = $"contracts/{contractId}/contract.pdf";
-        string pdfUrl = $"https://storage.rentalos.vn/{fileName}";
+        // Upload to Cloudflare R2
+        string key = $"contracts/{contractId}/contract.pdf";
+        using var stream = new MemoryStream(pdfBytes);
+        string pdfUrl = await storageService.UploadAsync(stream, key, "application/pdf", cancellationToken);
 
         contract.PdfUrl = pdfUrl;
         await context.SaveChangesAsync(cancellationToken);
