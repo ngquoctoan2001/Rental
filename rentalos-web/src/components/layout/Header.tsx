@@ -1,21 +1,32 @@
 'use client';
 
-import { 
-  Bell, Search, HelpCircle, 
-  Settings, ChevronDown, Menu 
+import {
+  Bell, Search, HelpCircle,
+  Settings, ChevronDown, Menu
 } from 'lucide-react';
 import { useUIStore } from '@/lib/stores/uiStore';
 import { useAuthStore } from '@/lib/stores/authStore';
 import { useNotificationStore } from '@/lib/stores/notificationStore';
 import { useNotifications } from '@/lib/hooks/useNotifications';
+import { notificationsApi } from '@/lib/api';
 
 export default function Header() {
-  const { toggleSidebar, activePropertyId, setActiveProperty } = useUIStore();
+  const { toggleSidebar, activePropertyId } = useUIStore();
   const { user, tenant } = useAuthStore();
-  const { unreadCount, notifications } = useNotificationStore();
-  
+  const { unreadCount, notifications, markAsRead, markAllAsRead } = useNotificationStore();
+
   // Kích hoạt lắng nghe thông báo thời gian thực
   useNotifications();
+
+  const handleMarkRead = async (id: string) => {
+    markAsRead(id);
+    try { await notificationsApi.markRead(id); } catch {}
+  };
+
+  const handleMarkAllRead = async () => {
+    markAllAsRead();
+    try { await notificationsApi.markAllRead(); } catch {}
+  };
 
   return (
     <header className="h-16 border-b border-slate-200 bg-white/80 backdrop-blur-md sticky top-0 z-40 px-4 md:px-6 flex items-center justify-between">
@@ -77,14 +88,14 @@ export default function Header() {
           <div className="absolute top-full right-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all flex flex-col max-h-[480px]">
             <div className="p-4 border-b border-slate-100 flex items-center justify-between">
               <h3 className="font-bold">Thông báo</h3>
-              <button className="text-xs text-indigo-600 font-semibold hover:underline">Đánh dấu tất cả là đã đọc</button>
+              <button className="text-xs text-indigo-600 font-semibold hover:underline" onClick={handleMarkAllRead}>Đánh dấu tất cả là đã đọc</button>
             </div>
             <div className="flex-1 overflow-y-auto p-2 space-y-1">
               {notifications.length === 0 ? (
                 <div className="py-8 text-center text-slate-400 text-sm">Không có thông báo mới</div>
               ) : (
                 notifications.map(n => (
-                  <button key={n.id} className={`w-full text-left p-3 rounded-lg hover:bg-slate-50 transition-colors flex gap-3 ${!n.isRead ? 'bg-indigo-50/30' : ''}`}>
+                  <button key={n.id} onClick={() => handleMarkRead(n.id)} className={`w-full text-left p-3 rounded-lg hover:bg-slate-50 transition-colors flex gap-3 ${!n.isRead ? 'bg-indigo-50/30' : ''}`}>
                     <div className={`w-2 h-2 mt-1.5 rounded-full shrink-0 ${n.isRead ? 'bg-slate-300' : 'bg-indigo-500'}`} />
                     <div className="min-w-0">
                       <p className={`text-sm ${!n.isRead ? 'font-bold' : 'text-slate-600'}`}>{n.title}</p>

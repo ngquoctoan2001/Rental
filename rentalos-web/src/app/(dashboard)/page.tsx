@@ -22,6 +22,14 @@ export default function DashboardPage() {
     },
   });
 
+  const { data: revenueReport } = useQuery({
+    queryKey: ['revenue-chart'],
+    queryFn: async () => {
+      const resp = await reportsApi.revenue({ period: 'last_6_months', groupBy: 'month' });
+      return resp.data;
+    },
+  });
+
   if (isLoading) {
     return <div className="p-8">Đang tải...</div>;
   }
@@ -33,14 +41,10 @@ export default function DashboardPage() {
     { label: 'Doanh thu tháng', value: formatCurrency(dashboardData?.monthlyRevenue || 0), icon: DollarSign, color: 'amber' },
   ];
 
-  const revenueData = [
-    { month: 'T10', amount: 120 },
-    { month: 'T11', amount: 145 },
-    { month: 'T12', amount: 180 },
-    { month: 'T1', amount: 190 },
-    { month: 'T2', amount: 210 },
-    { month: 'T3', amount: 205 },
-  ];
+  const revenueData = (revenueReport?.byMonth ?? []).map((item: { month: string; collected: number }) => ({
+    month: item.month,
+    amount: item.collected,
+  }));
 
   return (
     <div className="space-y-8 p-4">

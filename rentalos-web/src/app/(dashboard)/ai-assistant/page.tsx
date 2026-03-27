@@ -1,25 +1,21 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { 
-  Send, Bot, User, Trash2, Plus, Sparkles, 
-  Terminal, Check, X, Loader2, MessageSquare,
+import {
+  Send, Bot, Trash2, Plus, Sparkles,
+  Loader2, MessageSquare,
   ChevronRight, Lightbulb
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
+import { useAiChat } from '@/hooks/use-ai-chat';
+import { aiApi } from '@/lib/api';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 type Message = {
   id: string;
   role: 'user' | 'assistant';
   content: string;
-  tools?: {
-    name: string;
-    input: any;
-    output?: any;
-    status: 'pending' | 'completed' | 'error';
-  }[];
-  isConfirmationRequired?: boolean;
 };
 
 const SUGGESTED_PROMPTS = [
@@ -30,14 +26,24 @@ const SUGGESTED_PROMPTS = [
 ];
 
 export default function AIAssistantPage() {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const { messages, sendMessage, isLoading: isStreaming, clearMessages } = useAiChat();
   const [input, setInput] = useState('');
-  const [isStreaming, setIsStreaming] = useState(false);
-  const [conversations, setConversations] = useState([
-    { id: '1', title: 'Hỗ trợ thu phí tháng 3', date: 'Vừa xong' },
-    { id: '2', title: 'Báo cáo doanh thu Q1', date: '2 giờ trước' }
-  ]);
+  const [conversationId, setConversationId] = useState<string | undefined>(undefined);
+  const queryClient = useQueryClient();
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const { data: conversations = [] } = useQuery({
+    queryKey: ['ai-conversations'],
+    queryFn: async () => {
+      const resp = await aiApi.getConversations();
+      return Array.isArray(resp.data) ? resp.data : [];
+    },
+  });
+
+  const deleteConvMutation = useMutation({
+    mutationFn: (id: string) => aiApi.deleteConversation(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['ai-conversations'] }),
+  });
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -47,53 +53,8 @@ export default function AIAssistantPage() {
 
   const handleSendMessage = async (content: string) => {
     if (!content.trim() || isStreaming) return;
-
-    const userMsg: Message = {
-      id: Date.now().toString(),
-      role: 'user',
-      content
-    };
-
-    setMessages(prev => [...prev, userMsg]);
     setInput('');
-    setIsStreaming(true);
-
-    // Simulation of SSE Streaming
-    // In real app: const eventSource = new EventSource(`/api/ai/chat?q=${content}`);
-    
-    let currentAssistantMsg: Message = {
-      id: (Date.now() + 1).toString(),
-      role: 'assistant',
-      content: ''
-    };
-
-    setMessages(prev => [...prev, currentAssistantMsg]);
-
-    // Mock Streaming
-    const mockFullText = "Tôi đã kiểm tra dữ liệu. Hiện tại có **3 phòng** chưa đóng tiền tháng 3. Tôi có nên tạo lệnh nhắc nợ cho họ không?";
-    let charIndex = 0;
-    
-    const interval = setInterval(() => {
-      if (charIndex < mockFullText.length) {
-        currentAssistantMsg.content += mockFullText[charIndex];
-        setMessages(prev => prev.map(m => m.id === currentAssistantMsg.id ? { ...currentAssistantMsg } : m));
-        charIndex++;
-      } else {
-        clearInterval(interval);
-        // Add a mock tool call after text
-        setTimeout(() => {
-          currentAssistantMsg.tools = [{
-            name: 'get_unpaid_invoices',
-            input: { month: '2026-03' },
-            output: [{ room: '101', amount: 3500000 }, { room: '204', amount: 4200000 }],
-            status: 'completed'
-          }];
-          currentAssistantMsg.isConfirmationRequired = true;
-          setMessages(prev => prev.map(m => m.id === currentAssistantMsg.id ? { ...currentAssistantMsg } : m));
-          setIsStreaming(false);
-        }, 500);
-      }
-    }, 30);
+    await sendMessage(content, conversationId);
   };
 
   return (
@@ -101,7 +62,9 @@ export default function AIAssistantPage() {
       {/* Sidebar: Conversation List */}
       <aside className="w-[280px] flex flex-col bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
         <div className="p-6 border-b border-slate-50">
-          <button className="w-full flex items-center justify-center gap-2 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100">
+          <button
+            onClick={() => { clearMessages(); setConversationId(undefined); }}
+            className="w-full flex items-center justify-center gap-2 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100">
             <Plus className="w-4 h-4" />
             Hội thoại mới
           </button>
@@ -109,7 +72,11 @@ export default function AIAssistantPage() {
         <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
           <p className="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Gần đây</p>
           {conversations.map(conv => (
-            <button key={conv.id} className="w-full group flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all text-left">
+            <button
+              key={conv.id}
+              onClick={() => { clearMessages(); setConversationId(conv.id); }}
+              className={`w-full group flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-all text-left ${conversationId === conv.id ? 'bg-indigo-50' : ''}`}
+            >
               <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 group-hover:bg-indigo-100 transition-colors">
                 <MessageSquare className="w-5 h-5" />
               </div>
@@ -117,6 +84,12 @@ export default function AIAssistantPage() {
                 <p className="text-sm font-bold text-slate-700 truncate">{conv.title}</p>
                 <p className="text-[10px] text-slate-400">{conv.date}</p>
               </div>
+              <button
+                onClick={(e) => { e.stopPropagation(); deleteConvMutation.mutate(conv.id); }}
+                className="opacity-0 group-hover:opacity-100 p-1 rounded text-slate-400 hover:text-rose-500 transition-all"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
             </button>
           ))}
         </div>
@@ -176,9 +149,9 @@ export default function AIAssistantPage() {
           )}
 
           <AnimatePresence>
-            {messages.map((msg) => (
-              <motion.div 
-                key={msg.id}
+            {messages.map((msg, idx) => (
+              <motion.div
+                key={idx}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className={`flex gap-4 ${msg.role === 'assistant' ? 'justify-start' : 'justify-end'}`}
@@ -188,65 +161,22 @@ export default function AIAssistantPage() {
                     <Bot className="w-6 h-6" />
                   </div>
                 )}
-                
-                <div className={`max-w-[80%] space-y-3 ${msg.role === 'user' ? 'order-first' : ''}`}>
+
+                <div className={`max-w-[80%] ${msg.role === 'user' ? 'order-first' : ''}`}>
                   <div className={`p-4 rounded-[1.5rem] shadow-sm ${
-                    msg.role === 'assistant' 
-                    ? 'bg-slate-50 border border-slate-100 text-slate-800' 
+                    msg.role === 'assistant'
+                    ? 'bg-slate-50 border border-slate-100 text-slate-800'
                     : 'bg-indigo-600 text-white font-medium'
                   }`}>
                     <div className={`prose prose-sm max-w-none ${msg.role === 'user' ? 'prose-invert' : 'text-slate-700 font-medium'}`}>
-                      <ReactMarkdown>
-                        {msg.content}
-                      </ReactMarkdown>
+                      <ReactMarkdown>{msg.content || '...'}</ReactMarkdown>
                     </div>
                   </div>
-
-                  {/* Tool Call Rendering */}
-                  {msg.tools?.map((tool, idx) => (
-                    <div key={idx} className="bg-purple-50 border border-purple-100 rounded-2xl overflow-hidden">
-                      <div className="px-4 py-2 bg-purple-600 flex items-center justify-between">
-                         <div className="flex items-center gap-2">
-                            <Terminal className="w-3.5 h-3.5 text-purple-200" />
-                            <span className="text-[10px] font-black text-white uppercase tracking-widest">{tool.name}</span>
-                         </div>
-                         {tool.status === 'completed' && <Check className="w-3 h-3 text-purple-200" />}
-                      </div>
-                      <div className="p-4 font-mono text-[11px] space-y-2">
-                        <div>
-                          <p className="text-purple-400 font-bold mb-1 uppercase tracking-tight">Input:</p>
-                          <pre className="bg-white/50 p-2 rounded-lg text-purple-900 border border-purple-100">{JSON.stringify(tool.input, null, 2)}</pre>
-                        </div>
-                        {tool.output && (
-                          <div>
-                            <p className="text-purple-400 font-bold mb-1 uppercase tracking-tight">Output:</p>
-                            <pre className="bg-white/50 p-2 rounded-lg text-emerald-900 border border-purple-100">{JSON.stringify(tool.output, null, 2)}</pre>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-
-                  {/* Confirmation Box */}
-                  {msg.isConfirmationRequired && (
-                    <div className="bg-amber-50 border border-amber-100 p-4 rounded-2xl flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-amber-200 rounded-lg text-amber-700">
-                          <Check className="w-5 h-5" />
-                        </div>
-                        <p className="text-xs font-bold text-amber-900">Xác nhận thực hiện hành động?</p>
-                      </div>
-                      <div className="flex gap-2">
-                        <button className="px-4 py-2 bg-white border border-amber-200 text-amber-700 rounded-lg text-xs font-bold hover:bg-amber-100 transition-colors">Hủy</button>
-                        <button className="px-4 py-2 bg-amber-600 text-white rounded-lg text-xs font-bold hover:bg-amber-700 transition-colors">Xác nhận</button>
-                      </div>
-                    </div>
-                  )}
                 </div>
 
                 {msg.role === 'user' && (
                   <div className="w-10 h-10 rounded-xl bg-slate-900 flex-shrink-0 flex items-center justify-center text-white">
-                    <User className="w-6 h-6" />
+                    <span className="font-bold text-sm">U</span>
                   </div>
                 )}
               </motion.div>

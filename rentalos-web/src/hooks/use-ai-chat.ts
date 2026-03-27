@@ -1,67 +1,85 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback } from 'react';
+import { useAuthStore } from '@/lib/stores/authStore';
 
 export type Message = {
   role: 'user' | 'assistant';
   content: string;
 };
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+
 export function useAiChat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const eventSourceRef = useRef<EventSource | null>(null);
+  const { accessToken } = useAuthStore();
 
-  const sendMessage = useCallback(async (content: string) => {
+  const sendMessage = useCallback(async (content: string, conversationId?: string) => {
     const userMessage: Message = { role: 'user', content };
     setMessages((prev) => [...prev, userMessage]);
     setIsLoading(true);
 
     try {
-      // In a real app, this would be a POST to create a session if needed,
-      // then an SSE connection to stream. We'll simplify for now.
-      const response = await fetch('/api/ai/chat', {
+      const response = await fetch(`${API_URL}/ai/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: content }),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ message: content, conversationId: conversationId ?? null }),
       });
 
-      if (!response.ok) throw new Error('Failed to start chat');
+      if (!response.ok) throw new Error('Failed to start AI chat');
 
       const reader = response.body?.getReader();
       if (!reader) throw new Error('No reader available');
 
-      let assistantMessage = '';
+      let assistantContent = '';
       setMessages((prev) => [...prev, { role: 'assistant', content: '' }]);
+
+      const decoder = new TextDecoder();
+      let buffer = '';
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
-        const text = new TextDecoder().decode(value);
-        // Basic parsing of SSE data format "data: content\n\n"
-        const lines = text.split('\n');
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
+
         for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = line.slice(6);
-            if (data === '[DONE]') break;
-            assistantMessage += data;
-            setMessages((prev) => {
-              const last = prev[prev.length - 1];
-              if (last.role === 'assistant') {
-                return [...prev.slice(0, -1), { ...last, content: assistantMessage }];
-              }
-              return prev;
-            });
-          }
+          if (!line.startsWith('data: ')) continue;
+          const jsonStr = line.slice(6).trim();
+          if (!jsonStr) continue;
+          try {
+            const chunk = JSON.parse(jsonStr);
+            if (chunk.type === 'Text' && chunk.content) {
+              assistantContent += chunk.content;
+              setMessages((prev) => {
+                const updated = [...prev];
+                const last = updated[updated.length - 1];
+                if (last?.role === 'assistant') {
+                  updated[updated.length - 1] = { ...last, content: assistantContent };
+                }
+                return updated;
+              });
+            } else if (chunk.type === 'Done') {
+              break;
+            }
+          } catch {}
         }
       }
     } catch (error) {
       console.error('AI Chat Error:', error);
+      setMessages((prev) => [...prev, { role: 'assistant', content: 'Đã có lỗi xảy ra khi kết nối với AI. Vui lòng thử lại.' }]);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [accessToken]);
 
-  return { messages, sendMessage, isLoading };
+  const clearMessages = useCallback(() => setMessages([]), []);
+
+  return { messages, sendMessage, isLoading, clearMessages };
 }

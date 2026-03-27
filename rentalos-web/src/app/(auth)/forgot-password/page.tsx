@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Mail, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { forgotPasswordSchema, type ForgotPasswordInput } from '@/lib/schemas/authSchema';
+import { authApi } from '@/lib/api';
 
 export default function ForgotPasswordPage() {
   const [loading, setLoading] = useState(false);
@@ -23,11 +24,10 @@ export default function ForgotPasswordPage() {
     setLoading(true);
     setError(null);
     try {
-      console.log('Requesting password reset for...', data.email);
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await authApi.forgotPassword(data.email);
       setSuccess(true);
     } catch (err: any) {
-      setError('Đã có lỗi xảy ra. Vui lòng thử lại sau.');
+      setError(err.response?.data?.message || 'Đã có lỗi xảy ra. Vui lòng thử lại sau.');
     } finally {
       setLoading(false);
     }

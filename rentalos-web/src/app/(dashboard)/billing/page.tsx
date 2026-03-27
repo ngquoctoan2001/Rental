@@ -1,57 +1,98 @@
 'use client';
 
 import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   Receipt, Search, Filter, Download, Plus, 
   Send, DollarSign, Clock, CheckCircle2, AlertCircle,
-  MoreVertical, FileText, Share2, Wallet
+  MoreVertical, FileText, Share2
 } from 'lucide-react';
 import { DataTable } from '@/components/shared/DataTable';
 import { StatusBadge } from '@/components/shared';
-
-const MOCK_INVOICES = [
-  { id: 'HD001', tenant: 'Nguyễn Văn A', room: '101', amount: 4500000, status: 'unpaid', dueDate: '2026-03-30', type: 'Phòng + Điện nước' },
-  { id: 'HD002', tenant: 'Trần Thị B', room: '202', amount: 3800000, status: 'paid', dueDate: '2026-03-25', type: 'Phòng' },
-  { id: 'HD003', tenant: 'Lê Văn C', room: '303', amount: 5200000, status: 'overdue', dueDate: '2026-03-15', type: 'Phòng + Dịch vụ' },
-  { id: 'HD004', tenant: 'Phạm Minh D', room: '404', amount: 4100000, status: 'unpaid', dueDate: '2026-04-05', type: 'Phòng' },
-];
+import { invoicesApi, transactionsApi } from '@/lib/api';
+import { formatCurrency } from '@/lib/utils';
 
 export default function BillingPage() {
   const [filter, setFilter] = useState('all');
+  const [search, setSearch] = useState('');
+  const queryClient = useQueryClient();
+
+  const { data: invoicesData, isLoading } = useQuery({
+    queryKey: ['billing-invoices', filter],
+    queryFn: async () => {
+      const params: any = {};
+      if (filter !== 'all') params.status = filter;
+      const resp = await invoicesApi.list(params);
+      return Array.isArray(resp.data) ? resp.data : (resp.data?.items ?? []);
+    },
+  });
+
+  const invoices = (invoicesData ?? []).filter((inv: any) => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return (
+      (inv.customerName ?? '').toLowerCase().includes(q) ||
+      (inv.invoiceCode ?? '').toLowerCase().includes(q) ||
+      (inv.roomNumber ?? '').toLowerCase().includes(q)
+    );
+  });
+
+  const sendMutation = useMutation({
+    mutationFn: (id: string) => invoicesApi.send(id, { channel: 'zalo' }),
+  });
+
+  const recordCashMutation = useMutation({
+    mutationFn: ({ invoiceId, amount }: { invoiceId: string; amount: number }) =>
+      transactionsApi.recordCash({ invoiceId, amount, paidAt: new Date().toISOString() }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['billing-invoices'] }),
+  });
+
+  // Computed summary stats
+  const allInvoices: any[] = invoicesData ?? [];
+  const totalAmount = allInvoices.reduce((s: number, i: any) => s + (i.totalAmount ?? 0), 0);
+  const paidAmount = allInvoices.filter((i: any) => i.status === 'Paid').reduce((s: number, i: any) => s + (i.totalAmount ?? 0), 0);
+  const unpaidAmount = allInvoices.filter((i: any) => i.status === 'Unpaid').reduce((s: number, i: any) => s + (i.totalAmount ?? 0), 0);
+  const overdueAmount = allInvoices.filter((i: any) => i.status === 'Overdue').reduce((s: number, i: any) => s + (i.totalAmount ?? 0), 0);
+  const paidCount = allInvoices.filter((i: any) => i.status === 'Paid').length;
+  const unpaidCount = allInvoices.filter((i: any) => i.status === 'Unpaid').length;
+  const overdueCount = allInvoices.filter((i: any) => i.status === 'Overdue').length;
+  const collectionRate = totalAmount > 0 ? Math.round((paidAmount / totalAmount) * 100) : 0;
 
   const columns = [
     {
-      key: 'id',
+      key: 'invoiceCode',
       label: 'Mã HĐ',
       render: (val: string) => <span className="font-black text-slate-400 group-hover:text-indigo-600 transition-colors uppercase">{val}</span>
     },
     {
-      key: 'tenant',
+      key: 'customerName',
       label: 'Khách thuê / Phòng',
       render: (val: string, row: any) => (
         <div className="space-y-0.5">
           <p className="font-black text-slate-800 text-sm">{val}</p>
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Phòng {row.room}</p>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Phòng {row.roomNumber}</p>
         </div>
       )
     },
     {
-      key: 'amount',
+      key: 'totalAmount',
       label: 'Số tiền',
       sortable: true,
       render: (val: number) => (
-        <span className="font-black text-slate-900">{val.toLocaleString()}đ</span>
+        <span className="font-black text-slate-900">{formatCurrency(val)}</span>
       )
     },
     {
       key: 'dueDate',
       label: 'Hạn thanh toán',
       render: (val: string, row: any) => {
-        const isOverdue = row.status === 'overdue';
+        const isOverdue = row.status === 'Overdue';
         return (
           <div className="flex items-center gap-2">
             <Clock className={`w-3.5 h-3.5 ${isOverdue ? 'text-rose-500' : 'text-slate-400'}`} />
-            <span className={`text-xs font-bold ${isOverdue ? 'text-rose-600' : 'text-slate-600'}`}>{val}</span>
+            <span className={`text-xs font-bold ${isOverdue ? 'text-rose-600' : 'text-slate-600'}`}>
+              {val ? new Date(val).toLocaleDateString('vi-VN') : '—'}
+            </span>
           </div>
         );
       }
@@ -60,12 +101,14 @@ export default function BillingPage() {
       key: 'status',
       label: 'Trạng thái',
       render: (val: string) => {
-        const statusMap: any = {
-          paid: { label: 'Đã thu', type: 'success', icon: CheckCircle2 },
-          unpaid: { label: 'Chờ thu', type: 'warning', icon: AlertCircle },
-          overdue: { label: 'Quá hạn', type: 'error', icon: AlertCircle },
+        const statusMap: Record<string, { label: string; type: string; icon: any }> = {
+          Paid: { label: 'Đã thu', type: 'success', icon: CheckCircle2 },
+          Unpaid: { label: 'Chờ thu', type: 'warning', icon: AlertCircle },
+          Overdue: { label: 'Quá hạn', type: 'error', icon: AlertCircle },
+          Draft: { label: 'Nháp', type: 'warning', icon: FileText },
+          Cancelled: { label: 'Hủy', type: 'error', icon: AlertCircle },
         };
-        const s = statusMap[val];
+        const s = statusMap[val] ?? { label: val, type: 'warning', icon: AlertCircle };
         return (
           <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full w-fit ${
             s.type === 'success' ? 'bg-emerald-100 text-emerald-700' : 
@@ -83,14 +126,24 @@ export default function BillingPage() {
       label: '',
       render: (_: any, row: any) => (
         <div className="flex items-center gap-2">
-          {row.status !== 'paid' && (
-            <button title="Gửi nhắc nợ Zalo" className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-600 hover:text-white transition-all shadow-sm">
+          {row.status !== 'Paid' && row.status !== 'Cancelled' && (
+            <button
+              title="Gửi nhắc nợ Zalo"
+              onClick={() => sendMutation.mutate(row.id)}
+              className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
+            >
               <Share2 className="w-4 h-4" />
             </button>
           )}
-          <button title="Thu tiền nhanh" className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl hover:bg-emerald-600 hover:text-white transition-all shadow-sm">
-            <DollarSign className="w-4 h-4" />
-          </button>
+          {row.status !== 'Paid' && row.status !== 'Cancelled' && (
+            <button
+              title="Thu tiền nhanh"
+              onClick={() => recordCashMutation.mutate({ invoiceId: row.id, amount: row.totalAmount })}
+              className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl hover:bg-emerald-600 hover:text-white transition-all shadow-sm"
+            >
+              <DollarSign className="w-4 h-4" />
+            </button>
+          )}
           <button className="p-2.5 text-slate-400 hover:text-slate-600 rounded-xl transition-all">
             <MoreVertical className="w-4 h-4" />
           </button>
@@ -149,6 +202,8 @@ export default function BillingPage() {
             <input 
               type="text" 
               placeholder="Tên khách, mã HĐ..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-xs font-bold outline-none focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all"
             />
           </div>
@@ -163,43 +218,47 @@ export default function BillingPage() {
          <div className="p-6 bg-white rounded-[2rem] border border-slate-100 shadow-sm space-y-3 relative overflow-hidden group">
             <div className="absolute -top-4 -right-4 w-16 h-16 bg-slate-50 rounded-full group-hover:scale-150 transition-transform duration-700" />
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tổng cần thu</p>
-            <h4 className="text-2xl font-black text-slate-900">125.400.000đ</h4>
+            <h4 className="text-2xl font-black text-slate-900">{formatCurrency(totalAmount)}</h4>
             <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400">
-               <Receipt className="w-3.5 h-3.5" /> 24 hóa đơn
+               <Receipt className="w-3.5 h-3.5" /> {allInvoices.length} hóa đơn
             </div>
          </div>
          <div className="p-6 bg-white rounded-[2rem] border border-slate-100 shadow-sm space-y-3 relative overflow-hidden group">
             <div className="absolute -top-4 -right-4 w-16 h-16 bg-emerald-50 rounded-full group-hover:scale-150 transition-transform duration-700" />
             <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Đã thu hồi</p>
-            <h4 className="text-2xl font-black text-emerald-600">85.200.000đ</h4>
+            <h4 className="text-2xl font-black text-emerald-600">{formatCurrency(paidAmount)}</h4>
             <div className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-500">
-               <CheckCircle2 className="w-3.5 h-3.5" /> 68% hoàn tất
+               <CheckCircle2 className="w-3.5 h-3.5" /> {collectionRate}% hoàn tất ({paidCount} HĐ)
             </div>
          </div>
          <div className="p-6 bg-white rounded-[2rem] border border-slate-100 shadow-sm space-y-3 relative overflow-hidden group">
             <div className="absolute -top-4 -right-4 w-16 h-16 bg-amber-50 rounded-full group-hover:scale-150 transition-transform duration-700" />
             <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest">Chưa thanh toán</p>
-            <h4 className="text-2xl font-black text-amber-600">32.200.000đ</h4>
+            <h4 className="text-2xl font-black text-amber-600">{formatCurrency(unpaidAmount)}</h4>
             <div className="flex items-center gap-1.5 text-[10px] font-bold text-amber-500">
-               <Clock className="w-3.5 h-3.5" /> 8 hóa đơn
+               <Clock className="w-3.5 h-3.5" /> {unpaidCount} hóa đơn
             </div>
          </div>
          <div className="p-6 bg-white rounded-[2rem] border border-slate-100 shadow-sm space-y-3 relative overflow-hidden group">
             <div className="absolute -top-4 -right-4 w-16 h-16 bg-rose-50 rounded-full group-hover:scale-150 transition-transform duration-700" />
             <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest">Nợ quá hạn</p>
-            <h4 className="text-2xl font-black text-rose-600">7.000.000đ</h4>
+            <h4 className="text-2xl font-black text-rose-600">{formatCurrency(overdueAmount)}</h4>
             <div className="flex items-center gap-1.5 text-[10px] font-bold text-rose-400 underline cursor-help">
-               <AlertCircle className="w-3.5 h-3.5" /> Thúc đẩy thu hồi
+               <AlertCircle className="w-3.5 h-3.5" /> {overdueCount} cần thúc đẩy
             </div>
          </div>
       </div>
 
       {/* Invoice Table Area */}
       <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden p-6">
-        <DataTable 
-          columns={columns} 
-          data={MOCK_INVOICES} 
-        />
+        {isLoading ? (
+          <p className="text-center text-slate-400 py-10">Đang tải...</p>
+        ) : (
+          <DataTable 
+            columns={columns} 
+            data={invoices} 
+          />
+        )}
       </div>
 
       {/* Floating Action Bar (Batch Selection) */}

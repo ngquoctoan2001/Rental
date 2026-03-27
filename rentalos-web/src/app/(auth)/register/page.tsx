@@ -29,15 +29,17 @@ export default function RegisterPage() {
     setLoading(true);
     setError(null);
     try {
-      // Logic register giả định (cần link tới endpoint backend thực tế)
-      // data.fullName, data.email, data.phoneNumber, data.tenantName, data.password
-      console.log('Registering...', data);
-      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate API call
-      
-      // Success case
+      await authApi.register({
+        ownerName: data.fullName,
+        ownerEmail: data.email,
+        phone: data.phoneNumber,
+        tenantName: data.tenantName,
+        password: data.password,
+      });
       router.push('/login?registered=true');
     } catch (err: any) {
-      setError(err.message || 'Đăng ký không thành công. Vui lòng thử lại sau.');
+      const msg = err.response?.data?.message || err.response?.data?.title || err.message || 'Đăng ký không thành công. Vui lòng thử lại sau.';
+      setError(msg);
     } finally {
       setLoading(false);
     }

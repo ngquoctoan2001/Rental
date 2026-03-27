@@ -79,14 +79,38 @@ export interface Contract {
 export interface Invoice {
   id: string;
   contractId: string;
-  invoiceNumber: string;
+  invoiceCode: string;
+  invoiceNumber?: string;
   billingMonth: string;
   dueDate: string;
-  status: 'pending' | 'paid' | 'overdue' | 'cancelled';
+  status: 'pending' | 'paid' | 'overdue' | 'cancelled' | 'Pending' | 'Paid' | 'Overdue' | 'Cancelled';
   totalAmount: number;
-  electricityCost: number;
-  waterCost: number;
-  serviceCost: number;
+  customerName?: string;
+  roomNumber?: string;
+  propertyName?: string;
+  electricityOld?: number;
+  electricityNew?: number;
+  electricityPrice?: number;
+  electricityAmount?: number;
+  waterOld?: number;
+  waterNew?: number;
+  waterPrice?: number;
+  waterAmount?: number;
+  roomRent?: number;
+  serviceFee?: number;
+  internetFee?: number;
+  garbageFee?: number;
+  otherFees?: number;
+  discount?: number;
+  discountNote?: string;
+  notes?: string;
+  paidAt?: string;
+  sentAt?: string;
+  paymentLinkToken?: string;
+  // legacy fields
+  electricityCost?: number;
+  waterCost?: number;
+  serviceCost?: number;
   paymentLink?: string;
 }
 

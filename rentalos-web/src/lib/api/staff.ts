@@ -3,10 +3,10 @@ import api from './client';
 export const staffApi = {
   list: () => api.get('/staff'),
   getById: (id: string) => api.get(`/staff/${id}`),
-  invite: (data: any) => api.post('/staff/invite', data),
-  verifyInvite: (token: string) => api.get(`/staff/verify-invite/${token}`),
-  acceptInvite: (token: string, data: any) => api.post(`/staff/accept-invite/${token}`, data),
+  invite: (data: { email: string; role: string; assignedPropertyIds?: string[] }) => api.post('/staff', data),
+  acceptInvite: (data: { token: string; password: string; fullName: string; phone: string }) => api.post('/staff/accept-invite', data),
   update: (id: string, data: any) => api.put(`/staff/${id}`, data),
-  updatePermissions: (id: string, permissions: string[]) => api.patch(`/staff/${id}/permissions`, { permissions }),
-  deactivate: (id: string) => api.post(`/staff/${id}/deactivate`),
+  updatePermissions: (id: string, assignedPropertyIds: string[]) => api.patch(`/staff/${id}/permissions`, assignedPropertyIds),
+  deactivate: (id: string) => api.delete(`/staff/${id}`),
+  getActivityLog: (id: string, page = 1) => api.get(`/staff/${id}/logs`, { params: { page } }),
 };

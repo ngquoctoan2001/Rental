@@ -61,6 +61,8 @@ export default function SubscribePage() {
     queryFn: () => subscriptionApi.getCurrent().then((r: any) => r.data ?? r),
   });
 
+  const currentPlan: string = subscription?.plan ?? subscription?.planId ?? 'free';
+
   const upgradeMutation = useMutation({
     mutationFn: (planId: string) => subscriptionApi.upgrade(planId),
     onSuccess: (resp: any) => {

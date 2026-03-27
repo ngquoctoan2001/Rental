@@ -1,14 +1,16 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Lock, ShieldCheck, ArrowRight } from 'lucide-react';
 import { resetPasswordSchema, type ResetPasswordInput } from '@/lib/schemas/authSchema';
+import { authApi } from '@/lib/api';
 
-export default function ResetPasswordPage() {
+function ResetPasswordForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -21,14 +23,20 @@ export default function ResetPasswordPage() {
   });
 
   const onSubmit = async (data: ResetPasswordInput) => {
+    const token = searchParams.get('token');
+    const email = searchParams.get('email');
+    const tenantSlug = searchParams.get('tenant');
+    if (!token || !email || !tenantSlug) {
+      setError('Link đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.');
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
-      console.log('Resetting password...', data.password);
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await authApi.resetPassword({ email, token, newPassword: data.password, tenantSlug });
       router.push('/login?reset=true');
     } catch (err: any) {
-      setError('Token không hợp lệ hoặc đã hết hạn.');
+      setError(err.response?.data?.message || 'Token không hợp lệ hoặc đã hết hạn.');
     } finally {
       setLoading(false);
     }
@@ -101,5 +109,13 @@ export default function ResetPasswordPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={null}>
+      <ResetPasswordForm />
+    </Suspense>
   );
 }

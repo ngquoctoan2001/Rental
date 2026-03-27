@@ -8,6 +8,7 @@ using RentalOS.Application.Modules.Contracts.Commands.CreateContract;
 using RentalOS.Application.Modules.Contracts.Commands.RenewContract;
 using RentalOS.Application.Modules.Contracts.Commands.SignContract;
 using RentalOS.Application.Modules.Contracts.Commands.TerminateContract;
+using RentalOS.Application.Modules.Contracts.Commands.UpdateContract;
 using RentalOS.Application.Modules.Contracts.Queries.GetContractById;
 using RentalOS.Application.Modules.Contracts.Queries.GetContractInvoices;
 using RentalOS.Application.Modules.Contracts.Queries.GetContractPdf;
@@ -44,6 +45,15 @@ public class ContractsController(IMediator mediator) : ControllerBase
     {
         var result = await mediator.Send(command);
         return result.IsSuccess ? CreatedAtAction(nameof(GetContract), new { id = result.Data }, result.Data) : BadRequest(new { error = result.ErrorMessage, code = result.ErrorCode });
+    }
+
+    // 3b. PUT /api/v1/contracts/{id} - Cập nhật hợp đồng
+    [HttpPut("{id}")]
+    public async Task<ActionResult> UpdateContract(Guid id, UpdateContractCommand command)
+    {
+        if (id != command.Id) return BadRequest("Mã hợp đồng không khớp.");
+        var result = await mediator.Send(command);
+        return result.IsSuccess ? Ok() : BadRequest(result.ErrorMessage);
     }
 
     // 4. PUT /api/v1/contracts/{id}/terminate - Thanh lý hợp đồng

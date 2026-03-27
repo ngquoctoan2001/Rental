@@ -4,10 +4,20 @@ import { useEffect } from 'react';
 import * as signalR from '@microsoft/signalr';
 import { useAuthStore } from '@/lib/stores/authStore';
 import { useNotificationStore } from '@/lib/stores/notificationStore';
+import { notificationsApi } from '@/lib/api';
 
 export function useNotifications() {
   const { accessToken } = useAuthStore();
-  const { addNotification } = useNotificationStore();
+  const { addNotification, setNotifications } = useNotificationStore();
+
+  // Load initial notifications from API
+  useEffect(() => {
+    if (!accessToken) return;
+    notificationsApi.list().then(res => {
+      const data = Array.isArray(res.data) ? res.data : res.data?.items ?? [];
+      setNotifications(data);
+    }).catch(() => {});
+  }, [accessToken, setNotifications]);
 
   useEffect(() => {
     if (!accessToken) return;
