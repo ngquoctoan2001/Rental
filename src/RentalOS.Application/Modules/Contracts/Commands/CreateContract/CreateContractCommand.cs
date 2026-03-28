@@ -42,7 +42,7 @@ public class CreateContractCommandHandler(
             // 1. Validate room status == available
             // 4. SELECT FOR UPDATE on rooms row (combined)
             var room = await context.Rooms
-                .FromSqlRaw("SELECT * FROM rooms WHERE \"Id\" = {0} FOR UPDATE", request.RoomId)
+                .FromSqlRaw("SELECT * FROM rooms WHERE id = {0} FOR UPDATE", request.RoomId)
                 .FirstOrDefaultAsync(cancellationToken);
 
             if (room == null) return Result<Guid>.Fail("ROOM_NOT_FOUND", "Không tìm thấy phòng.");
@@ -119,7 +119,18 @@ public class CreateContractCommandHandler(
                 EntityId = contract.Id,
                 EntityCode = contract.ContractCode,
                 UserId = Guid.TryParse(currentUserService.UserId, out var auditorId) ? auditorId : null,
-                NewValue = JsonSerializer.Serialize(contract)
+                NewValue = JsonSerializer.Serialize(new
+                {
+                    contract.Id,
+                    contract.ContractCode,
+                    contract.RoomId,
+                    contract.CustomerId,
+                    contract.StartDate,
+                    contract.EndDate,
+                    contract.MonthlyRent,
+                    contract.DepositAmount,
+                    contract.Status
+                })
             };
             context.AuditLogs.Add(auditLog);
 

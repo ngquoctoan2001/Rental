@@ -4,6 +4,7 @@ using RentalOS.Application.Common.Interfaces;
 using RentalOS.Application.Common.Models;
 using RentalOS.Domain.Entities;
 using RentalOS.Domain.Enums;
+using System.Text.Json;
 
 namespace RentalOS.Application.Modules.Transactions.Commands.RecordCashPayment;
 
@@ -49,7 +50,13 @@ public class RecordCashPaymentCommandHandler(IApplicationDbContext context) : IR
             EntityType = "Invoice",
             EntityId = invoice.Id,
             EntityCode = invoice.InvoiceCode,
-            NewValue = $"Paid amount: {request.Amount}",
+            NewValue = JsonSerializer.Serialize(new
+            {
+                invoiceId = invoice.Id,
+                amount = request.Amount,
+                paidAt = request.PaidAt,
+                method = TransactionMethod.Cash.ToString()
+            }),
             CreatedAt = DateTime.UtcNow
         });
 

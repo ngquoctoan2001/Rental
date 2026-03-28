@@ -16,6 +16,7 @@ public class MarkNotificationReadCommandHandler(IApplicationDbContext dbContext,
             UPDATE in_app_notifications 
             SET is_read = true 
             WHERE id = @id AND user_id = @userId";
+        await dbContext.Database.OpenConnectionAsync(cancellationToken);
         var connection = dbContext.Database.GetDbConnection();
         var affected = await connection.ExecuteAsync(sql, new { id = request.Id, userId = userContext.UserId });
         return affected > 0;

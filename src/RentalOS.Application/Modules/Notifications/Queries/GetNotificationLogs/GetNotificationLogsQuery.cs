@@ -23,19 +23,20 @@ public class NotificationLogDto
     public DateTime CreatedAt { get; set; }
 }
 
-public class GetNotificationLogsQueryHandler(IApplicationDbContext dbContext, ITenantContext tenantContext)
+public class GetNotificationLogsQueryHandler(IApplicationDbContext dbContext)
     : IRequestHandler<GetNotificationLogsQuery, List<NotificationLogDto>>
 {
     public async Task<List<NotificationLogDto>> Handle(GetNotificationLogsQuery request, CancellationToken cancellationToken)
     {
+        if (dbContext.Database.GetDbConnection().State != System.Data.ConnectionState.Open)
+            await dbContext.Database.OpenConnectionAsync(cancellationToken);
         var connection = dbContext.Database.GetDbConnection();
         var sql = @"
-            SELECT id, channel, event_type as EventType, recipient, status, error_message as ErrorMessage, created_at as CreatedAt
+            SELECT id, channel, event_type as EventType, COALESCE(recipient_name, recipient_email, recipient_phone, '') as Recipient, status, error_message as ErrorMessage, created_at as CreatedAt
             FROM notification_logs
-            WHERE tenant_id = @tenantId";
+            WHERE 1=1";
 
         var parameters = new DynamicParameters();
-        parameters.Add("tenantId", tenantContext.TenantId);
 
         if (!string.IsNullOrEmpty(request.Channel))
         {

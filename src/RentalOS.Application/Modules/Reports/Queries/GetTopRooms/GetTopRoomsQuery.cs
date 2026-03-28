@@ -8,13 +8,14 @@ namespace RentalOS.Application.Modules.Reports.Queries.GetTopRooms;
 
 public record GetTopRoomsQuery(int Top = 10) : IRequest<List<TopRoomDto>>;
 
-public class GetTopRoomsQueryHandler(IApplicationDbContext dbContext, ITenantContext tenantContext)
+public class GetTopRoomsQueryHandler(IApplicationDbContext dbContext)
     : IRequestHandler<GetTopRoomsQuery, List<TopRoomDto>>
 {
     public async Task<List<TopRoomDto>> Handle(GetTopRoomsQuery request, CancellationToken cancellationToken)
     {
         var connection = dbContext.Database.GetDbConnection();
-        var tenantId = tenantContext.TenantId;
+        if (connection.State != System.Data.ConnectionState.Open)
+            await dbContext.Database.OpenConnectionAsync(cancellationToken);
 
         const string correctSql = @"
             SELECT 
@@ -27,13 +28,13 @@ public class GetTopRoomsQueryHandler(IApplicationDbContext dbContext, ITenantCon
             LEFT JOIN contracts c ON i.contract_id = c.id
             LEFT JOIN rooms r ON c.room_id = r.id
             LEFT JOIN properties p ON r.property_id = p.id
-            WHERE t.tenant_id = @tenantId AND t.direction = 'income' AND t.is_deleted = false
+            WHERE t.direction = 'Income'
             AND r.id IS NOT NULL
             GROUP BY r.room_number, p.name
             ORDER BY TotalRevenue DESC
             LIMIT @top";
 
-        var result = await connection.QueryAsync<TopRoomDto>(correctSql, new { tenantId, top = request.Top });
+        var result = await connection.QueryAsync<TopRoomDto>(correctSql, new { top = request.Top });
         return result.ToList();
     }
 }

@@ -8,25 +8,25 @@ namespace RentalOS.Application.Modules.Reports.Queries.GetOccupancyReport;
 
 public record GetOccupancyReportQuery(Guid? PropertyId) : IRequest<OccupancyReportDto>;
 
-public class GetOccupancyReportQueryHandler(IApplicationDbContext dbContext, ITenantContext tenantContext)
+public class GetOccupancyReportQueryHandler(IApplicationDbContext dbContext)
     : IRequestHandler<GetOccupancyReportQuery, OccupancyReportDto>
 {
     public async Task<OccupancyReportDto> Handle(GetOccupancyReportQuery request, CancellationToken cancellationToken)
     {
+        if (dbContext.Database.GetDbConnection().State != System.Data.ConnectionState.Open)
+            await dbContext.Database.OpenConnectionAsync(cancellationToken);
         var connection = dbContext.Database.GetDbConnection();
-        var tenantId = tenantContext.TenantId;
         var report = new OccupancyReportDto();
 
         // 1. Current Occupancy
         const string currentSql = @"
             SELECT 
-                COUNT(*) FILTER (WHERE status = 'rented') as Occupied,
+                COUNT(*) FILTER (WHERE status = 'Rented') as Occupied,
                 COUNT(*) as Total
             FROM rooms 
-            WHERE tenant_id = @tenantId AND is_deleted = false
-            AND (@propertyId IS NULL OR property_id = @propertyId)";
+            WHERE (@propertyId IS NULL OR property_id = @propertyId)";
 
-        var current = await connection.QuerySingleOrDefaultAsync<OccupancyDetailDto>(currentSql, new { tenantId, request.PropertyId });
+        var current = await connection.QuerySingleOrDefaultAsync<OccupancyDetailDto>(currentSql, new { request.PropertyId });
         if (current != null)
         {
             report.Current = current;
@@ -39,14 +39,13 @@ public class GetOccupancyReportQueryHandler(IApplicationDbContext dbContext, ITe
             const string byPropertySql = @"
                 SELECT 
                     p.name as PropertyName,
-                    COUNT(*) FILTER (WHERE r.status = 'rented') as Occupied,
+                    COUNT(*) FILTER (WHERE r.status = 'Rented') as Occupied,
                     COUNT(*) as Total
                 FROM properties p
                 JOIN rooms r ON p.id = r.property_id
-                WHERE p.tenant_id = @tenantId AND p.is_deleted = false AND r.is_deleted = false
                 GROUP BY p.name";
             
-            var byProperty = await connection.QueryAsync<OccupancyByPropertyDto>(byPropertySql, new { tenantId });
+            var byProperty = await connection.QueryAsync<OccupancyByPropertyDto>(byPropertySql, new { });
             foreach (var prop in byProperty)
             {
                 if (prop.Total > 0) prop.Rate = Math.Round((double)prop.Occupied / prop.Total * 100, 1);

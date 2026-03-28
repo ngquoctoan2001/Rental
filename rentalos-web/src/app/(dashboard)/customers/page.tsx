@@ -309,7 +309,7 @@ export default function CustomersPage() {
         )}
 
         {addStep === 'form' && (
-          <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); createMutation.mutate(form); }}>
+          <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); createMutation.mutate({ fullName: form.fullName, idCardNumber: form.idCardNumber, phone: form.phoneNumber, email: form.email, currentAddress: form.address, notes: form.notes }); }}>
              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-sm font-bold text-slate-700 ml-1">Họ và tên</label>

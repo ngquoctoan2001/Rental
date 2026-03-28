@@ -59,6 +59,157 @@ public class TenantSchemaManager(string connectionString, Microsoft.Extensions.L
                 ALTER TABLE rooms ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT true;
               END IF;
             END $$;
+
+            -- Patch: fix audit_logs.ip_address inet → text
+            DO $$ BEGIN
+              IF EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_schema = '{schemaName}' AND table_name = 'audit_logs'
+                  AND column_name = 'ip_address' AND data_type = 'inet'
+              ) THEN
+                ALTER TABLE audit_logs ALTER COLUMN ip_address TYPE TEXT USING ip_address::text;
+              END IF;
+            END $$;
+
+            -- Patch: fix payment_link_logs.ip_address inet → text
+            DO $$ BEGIN
+              IF EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_schema = '{schemaName}' AND table_name = 'payment_link_logs'
+                  AND column_name = 'ip_address' AND data_type = 'inet'
+              ) THEN
+                ALTER TABLE payment_link_logs ALTER COLUMN ip_address TYPE TEXT USING ip_address::text;
+              END IF;
+            END $$;
+
+            -- Patch: create in_app_notifications if missing
+            CREATE TABLE IF NOT EXISTS in_app_notifications (
+              id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+              user_id    UUID NOT NULL,
+              type       VARCHAR(100) NOT NULL,
+              title      VARCHAR(300) NOT NULL,
+              message    TEXT NOT NULL,
+              is_read    BOOLEAN NOT NULL DEFAULT false,
+              created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+            CREATE INDEX IF NOT EXISTS idx_in_app_notif_user_read ON in_app_notifications(user_id, is_read);
+            CREATE INDEX IF NOT EXISTS idx_in_app_notif_created ON in_app_notifications(created_at DESC);
+
+            -- Patch: add settings.group if missing
+            DO $$ BEGIN
+              IF NOT EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_schema = '{schemaName}' AND table_name = 'settings' AND column_name = 'group'
+              ) THEN
+                ALTER TABLE settings ADD COLUMN "group" VARCHAR(50) NOT NULL DEFAULT '';
+                UPDATE settings SET "group" = SPLIT_PART(key, '.', 1);
+              END IF;
+            END $$;
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_settings_group_key ON settings("group", key);
+
+            -- Patch: add transactions.updated_at if missing
+            DO $$ BEGIN
+              IF NOT EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_schema = '{schemaName}' AND table_name = 'transactions' AND column_name = 'updated_at'
+              ) THEN
+                ALTER TABLE transactions ADD COLUMN updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+              END IF;
+            END $$;
+
+            -- Patch: add meter_readings.updated_at if missing
+            DO $$ BEGIN
+              IF NOT EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_schema = '{schemaName}' AND table_name = 'meter_readings' AND column_name = 'updated_at'
+              ) THEN
+                ALTER TABLE meter_readings ADD COLUMN updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+              END IF;
+            END $$;
+
+            -- Patch: add contract_co_tenants.updated_at if missing
+            DO $$ BEGIN
+              IF NOT EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_schema = '{schemaName}' AND table_name = 'contract_co_tenants' AND column_name = 'updated_at'
+              ) THEN
+                ALTER TABLE contract_co_tenants ADD COLUMN updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+              END IF;
+            END $$;
+
+            -- Patch: drop any FK constraints that reference tenant users(id)
+            -- App users are stored in public schema, so these tenant-level FKs are invalid.
+            DO $$ DECLARE c RECORD; BEGIN
+              FOR c IN
+                SELECT tc.table_name, tc.constraint_name
+                FROM information_schema.table_constraints tc
+                JOIN information_schema.key_column_usage kcu
+                  ON tc.constraint_name = kcu.constraint_name
+                 AND tc.table_schema = kcu.table_schema
+                JOIN information_schema.constraint_column_usage ccu
+                  ON tc.constraint_name = ccu.constraint_name
+                 AND tc.table_schema = ccu.table_schema
+                WHERE tc.constraint_type = 'FOREIGN KEY'
+                  AND tc.table_schema = '{schemaName}'
+                  AND ccu.table_name = 'users'
+                  AND ccu.column_name = 'id'
+              LOOP
+                EXECUTE format('ALTER TABLE %I DROP CONSTRAINT %I', c.table_name, c.constraint_name);
+              END LOOP;
+            END $$;
+
+            -- Patch: drop audit_logs.user_id FK if it references per-tenant users (causes FK violation for public-schema users)
+            DO $$ BEGIN
+              IF EXISTS (
+                SELECT 1 FROM information_schema.table_constraints tc
+                JOIN information_schema.constraint_column_usage ccu
+                  ON tc.constraint_name = ccu.constraint_name
+                WHERE tc.constraint_type = 'FOREIGN KEY'
+                  AND tc.table_schema = '{schemaName}'
+                  AND tc.table_name = 'audit_logs'
+                  AND ccu.column_name = 'id'
+                  AND ccu.table_name = 'users'
+              ) THEN
+                ALTER TABLE audit_logs DROP CONSTRAINT audit_logs_user_id_fkey;
+              END IF;
+            END $$;
+
+            -- Patch: add properties.property_type if missing
+            DO $$ BEGIN
+              IF NOT EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_schema = '{schemaName}' AND table_name = 'properties' AND column_name = 'property_type'
+              ) THEN
+                ALTER TABLE properties ADD COLUMN property_type VARCHAR(50) NOT NULL DEFAULT '';
+              END IF;
+            END $$;
+
+            -- Patch: add properties.owner_id if missing
+            DO $$ BEGIN
+              IF NOT EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_schema = '{schemaName}' AND table_name = 'properties' AND column_name = 'owner_id'
+              ) THEN
+                ALTER TABLE properties ADD COLUMN owner_id UUID;
+              END IF;
+            END $$;
+
+            -- Patch: drop FK on properties.owner_id (owner user lives in public schema)
+            DO $$ DECLARE c RECORD; BEGIN
+              FOR c IN
+                SELECT tc.constraint_name
+                FROM information_schema.table_constraints tc
+                JOIN information_schema.key_column_usage kcu
+                  ON tc.constraint_name = kcu.constraint_name
+                 AND tc.table_schema = kcu.table_schema
+                WHERE tc.constraint_type = 'FOREIGN KEY'
+                  AND tc.table_schema = '{schemaName}'
+                  AND tc.table_name = 'properties'
+                  AND kcu.column_name = 'owner_id'
+              LOOP
+                EXECUTE format('ALTER TABLE properties DROP CONSTRAINT %I', c.constraint_name);
+              END LOOP;
+            END $$;
             """;
 
         await using var conn = new NpgsqlConnection(_connectionString);
@@ -95,6 +246,8 @@ public class TenantSchemaManager(string connectionString, Microsoft.Extensions.L
           id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
           name          VARCHAR(200) NOT NULL,
           address       TEXT NOT NULL,
+          property_type VARCHAR(50) NOT NULL DEFAULT '',
+          owner_id      UUID,
           province      VARCHAR(100),
           district      VARCHAR(100),
           ward          VARCHAR(100),
@@ -168,7 +321,7 @@ public class TenantSchemaManager(string connectionString, Microsoft.Extensions.L
           is_blacklisted                  BOOLEAN NOT NULL DEFAULT false,
           blacklist_reason                TEXT,
           blacklisted_at                  TIMESTAMPTZ,
-          blacklisted_by                  UUID REFERENCES users(id),
+          blacklisted_by                  UUID,
           notes                           TEXT,
           created_at                      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
           updated_at                      TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -207,7 +360,7 @@ public class TenantSchemaManager(string connectionString, Microsoft.Extensions.L
           termination_type    VARCHAR(30),
           signed_by_customer  BOOLEAN NOT NULL DEFAULT false,
           signed_at           TIMESTAMPTZ,
-          created_by          UUID REFERENCES users(id),
+          created_by          UUID,
           created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
           updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
         );
@@ -225,6 +378,7 @@ public class TenantSchemaManager(string connectionString, Microsoft.Extensions.L
           moved_in_at  DATE,
           moved_out_at DATE,
           created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+          updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
           UNIQUE(contract_id, customer_id)
         );
         CREATE INDEX IF NOT EXISTS idx_co_tenants_contract ON contract_co_tenants(contract_id);
@@ -265,7 +419,7 @@ public class TenantSchemaManager(string connectionString, Microsoft.Extensions.L
           is_auto_generated        BOOLEAN NOT NULL DEFAULT false,
           sent_at                  TIMESTAMPTZ,
           paid_at                  TIMESTAMPTZ,
-          created_by               UUID REFERENCES users(id),
+          created_by               UUID,
           created_at               TIMESTAMPTZ NOT NULL DEFAULT NOW(),
           updated_at               TIMESTAMPTZ NOT NULL DEFAULT NOW()
         );
@@ -289,9 +443,10 @@ public class TenantSchemaManager(string connectionString, Microsoft.Extensions.L
           status            VARCHAR(20) NOT NULL DEFAULT 'success',
           note              VARCHAR(500),
           receipt_url       VARCHAR(500),
-          recorded_by       UUID REFERENCES users(id),
+          recorded_by       UUID,
           paid_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-          created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
+          created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+          updated_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
         );
         CREATE INDEX IF NOT EXISTS idx_transactions_invoice ON transactions(invoice_id);
         CREATE INDEX IF NOT EXISTS idx_transactions_provider_ref ON transactions(provider_ref) WHERE provider_ref IS NOT NULL;
@@ -308,8 +463,9 @@ public class TenantSchemaManager(string connectionString, Microsoft.Extensions.L
           electricity_image     VARCHAR(500),
           water_image           VARCHAR(500),
           note                  VARCHAR(200),
-          recorded_by           UUID REFERENCES users(id),
-          created_at            TIMESTAMPTZ NOT NULL DEFAULT NOW()
+          recorded_by           UUID,
+          created_at            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+          updated_at            TIMESTAMPTZ NOT NULL DEFAULT NOW()
         );
         CREATE INDEX IF NOT EXISTS idx_meter_readings_room ON meter_readings(room_id);
         CREATE INDEX IF NOT EXISTS idx_meter_readings_date ON meter_readings(room_id, reading_date DESC);
@@ -339,7 +495,7 @@ public class TenantSchemaManager(string connectionString, Microsoft.Extensions.L
         -- Bảng 13: ai_conversations
         CREATE TABLE IF NOT EXISTS ai_conversations (
           id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-          user_id          UUID NOT NULL REFERENCES users(id),
+          user_id          UUID NOT NULL,
           title            VARCHAR(200),
           messages         JSONB NOT NULL DEFAULT '[]',
           message_count    INT NOT NULL DEFAULT 0,
@@ -352,16 +508,18 @@ public class TenantSchemaManager(string connectionString, Microsoft.Extensions.L
         -- Bảng 14: settings
         CREATE TABLE IF NOT EXISTS settings (
           id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-          key         VARCHAR(100) UNIQUE NOT NULL,
+          "group"     VARCHAR(50) NOT NULL DEFAULT '',
+          key         VARCHAR(100) NOT NULL,
           value       JSONB NOT NULL,
-          updated_by  UUID REFERENCES users(id),
+          updated_by  UUID,
           updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
         );
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_settings_group_key ON settings("group", key);
 
         -- Bảng 15: audit_logs
         CREATE TABLE IF NOT EXISTS audit_logs (
           id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-          user_id     UUID REFERENCES users(id),
+          user_id     UUID,
           user_name   VARCHAR(200),
           action      VARCHAR(100) NOT NULL,
           entity_type VARCHAR(50),
@@ -369,7 +527,7 @@ public class TenantSchemaManager(string connectionString, Microsoft.Extensions.L
           entity_code VARCHAR(100),
           old_value   JSONB,
           new_value   JSONB,
-          ip_address  INET,
+          ip_address  TEXT,
           user_agent  TEXT,
           created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
         );
@@ -381,25 +539,38 @@ public class TenantSchemaManager(string connectionString, Microsoft.Extensions.L
         CREATE TABLE IF NOT EXISTS payment_link_logs (
           id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
           invoice_id   UUID NOT NULL REFERENCES invoices(id),
-          ip_address   INET,
+          ip_address   TEXT,
           user_agent   TEXT,
           action       VARCHAR(30) NOT NULL,
           created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
         );
         CREATE INDEX IF NOT EXISTS idx_pay_link_logs_invoice ON payment_link_logs(invoice_id);
 
+        -- Bảng 17: in_app_notifications
+        CREATE TABLE IF NOT EXISTS in_app_notifications (
+          id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          user_id    UUID NOT NULL,
+          type       VARCHAR(100) NOT NULL,
+          title      VARCHAR(300) NOT NULL,
+          message    TEXT NOT NULL,
+          is_read    BOOLEAN NOT NULL DEFAULT false,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        CREATE INDEX IF NOT EXISTS idx_in_app_notif_user_read ON in_app_notifications(user_id, is_read);
+        CREATE INDEX IF NOT EXISTS idx_in_app_notif_created ON in_app_notifications(created_at DESC);
+
         -- Seed default settings
-        INSERT INTO settings (key, value) VALUES
-          ('payment.momo',      '{"partner_code":"","access_key":"","secret_key":"","is_active":false}'::jsonb),
-          ('payment.vnpay',     '{"tmn_code":"","hash_secret":"","is_active":false}'::jsonb),
-          ('payment.bank',      '{"bank_name":"","account_number":"","account_name":"","is_active":false}'::jsonb),
-          ('notification.zalo', '{"oa_id":"","access_token":"","refresh_token":"","is_active":false}'::jsonb),
-          ('notification.sms',  '{"provider":"vnpt","username":"","password":"","brandname":"","is_active":false}'::jsonb),
-          ('notification.email','{"provider":"sendgrid","api_key":"","from":"","from_name":"","is_active":false}'::jsonb),
-          ('billing.auto',      '{"auto_generate_day":5,"payment_due_days":10,"remind_before_days":[3,1],"remind_overdue_days":[1,3,7]}'::jsonb),
-          ('billing.prices',    '{"default_electricity":3500,"default_water":15000,"default_service_fee":0}'::jsonb),
-          ('company.profile',   '{"name":"","address":"","phone":"","email":"","tax_code":"","logo_url":""}'::jsonb),
-          ('contract.template', '{"template_id":"default","custom_terms":""}'::jsonb)
-        ON CONFLICT (key) DO NOTHING;
+        INSERT INTO settings ("group", key, value) VALUES
+          ('payment',      'payment.momo',      '{"partner_code":"","access_key":"","secret_key":"","is_active":false}'::jsonb),
+          ('payment',      'payment.vnpay',     '{"tmn_code":"","hash_secret":"","is_active":false}'::jsonb),
+          ('payment',      'payment.bank',      '{"bank_name":"","account_number":"","account_name":"","is_active":false}'::jsonb),
+          ('notification', 'notification.zalo', '{"oa_id":"","access_token":"","refresh_token":"","is_active":false}'::jsonb),
+          ('notification', 'notification.sms',  '{"provider":"vnpt","username":"","password":"","brandname":"","is_active":false}'::jsonb),
+          ('notification', 'notification.email','{"provider":"sendgrid","api_key":"","from":"","from_name":"","is_active":false}'::jsonb),
+          ('billing',      'billing.auto',      '{"auto_generate_day":5,"payment_due_days":10,"remind_before_days":[3,1],"remind_overdue_days":[1,3,7]}'::jsonb),
+          ('billing',      'billing.prices',    '{"default_electricity":3500,"default_water":15000,"default_service_fee":0}'::jsonb),
+          ('company',      'company.profile',   '{"name":"","address":"","phone":"","email":"","tax_code":"","logo_url":""}'::jsonb),
+          ('contract',     'contract.template', '{"template_id":"default","custom_terms":""}'::jsonb)
+        ON CONFLICT ("group", key) DO NOTHING;
         """;
 }

@@ -172,6 +172,7 @@ if (app.Environment.IsDevelopment())
     app.MapScalarApiReference(options =>
     {
         options.Title = "RentalOS API";
+        options.AddHttpAuthentication("Bearer", _ => { });
         options.AddPreferredSecuritySchemes("Bearer");
     });
 }

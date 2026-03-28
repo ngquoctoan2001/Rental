@@ -20,7 +20,7 @@ const emptyForm = {
   startDate: format(new Date(), 'yyyy-MM-dd'),
   months: 12,
   monthlyPrice: '',
-  depositAmount: '',
+  depositMonths: 1,
 };
 
 const emptyTerminate = { reason: '', type: 'Normal', depositRefunded: '' };
@@ -136,9 +136,9 @@ export default function ContractsPage() {
       customerId: form.customerId,
       roomId: form.roomId,
       startDate: form.startDate,
-      months: Number(form.months),
+      endDate: format(addMonths(new Date(form.startDate), Number(form.months) || 12), 'yyyy-MM-dd'),
       monthlyRent: Number(form.monthlyPrice) || selectedRoom?.basePrice || 0,
-      depositAmount: Number(form.depositAmount) || 0,
+      depositMonths: Number(form.depositMonths) || 1,
     });
   };
 
@@ -390,14 +390,15 @@ export default function ContractsPage() {
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-bold text-slate-700 ml-1 flex items-center gap-2">
-                  <DollarSign className="w-4 h-4 text-indigo-500" /> Tiền cọc
+                  <DollarSign className="w-4 h-4 text-indigo-500" /> Số tháng cọc
                 </label>
                 <div className="relative">
                   <input
                     type="number"
-                    min={0}
-                    value={form.depositAmount}
-                    onChange={e => setForm(f => ({ ...f, depositAmount: e.target.value }))}
+                    min={1}
+                    max={12}
+                    value={form.depositMonths}
+                    onChange={e => setForm(f => ({ ...f, depositMonths: Number(e.target.value) }))}
                     className="w-full pl-4 pr-10 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 outline-none"
                   />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">đ</span>

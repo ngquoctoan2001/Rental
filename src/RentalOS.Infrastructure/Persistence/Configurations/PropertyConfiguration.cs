@@ -24,6 +24,9 @@ public class PropertyConfiguration : IEntityTypeConfiguration<Property>
             .IsRequired()
             .HasMaxLength(50);
 
+        builder.Property(x => x.Images)
+            .HasColumnType("jsonb");
+
         builder.HasMany(x => x.Rooms)
             .WithOne(x => x.Property)
             .HasForeignKey(x => x.PropertyId)

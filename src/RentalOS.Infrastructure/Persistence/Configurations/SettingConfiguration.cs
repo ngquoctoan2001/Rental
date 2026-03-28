@@ -20,6 +20,10 @@ public class SettingConfiguration : IEntityTypeConfiguration<Setting>
             .IsRequired()
             .HasMaxLength(50);
 
+        builder.Property(x => x.Value)
+            .IsRequired()
+            .HasColumnType("jsonb");
+
         builder.HasIndex(x => new { x.Group, x.Key })
             .IsUnique();
     }

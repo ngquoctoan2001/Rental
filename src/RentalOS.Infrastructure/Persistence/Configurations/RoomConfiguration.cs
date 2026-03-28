@@ -24,7 +24,13 @@ public class RoomConfiguration : IEntityTypeConfiguration<Room>
 
         builder.HasIndex(x => new { x.PropertyId, x.RoomNumber })
             .IsUnique();
-            
+
+        builder.Property(x => x.Amenities)
+            .HasColumnType("jsonb");
+
+        builder.Property(x => x.Images)
+            .HasColumnType("jsonb");
+
         builder.HasMany(x => x.Contracts)
             .WithOne(x => x.Room)
             .HasForeignKey(x => x.RoomId)

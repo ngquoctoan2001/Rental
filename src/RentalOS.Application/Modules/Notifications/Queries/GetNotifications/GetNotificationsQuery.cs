@@ -28,8 +28,9 @@ public class GetNotificationsQueryHandler(IApplicationDbContext dbContext, ICurr
 {
     public async Task<NotificationListDto> Handle(GetNotificationsQuery request, CancellationToken cancellationToken)
     {
+        await dbContext.Database.OpenConnectionAsync(cancellationToken);
         var connection = dbContext.Database.GetDbConnection();
-        var userId = userContext.UserId;
+        var userId = Guid.Parse(userContext.UserId!);
         const string sql = @"
             SELECT id, type, title, message, is_read as IsRead, created_at as CreatedAt
             FROM in_app_notifications

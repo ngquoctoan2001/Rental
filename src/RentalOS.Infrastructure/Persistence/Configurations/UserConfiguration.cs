@@ -22,5 +22,11 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .IsUnique();
 
         builder.HasIndex(x => x.InviteToken);
+
+        // Ignore navs that don't exist in per-tenant DDL to prevent shadow FK columns
+        builder.Ignore(x => x.ManagedContracts);
+        builder.Ignore(x => x.AssignedTasks);
+        builder.Ignore(x => x.Reviews);
+        builder.Ignore(x => x.Addresses);
     }
 }

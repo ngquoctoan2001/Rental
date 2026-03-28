@@ -14,13 +14,15 @@ public record GetRevenueReportQuery(
     string GroupBy = "month" // month, property, method
 ) : IRequest<RevenueReportDto>;
 
-public class GetRevenueReportQueryHandler(IApplicationDbContext dbContext, ITenantContext tenantContext)
+public class GetRevenueReportQueryHandler(IApplicationDbContext dbContext)
     : IRequestHandler<GetRevenueReportQuery, RevenueReportDto>
 {
     public async Task<RevenueReportDto> Handle(GetRevenueReportQuery request, CancellationToken cancellationToken)
     {
         var connection = dbContext.Database.GetDbConnection();
-        var tenantId = tenantContext.TenantId;
+        if (connection.State != System.Data.ConnectionState.Open)
+            await dbContext.Database.OpenConnectionAsync(cancellationToken);
+
         var (fromDate, toDate) = GetDateRange(request.Period, request.From, request.To);
         
         var report = new RevenueReportDto
@@ -34,21 +36,29 @@ public class GetRevenueReportQueryHandler(IApplicationDbContext dbContext, ITena
                 COALESCE(SUM(amount), 0) as TotalRevenue,
                 COUNT(*) as Count
             FROM transactions
-            WHERE tenant_id = @tenantId AND direction = 'income' AND is_deleted = false
+            WHERE direction = 'Income'
             AND paid_at >= @fromDate AND paid_at <= @toDate
-            AND (@propertyId IS NULL OR property_id = @propertyId)";
+            AND (@propertyId IS NULL OR invoice_id IN (
+                SELECT i.id FROM invoices i
+                JOIN contracts c ON i.contract_id = c.id
+                JOIN rooms r ON c.room_id = r.id
+                WHERE r.property_id = @propertyId
+            ))";
 
-        var summary = await connection.QuerySingleOrDefaultAsync<dynamic>(summarySql, new { tenantId, fromDate, toDate, propertyId = request.PropertyId });
+        var summary = await connection.QuerySingleOrDefaultAsync<dynamic>(summarySql, new { fromDate, toDate, propertyId = request.PropertyId });
         report.Summary.TotalRevenue = summary?.totalrevenue ?? 0m;
 
         // Collection Rate (Simplified: Collected vs Invoiced in period)
         const string invoiceSql = @"
             SELECT COALESCE(SUM(total_amount), 0) FROM invoices
-            WHERE tenant_id = @tenantId AND is_deleted = false
-            AND created_at >= @fromDate AND created_at <= @toDate
-            AND (@propertyId IS NULL OR contract_id IN (SELECT id FROM contracts WHERE property_id = @propertyId))";
+            WHERE created_at >= @fromDate AND created_at <= @toDate
+            AND (@propertyId IS NULL OR contract_id IN (
+                SELECT c.id FROM contracts c
+                JOIN rooms r ON c.room_id = r.id
+                WHERE r.property_id = @propertyId
+            ))";
         
-        var totalInvoiced = await connection.ExecuteScalarAsync<decimal>(invoiceSql, new { tenantId, fromDate, toDate, propertyId = request.PropertyId });
+        var totalInvoiced = await connection.ExecuteScalarAsync<decimal>(invoiceSql, new { fromDate, toDate, propertyId = request.PropertyId });
         if (totalInvoiced > 0)
         {
             report.Summary.CollectionRate = Math.Round((double)report.Summary.TotalRevenue / (double)totalInvoiced * 100, 1);
@@ -60,13 +70,18 @@ public class GetRevenueReportQueryHandler(IApplicationDbContext dbContext, ITena
                 TO_CHAR(paid_at, 'YYYY-MM') as Month,
                 SUM(amount) as Collected
             FROM transactions
-            WHERE tenant_id = @tenantId AND direction = 'income' AND is_deleted = false
+            WHERE direction = 'Income'
             AND paid_at >= @fromDate AND paid_at <= @toDate
-            AND (@propertyId IS NULL OR property_id = @propertyId)
+            AND (@propertyId IS NULL OR invoice_id IN (
+                SELECT i.id FROM invoices i
+                JOIN contracts c ON i.contract_id = c.id
+                JOIN rooms r ON c.room_id = r.id
+                WHERE r.property_id = @propertyId
+            ))
             GROUP BY TO_CHAR(paid_at, 'YYYY-MM')
-            ORDER BY Month";
+            ORDER BY TO_CHAR(paid_at, 'YYYY-MM')";
         
-        var byMonth = await connection.QueryAsync<RevenueByMonthDto>(byMonthSql, new { tenantId, fromDate, toDate, propertyId = request.PropertyId });
+        var byMonth = await connection.QueryAsync<RevenueByMonthDto>(byMonthSql, new { fromDate, toDate, propertyId = request.PropertyId });
         report.ByMonth = byMonth.ToList();
 
         // 3. By Property
@@ -75,13 +90,16 @@ public class GetRevenueReportQueryHandler(IApplicationDbContext dbContext, ITena
                 p.name as PropertyName,
                 SUM(t.amount) as Collected
             FROM transactions t
-            JOIN properties p ON t.property_id = p.id
-            WHERE t.tenant_id = @tenantId AND t.direction = 'income' AND t.is_deleted = false
+            JOIN invoices i ON t.invoice_id = i.id
+            JOIN contracts c ON i.contract_id = c.id
+            JOIN rooms r ON c.room_id = r.id
+            JOIN properties p ON r.property_id = p.id
+            WHERE t.direction = 'Income'
             AND t.paid_at >= @fromDate AND t.paid_at <= @toDate
-            AND (@propertyId IS NULL OR t.property_id = @propertyId)
+            AND (@propertyId IS NULL OR r.property_id = @propertyId)
             GROUP BY p.name";
         
-        var byProperty = await connection.QueryAsync<RevenueByPropertyDto>(byPropertySql, new { tenantId, fromDate, toDate, propertyId = request.PropertyId });
+        var byProperty = await connection.QueryAsync<RevenueByPropertyDto>(byPropertySql, new { fromDate, toDate, propertyId = request.PropertyId });
         report.ByProperty = byProperty.ToList();
 
         // 4. By Method
@@ -90,12 +108,17 @@ public class GetRevenueReportQueryHandler(IApplicationDbContext dbContext, ITena
                 method as Key,
                 SUM(amount) as Value
             FROM transactions
-            WHERE tenant_id = @tenantId AND direction = 'income' AND is_deleted = false
+            WHERE direction = 'Income'
             AND paid_at >= @fromDate AND paid_at <= @toDate
-            AND (@propertyId IS NULL OR property_id = @propertyId)
+            AND (@propertyId IS NULL OR invoice_id IN (
+                SELECT i.id FROM invoices i
+                JOIN contracts c ON i.contract_id = c.id
+                JOIN rooms r ON c.room_id = r.id
+                WHERE r.property_id = @propertyId
+            ))
             GROUP BY method";
         
-        var byMethod = await connection.QueryAsync<KeyValuePair<string, decimal>>(byMethodSql, new { tenantId, fromDate, toDate, propertyId = request.PropertyId });
+        var byMethod = await connection.QueryAsync<KeyValuePair<string, decimal>>(byMethodSql, new { fromDate, toDate, propertyId = request.PropertyId });
         report.ByMethod = byMethod.ToDictionary(x => x.Key, x => x.Value);
 
         return report;

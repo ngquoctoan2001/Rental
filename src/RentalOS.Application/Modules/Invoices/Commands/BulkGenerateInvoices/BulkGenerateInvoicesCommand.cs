@@ -172,7 +172,13 @@ public class BulkGenerateInvoicesCommandHandler(
                 Action = "invoices.bulk_generate",
                 EntityType = "Invoice",
                 UserId = Guid.TryParse(currentUserService.UserId, out var auditorId) ? auditorId : null,
-                NewValue = $"Generated {result.Generated} invoices for {firstDayOfMonth:MM/yyyy}"
+                NewValue = JsonSerializer.Serialize(new
+                {
+                    generated = result.Generated,
+                    skipped = result.Skipped,
+                    errors = result.Errors,
+                    billingMonth = firstDayOfMonth
+                })
             });
             await context.SaveChangesAsync(cancellationToken);
         }

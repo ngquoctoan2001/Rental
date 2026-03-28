@@ -8,5 +8,9 @@ export const propertiesApi = {
   create: (data: any) => api.post('/properties', data),
   update: (id: string, data: any) => api.put(`/properties/${id}`, data),
   remove: (id: string) => api.delete(`/properties/${id}`),
-  uploadImage: (id: string, fileKey: string) => api.post(`/properties/${id}/image`, { fileKey }),
+  uploadImage: (id: string, file: File, isCover = false) => {
+    const fd = new FormData();
+    fd.append('file', file);
+    return api.post(`/properties/${id}/images`, fd, { params: { isCover }, headers: { 'Content-Type': 'multipart/form-data' } });
+  },
 };

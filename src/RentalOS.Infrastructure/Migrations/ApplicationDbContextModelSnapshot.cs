@@ -214,7 +214,7 @@ namespace RentalOS.Infrastructure.Migrations
 
                     b.Property<string>("Messages")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasColumnType("jsonb")
                         .HasColumnName("messages");
 
                     b.Property<string>("Title")
@@ -305,11 +305,11 @@ namespace RentalOS.Infrastructure.Migrations
                         .HasColumnName("ip_address");
 
                     b.Property<string>("NewValue")
-                        .HasColumnType("text")
+                        .HasColumnType("jsonb")
                         .HasColumnName("new_value");
 
                     b.Property<string>("OldValue")
-                        .HasColumnType("text")
+                        .HasColumnType("jsonb")
                         .HasColumnName("old_value");
 
                     b.Property<string>("UserAgent")
@@ -468,10 +468,6 @@ namespace RentalOS.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
 
-                    b.Property<Guid?>("UserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("user_id");
-
                     b.Property<decimal?>("WaterPrice")
                         .HasColumnType("numeric")
                         .HasColumnName("water_price");
@@ -492,9 +488,6 @@ namespace RentalOS.Infrastructure.Migrations
 
                     b.HasIndex("RoomId")
                         .HasDatabaseName("i_x_contracts_room_id");
-
-                    b.HasIndex("UserId")
-                        .HasDatabaseName("i_x_contracts_user_id");
 
                     b.ToTable("contracts", (string)null);
                 });
@@ -617,7 +610,6 @@ namespace RentalOS.Infrastructure.Migrations
                         .HasColumnName("id_card_image_front");
 
                     b.Property<string>("IdCardNumber")
-                        .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)")
                         .HasColumnName("id_card_number");
@@ -662,6 +654,57 @@ namespace RentalOS.Infrastructure.Migrations
                         .HasDatabaseName("i_x_customers_phone");
 
                     b.ToTable("customers", (string)null);
+                });
+
+            modelBuilder.Entity("RentalOS.Domain.Entities.InAppNotification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<bool>("IsRead")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_read");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("message");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("title");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("type");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("p_k_in_app_notifications");
+
+                    b.HasIndex("CreatedAt")
+                        .IsDescending()
+                        .HasDatabaseName("i_x_in_app_notifications_created_at");
+
+                    b.HasIndex("UserId", "IsRead")
+                        .HasDatabaseName("i_x_in_app_notifications_user_id_is_read");
+
+                    b.ToTable("in_app_notifications", (string)null);
                 });
 
             modelBuilder.Entity("RentalOS.Domain.Entities.Invoice", b =>
@@ -1108,7 +1151,7 @@ namespace RentalOS.Infrastructure.Migrations
 
                     b.Property<string>("Images")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasColumnType("jsonb")
                         .HasColumnName("images");
 
                     b.Property<bool>("IsActive")
@@ -1218,7 +1261,7 @@ namespace RentalOS.Infrastructure.Migrations
 
                     b.Property<string>("Amenities")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasColumnType("jsonb")
                         .HasColumnName("amenities");
 
                     b.Property<decimal?>("AreaSqm")
@@ -1249,7 +1292,7 @@ namespace RentalOS.Infrastructure.Migrations
 
                     b.Property<string>("Images")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasColumnType("jsonb")
                         .HasColumnName("images");
 
                     b.Property<decimal>("InternetFee")
@@ -1339,7 +1382,7 @@ namespace RentalOS.Infrastructure.Migrations
 
                     b.Property<string>("Value")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasColumnType("jsonb")
                         .HasColumnName("value");
 
                     b.HasKey("Id")
@@ -1511,7 +1554,7 @@ namespace RentalOS.Infrastructure.Migrations
                         .HasColumnName("provider_ref");
 
                     b.Property<string>("ProviderResponse")
-                        .HasColumnType("text")
+                        .HasColumnType("jsonb")
                         .HasColumnName("provider_response");
 
                     b.Property<string>("ReceiptUrl")
@@ -1728,9 +1771,8 @@ namespace RentalOS.Infrastructure.Migrations
                         .HasConstraintName("f_k_addresses_properties_property_id");
 
                     b.HasOne("RentalOS.Domain.Entities.User", "User")
-                        .WithMany("Addresses")
+                        .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
                         .HasConstraintName("f_k_addresses_users_user_id");
 
                     b.Navigation("Property");
@@ -1765,11 +1807,6 @@ namespace RentalOS.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("f_k_contracts_rooms_room_id");
-
-                    b.HasOne("RentalOS.Domain.Entities.User", null)
-                        .WithMany("ManagedContracts")
-                        .HasForeignKey("UserId")
-                        .HasConstraintName("f_k_contracts_users_user_id");
 
                     b.Navigation("Customer");
 
@@ -1812,9 +1849,8 @@ namespace RentalOS.Infrastructure.Migrations
             modelBuilder.Entity("RentalOS.Domain.Entities.MaintenanceTask", b =>
                 {
                     b.HasOne("RentalOS.Domain.Entities.User", "AssignedTo")
-                        .WithMany("AssignedTasks")
+                        .WithMany()
                         .HasForeignKey("AssignedToId")
-                        .OnDelete(DeleteBehavior.SetNull)
                         .HasConstraintName("f_k_maintenance_tasks_users_assigned_to_id");
 
                     b.HasOne("RentalOS.Domain.Entities.Property", "Property")
@@ -1863,7 +1899,7 @@ namespace RentalOS.Infrastructure.Migrations
                         .HasConstraintName("f_k_reviews_properties_property_id");
 
                     b.HasOne("RentalOS.Domain.Entities.User", "User")
-                        .WithMany("Reviews")
+                        .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
@@ -1946,17 +1982,6 @@ namespace RentalOS.Infrastructure.Migrations
             modelBuilder.Entity("RentalOS.Domain.Entities.Tenant", b =>
                 {
                     b.Navigation("SubscriptionPayments");
-                });
-
-            modelBuilder.Entity("RentalOS.Domain.Entities.User", b =>
-                {
-                    b.Navigation("Addresses");
-
-                    b.Navigation("AssignedTasks");
-
-                    b.Navigation("ManagedContracts");
-
-                    b.Navigation("Reviews");
                 });
 #pragma warning restore 612, 618
         }

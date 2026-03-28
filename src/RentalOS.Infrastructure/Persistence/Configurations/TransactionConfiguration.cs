@@ -18,6 +18,9 @@ public class TransactionConfiguration : IEntityTypeConfiguration<Transaction>
         builder.Property(x => x.ProviderRef)
             .HasMaxLength(200);
 
+        builder.Property(x => x.ProviderResponse)
+            .HasColumnType("jsonb");
+
         builder.HasIndex(x => x.ProviderRef);
         builder.HasIndex(x => x.PaidAt);
     }

@@ -3,58 +3,24 @@
 import { useState } from 'react';
 import { 
   Building2, MapPin, Users, Home, Plus, 
-  ChevronRight, ArrowUpRight, TrendingUp, MoreVertical,
-  Layers, Search, Filter, Edit3, Trash2
+  ChevronRight, TrendingUp, MoreVertical,
+  Layers, Search, Edit3, Save
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, 
   ResponsiveContainer, Cell 
 } from 'recharts';
-import { useQuery } from '@tanstack/react-query';
-import { propertiesApi } from '@/lib/api';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { propertiesApi, reportsApi } from '@/lib/api';
 import { Property } from '@/types';
-
-const MOCK_PROPERTIES = [
-  { 
-    id: '1', 
-    name: 'Nhà trọ Blue Moon', 
-    address: '123 Cách Mạng Tháng 8, Q10, HCM', 
-    totalRooms: 45, 
-    occupied: 42, 
-    revenue: 150000000,
-    image: 'https://images.unsplash.com/photo-1554995207-c18c20360a59?auto=format&fit=crop&w=400&q=80'
-  },
-  { 
-    id: '2', 
-    name: 'Căn hộ dịch vụ Sunrise', 
-    address: '456 Võ Văn Kiệt, Q1, HCM', 
-    totalRooms: 12, 
-    occupied: 10, 
-    revenue: 240000000,
-    image: 'https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=400&q=80'
-  },
-  { 
-    id: '3', 
-    name: 'Ký túc xá Joy Hostel', 
-    address: '789 Sư Vạn Hạnh, Q10, HCM', 
-    totalRooms: 120, 
-    occupied: 120, 
-    revenue: 85000000,
-    image: 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&w=400&q=80'
-  },
-];
-
-const MOCK_REVENUE_HISTORY = [
-  { month: 'Tháng 10', amount: 120 },
-  { month: 'Tháng 11', amount: 145 },
-  { month: 'Tháng 12', amount: 130 },
-  { month: 'Tháng 01', amount: 160 },
-  { month: 'Tháng 02', amount: 140 },
-  { month: 'Tháng 03', amount: 150 },
-];
+import { Modal } from '@/components/shared/Modal';
 
 export default function PropertiesPage() {
+  const queryClient = useQueryClient();
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [createForm, setCreateForm] = useState({ name: '', address: '', totalFloors: 1, description: '' });
+
   const { data: properties = [], isLoading } = useQuery<Property[]>({
     queryKey: ['properties'],
     queryFn: async () => {
@@ -66,9 +32,29 @@ export default function PropertiesPage() {
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   
+  const createMutation = useMutation({
+    mutationFn: (data: any) => propertiesApi.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['properties'] });
+      setIsCreateOpen(false);
+      setCreateForm({ name: '', address: '', totalFloors: 1, description: '' });
+    },
+  });
+
   // Update selectedId when properties data arrives if not set
   const currentSelectedId = selectedId || properties[0]?.id;
   const selected = properties.find(p => p.id === currentSelectedId) || properties[0];
+
+  const { data: revenueData } = useQuery({
+    queryKey: ['property-revenue', currentSelectedId],
+    queryFn: () => reportsApi.revenue({ period: 'this_year', propertyId: currentSelectedId }).then(r => r.data),
+    enabled: !!currentSelectedId,
+  });
+
+  const revenueChartData = (revenueData as any)?.byMonth?.map((m: any) => ({
+    month: m.month?.slice(5) ?? m.month,
+    amount: Math.round((m.collected ?? 0) / 1_000_000),
+  })) ?? [];
 
   if (isLoading) {
     return (
@@ -83,9 +69,39 @@ export default function PropertiesPage() {
       <div className="flex flex-col h-[calc(100vh-120px)] items-center justify-center bg-white rounded-[2.5rem] border border-dashed border-slate-200">
         <Building2 className="w-16 h-16 text-slate-200 mb-4" />
         <h2 className="text-xl font-bold text-slate-400">Chưa có cơ sở kinh doanh nào</h2>
-        <button className="mt-6 px-6 py-3 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100">
+        <button
+          onClick={() => setIsCreateOpen(true)}
+          className="mt-6 px-6 py-3 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100">
           Thêm cơ sở đầu tiên
         </button>
+
+        <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Thêm cơ sở mới" size="md">
+          <form className="space-y-5" onSubmit={(e) => { e.preventDefault(); createMutation.mutate(createForm); }}>
+            <div className="space-y-1.5">
+              <label className="text-sm font-bold text-slate-700">Tên cơ sở *</label>
+              <input required value={createForm.name} onChange={e => setCreateForm(f => ({ ...f, name: e.target.value }))} placeholder="VD: Nhà trọ Hoàng Anh" className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none" />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-bold text-slate-700">Địa chỉ *</label>
+              <input required value={createForm.address} onChange={e => setCreateForm(f => ({ ...f, address: e.target.value }))} placeholder="VD: 123 Đường ABC, Q.1, TP.HCM" className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none" />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-bold text-slate-700">Số tầng</label>
+              <input type="number" min={1} value={createForm.totalFloors} onChange={e => setCreateForm(f => ({ ...f, totalFloors: Number(e.target.value) }))} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none" />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-bold text-slate-700">Mô tả</label>
+              <textarea rows={3} value={createForm.description} onChange={e => setCreateForm(f => ({ ...f, description: e.target.value }))} placeholder="Thêm mô tả về cơ sở..." className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none resize-none" />
+            </div>
+            <div className="flex gap-3 pt-2">
+              <button type="button" onClick={() => setIsCreateOpen(false)} className="flex-1 py-3.5 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-colors">Hủy</button>
+              <button type="submit" disabled={createMutation.isPending} className="flex-[2] py-3.5 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 disabled:opacity-60 flex items-center justify-center gap-2">
+                {createMutation.isPending ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Save className="w-5 h-5" />}
+                Tạo cơ sở
+              </button>
+            </div>
+          </form>
+        </Modal>
       </div>
     );
   }
@@ -96,7 +112,9 @@ export default function PropertiesPage() {
       <aside className="w-[380px] flex flex-col gap-6">
         <div className="flex items-center justify-between">
            <h1 className="text-2xl font-black text-slate-900 tracking-tight">Cơ sở (Properties)</h1>
-           <button className="p-3 bg-indigo-600 text-white rounded-2xl hover:bg-indigo-700 shadow-lg shadow-indigo-100 transition-all">
+           <button
+             onClick={() => setIsCreateOpen(true)}
+             className="p-3 bg-indigo-600 text-white rounded-2xl hover:bg-indigo-700 shadow-lg shadow-indigo-100 transition-all">
              <Plus className="w-5 h-5" />
            </button>
         </div>
@@ -122,8 +140,10 @@ export default function PropertiesPage() {
               }`}
             >
               <div className="flex gap-4">
-                <div className="w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 border border-slate-100 shadow-inner">
-                  <img src={prop.imageUrl} alt={prop.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                <div className="w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 border border-slate-100 shadow-inner bg-indigo-50 flex items-center justify-center">
+                  {prop.imageUrl
+                    ? <img src={prop.imageUrl} alt={prop.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                    : <Building2 className="w-8 h-8 text-indigo-300" />}
                 </div>
                 <div className="flex-1 min-w-0 py-1">
                   <h3 className={`font-black text-sm truncate ${selectedId === prop.id ? 'text-indigo-600' : 'text-slate-800'}`}>{prop.name}</h3>
@@ -161,8 +181,10 @@ export default function PropertiesPage() {
           </button>
         </div>
 
-        <div className="h-[250px] w-full relative overflow-hidden">
-          <img src={selected.imageUrl} className="w-full h-full object-cover" alt="Banner" />
+        <div className="h-[250px] w-full relative overflow-hidden bg-indigo-50 flex items-center justify-center">
+          {selected.imageUrl
+            ? <img src={selected.imageUrl} className="w-full h-full object-cover" alt="Banner" />
+            : <Building2 className="w-24 h-24 text-indigo-200" />}
           <div className="absolute inset-0 bg-gradient-to-t from-white via-white/10 to-transparent" />
         </div>
 
@@ -216,14 +238,14 @@ export default function PropertiesPage() {
                </div>
                <div className="h-[250px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={MOCK_REVENUE_HISTORY}>
+                    <BarChart data={revenueChartData}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                       <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }} />
                       <YAxis hide />
-                      <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
+                      <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} formatter={(v: any) => [`${v}tr đ`, 'Doanh thu']} />
                       <Bar dataKey="amount" fill="#4f46e5" radius={[10, 10, 0, 0]} barSize={40}>
-                         {MOCK_REVENUE_HISTORY.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={index === 5 ? '#4f46e5' : '#cbd5e1'} />
+                         {revenueChartData.map((_: any, index: number) => (
+                          <Cell key={`cell-${index}`} fill={index === revenueChartData.length - 1 ? '#4f46e5' : '#cbd5e1'} />
                         ))}
                       </Bar>
                     </BarChart>
@@ -257,6 +279,72 @@ export default function PropertiesPage() {
           </div>
         </div>
       </main>
+
+      {/* Create Property Modal */}
+      <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Thêm cơ sở mới" size="md">
+        <form
+          className="space-y-5"
+          onSubmit={(e) => { e.preventDefault(); createMutation.mutate(createForm); }}
+        >
+          <div className="space-y-1.5">
+            <label className="text-sm font-bold text-slate-700">Tên cơ sở *</label>
+            <input
+              required
+              value={createForm.name}
+              onChange={e => setCreateForm(f => ({ ...f, name: e.target.value }))}
+              placeholder="VD: Nhà trọ Hoàng Anh"
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-sm font-bold text-slate-700">Địa chỉ *</label>
+            <input
+              required
+              value={createForm.address}
+              onChange={e => setCreateForm(f => ({ ...f, address: e.target.value }))}
+              placeholder="VD: 123 Đường ABC, Q.1, TP.HCM"
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-sm font-bold text-slate-700">Số tầng</label>
+            <input
+              type="number"
+              min={1}
+              value={createForm.totalFloors}
+              onChange={e => setCreateForm(f => ({ ...f, totalFloors: Number(e.target.value) }))}
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-sm font-bold text-slate-700">Mô tả</label>
+            <textarea
+              rows={3}
+              value={createForm.description}
+              onChange={e => setCreateForm(f => ({ ...f, description: e.target.value }))}
+              placeholder="Thêm mô tả về cơ sở..."
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none resize-none"
+            />
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={() => setIsCreateOpen(false)} className="flex-1 py-3.5 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-colors">
+              Hủy
+            </button>
+            <button
+              type="submit"
+              disabled={createMutation.isPending}
+              className="flex-[2] py-3.5 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 disabled:opacity-60 flex items-center justify-center gap-2"
+            >
+              {createMutation.isPending ? (
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Save className="w-5 h-5" />
+              )}
+              Tạo cơ sở
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

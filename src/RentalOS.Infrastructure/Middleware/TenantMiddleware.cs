@@ -22,6 +22,12 @@ public class TenantMiddleware
     {
         var tenantSlug = context.Request.Headers["X-Tenant-Slug"].ToString();
 
+        // Fallback: resolve tenant slug from the authenticated user's JWT claims
+        if (string.IsNullOrEmpty(tenantSlug) && context.User.Identity?.IsAuthenticated == true)
+        {
+            tenantSlug = context.User.FindFirst("tenant_slug")?.Value ?? string.Empty;
+        }
+
         // If X-Tenant-Slug is missing, try to resolve from invoice token in URL
         if (string.IsNullOrEmpty(tenantSlug) && context.Request.Path.Value != null && 
             context.Request.Path.Value.Contains("/api/invoice/detail/", StringComparison.OrdinalIgnoreCase))

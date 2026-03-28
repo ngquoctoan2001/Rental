@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using RentalOS.Application.Common.Interfaces;
+using RentalOS.Domain.Exceptions;
 
 namespace RentalOS.Application.Modules.Rooms.Commands.DeleteRoom;
 
@@ -23,7 +24,10 @@ public class DeleteRoomCommandHandler : IRequestHandler<DeleteRoomCommand, Unit>
 
         if (entity == null)
         {
-            throw new Exception("ROOM_NOT_FOUND");
+            throw new ValidationException(new Dictionary<string, string[]>
+            {
+                ["room"] = ["ROOM_NOT_FOUND"]
+            });
         }
 
         // Logic from Properties: Chỉ được xóa nếu không có phòng đang thuê
@@ -31,7 +35,10 @@ public class DeleteRoomCommandHandler : IRequestHandler<DeleteRoomCommand, Unit>
         // Technically if rented, it's safer to block.
         if (entity.Status == Domain.Enums.RoomStatus.Rented)
         {
-            throw new Exception("CANNOT_DELETE_RENTED_ROOM");
+            throw new ValidationException(new Dictionary<string, string[]>
+            {
+                ["room"] = ["CANNOT_DELETE_RENTED_ROOM"]
+            });
         }
 
         entity.IsActive = false;

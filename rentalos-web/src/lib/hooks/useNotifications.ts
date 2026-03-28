@@ -23,7 +23,7 @@ export function useNotifications() {
     if (!accessToken) return;
 
     const connection = new signalR.HubConnectionBuilder()
-      .withUrl(`${process.env.NEXT_PUBLIC_SIGNALR_URL || 'http://localhost:5000/notifications'}`, {
+      .withUrl(`${process.env.NEXT_PUBLIC_SIGNALR_URL || 'http://localhost:5272/hubs/notifications'}`, {
         accessTokenFactory: () => accessToken,
       })
       .withAutomaticReconnect()

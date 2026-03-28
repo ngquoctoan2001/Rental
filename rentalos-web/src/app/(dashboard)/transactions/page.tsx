@@ -38,21 +38,8 @@ export default function TransactionsPage() {
     }
   });
 
-  // Mutations
-  const recordMutation = useMutation({
-    mutationFn: (data: typeof emptyForm) => transactionsApi.recordCash({
-      amount: Number(data.amount),
-      type: data.type,
-      category: data.category,
-      paymentMethod: data.paymentMethod,
-      description: data.description,
-    }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      setIsAddOpen(false);
-      setForm(emptyForm);
-    },
-  });
+  // Note: Cash payments are created via Invoices page (POST /invoices/{id}/cash-payment).
+  // There is no generic freeform transaction creation API.
 
   const exportMutation = useMutation({
     mutationFn: () => transactionsApi.exportExcel(dateRange.start ? dateRange : undefined),
@@ -265,7 +252,7 @@ export default function TransactionsPage() {
             </button>
           </div>
 
-          <form className="space-y-6" onSubmit={e => { e.preventDefault(); recordMutation.mutate(form); }}>
+            <form className="space-y-6" onSubmit={e => { e.preventDefault(); alert('Giao dịch được tạo tự động khi thanh toán hóa đơn. Vui lòng vào trang Hóa đơn để ghi nhận thu tiền.'); setIsAddOpen(false); }}>
             <div className="space-y-2">
               <label className="text-sm font-bold text-slate-700 ml-1">Số tiền (VNĐ)</label>
               <div className="relative">
@@ -347,10 +334,8 @@ export default function TransactionsPage() {
               </button>
               <button 
                 type="submit"
-                disabled={recordMutation.isPending}
-                className="flex-[2] py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 disabled:opacity-60 flex items-center justify-center gap-2"
+                className="flex-[2] py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center justify-center gap-2"
               >
-                {recordMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
                 Ghi sổ giao dịch
               </button>
             </div>

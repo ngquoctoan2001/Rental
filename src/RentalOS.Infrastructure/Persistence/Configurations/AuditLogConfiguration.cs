@@ -20,6 +20,15 @@ public class AuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
             .IsRequired()
             .HasMaxLength(100);
 
+        builder.Property(x => x.IpAddress)
+            .HasColumnType("text");
+
+        builder.Property(x => x.OldValue)
+            .HasColumnType("jsonb");
+
+        builder.Property(x => x.NewValue)
+            .HasColumnType("jsonb");
+
         builder.HasIndex(x => x.CreatedAt)
             .IsDescending();
     }

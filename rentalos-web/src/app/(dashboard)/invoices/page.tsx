@@ -60,7 +60,7 @@ export default function InvoicesPage() {
   });
 
   const bulkGenerateMutation = useMutation({
-    mutationFn: () => invoicesApi.bulkGenerate({ month: selectedMonth }),
+    mutationFn: () => invoicesApi.bulkGenerate({ billingMonth: selectedMonth + '-01', sendNotification: false, overwriteExisting: false }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['invoices'] }),
   });
 
@@ -70,7 +70,7 @@ export default function InvoicesPage() {
   });
 
   const cancelInvoiceMutation = useMutation({
-    mutationFn: (invoiceId: string) => invoicesApi.cancel(invoiceId, { reason: 'Manual cancel' }),
+    mutationFn: (invoiceId: string) => invoicesApi.cancel(invoiceId, { invoiceId, reason: 'Manual cancel' }),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['invoices'] }); setIsDetailOpen(false); },
   });
 
@@ -100,6 +100,7 @@ export default function InvoicesPage() {
       await updateMeterMutation.mutateAsync({
         id: entry.invoiceId,
         data: {
+          invoiceId: entry.invoiceId,
           electricityNew: entry.electricityNew ? Number(entry.electricityNew) : undefined,
           waterNew: entry.waterNew ? Number(entry.waterNew) : undefined,
         },

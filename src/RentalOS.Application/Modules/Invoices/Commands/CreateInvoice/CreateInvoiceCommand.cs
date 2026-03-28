@@ -131,7 +131,17 @@ public class CreateInvoiceCommandHandler(
             EntityId = invoice.Id,
             EntityCode = invoice.InvoiceCode,
             UserId = Guid.TryParse(currentUserService.UserId, out var auditorId) ? auditorId : null,
-            NewValue = JsonSerializer.Serialize(invoice)
+            NewValue = JsonSerializer.Serialize(new
+            {
+                invoice.Id,
+                invoice.InvoiceCode,
+                invoice.ContractId,
+                invoice.BillingMonth,
+                invoice.DueDate,
+                invoice.TotalAmount,
+                invoice.Status,
+                invoice.PaymentLinkToken
+            })
         };
         context.AuditLogs.Add(auditLog);
 

@@ -24,12 +24,14 @@ const STATUS_OPTIONS = [
 const AMENITIES_LIST = ['Điều hòa', 'Máy nóng lạnh', 'Tủ lạnh', 'Giường', 'Bàn', 'WC riêng', 'Ban công', 'Máy giặt', 'Internet'];
 
 const emptyForm = {
+  propertyId: '',
   roomNumber: '',
   floor: 1,
   basePrice: '',
   areaSqm: '',
   electricityPrice: '',
   waterPrice: '',
+  serviceFee: '',
   internetFee: '',
   garbageFee: '',
   amenities: [] as string[],
@@ -71,7 +73,7 @@ export default function RoomsPage() {
 
   // Mutations
   const createMutation = useMutation({
-    mutationFn: (data: any) => roomsApi.create({ ...data, propertyId: filterPropertyId !== 'all' ? filterPropertyId : undefined }),
+    mutationFn: (data: any) => roomsApi.create(data),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['rooms'] }); closeForm(); },
   });
 
@@ -89,7 +91,7 @@ export default function RoomsPage() {
   });
 
   const changeStatusMutation = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: string }) => roomsApi.changeStatus(id, status),
+    mutationFn: ({ id, status }: { id: string; status: string }) => roomsApi.changeStatus(id, { id, newStatus: status }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['rooms'] }),
   });
 
@@ -118,20 +120,22 @@ export default function RoomsPage() {
   }), [rooms]);
 
   // Helpers
-  const openCreate = () => { setEditingRoom(null); setForm({ ...emptyForm }); setIsFormOpen(true); };
+  const openCreate = () => { setEditingRoom(null); setForm({ ...emptyForm, propertyId: filterPropertyId !== 'all' ? filterPropertyId : '' }); setIsFormOpen(true); };
   const openEdit = (room: Room) => {
     setEditingRoom(room);
     setForm({
+      propertyId: (room as any).propertyId ?? '',
       roomNumber: room.roomNumber,
       floor: room.floor,
       basePrice: String(room.basePrice),
       areaSqm: String(room.areaSqm ?? ''),
-      electricityPrice: '',
-      waterPrice: '',
-      internetFee: '',
-      garbageFee: '',
+      electricityPrice: String((room as any).electricityPrice ?? ''),
+      waterPrice: String((room as any).waterPrice ?? ''),
+      serviceFee: String((room as any).serviceFee ?? ''),
+      internetFee: String((room as any).internetFee ?? ''),
+      garbageFee: String((room as any).garbageFee ?? ''),
       amenities: [...(room.amenities ?? [])],
-      notes: '',
+      notes: (room as any).notes ?? '',
     });
     setIsFormOpen(true);
   };
@@ -143,10 +147,16 @@ export default function RoomsPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const payload = {
+      propertyId: form.propertyId || undefined,
       roomNumber: form.roomNumber,
       floor: Number(form.floor),
       basePrice: Number(form.basePrice),
-      areaSqm: form.areaSqm ? Number(form.areaSqm) : null,
+      areaSqm: form.areaSqm ? Number(form.areaSqm) : undefined,
+      electricityPrice: form.electricityPrice ? Number(form.electricityPrice) : undefined,
+      waterPrice: form.waterPrice ? Number(form.waterPrice) : undefined,
+      serviceFee: form.serviceFee ? Number(form.serviceFee) : undefined,
+      internetFee: form.internetFee ? Number(form.internetFee) : undefined,
+      garbageFee: form.garbageFee ? Number(form.garbageFee) : undefined,
       amenities: form.amenities,
       notes: form.notes,
     };
@@ -312,6 +322,20 @@ export default function RoomsPage() {
       >
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-2 gap-4">
+            {!editingRoom && (
+              <div className="col-span-2 space-y-1.5">
+                <label className="text-sm font-bold text-slate-700">Cơ sở (Property) *</label>
+                <select
+                  required
+                  value={form.propertyId}
+                  onChange={e => setForm(f => ({ ...f, propertyId: e.target.value }))}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                >
+                  <option value="">-- Chọn cơ sở --</option>
+                  {properties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+              </div>
+            )}
             <div className="space-y-1.5">
               <label className="text-sm font-bold text-slate-700">Số phòng *</label>
               <input

@@ -22,20 +22,30 @@ public class GetExpiringContractsQueryHandler(IApplicationDbContext context) : I
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
         var thirtyDaysLater = today.AddDays(30);
 
-        return await context.Contracts
+        var rows = await context.Contracts
             .Include(c => c.Customer)
             .Include(c => c.Room)
             .Where(c => c.Status == ContractStatus.Active && 
                         c.EndDate >= today && 
                         c.EndDate <= thirtyDaysLater)
-            .Select(c => new ExpiringContractDto(
+            .Select(c => new
+            {
                 c.Id,
                 c.ContractCode,
-                c.Customer.FullName,
-                c.Room.RoomNumber,
+                CustomerName = c.Customer.FullName,
+                RoomNumber = c.Room.RoomNumber,
                 c.EndDate,
-                c.EndDate.DayNumber - today.DayNumber))
+            })
             .OrderBy(c => c.EndDate)
             .ToListAsync(cancellationToken);
+
+        return rows.Select(c => new ExpiringContractDto(
+            c.Id,
+            c.ContractCode,
+            c.CustomerName,
+            c.RoomNumber,
+            c.EndDate,
+            c.EndDate.DayNumber - today.DayNumber))
+            .ToList();
     }
 }

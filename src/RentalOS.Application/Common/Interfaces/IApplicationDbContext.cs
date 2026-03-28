@@ -20,6 +20,7 @@ public interface IApplicationDbContext
     DbSet<AiConversation> AiConversations { get; }
     DbSet<Setting> Settings { get; }
     DbSet<AuditLog> AuditLogs { get; }
+    DbSet<InAppNotification> InAppNotifications { get; }
     DbSet<SubscriptionPayment> SubscriptionPayments { get; }
     DbSet<PaymentLinkLog> PaymentLinkLogs { get; }
     

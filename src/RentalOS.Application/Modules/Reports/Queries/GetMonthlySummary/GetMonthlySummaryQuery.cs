@@ -18,25 +18,27 @@ public class MonthlySummaryDto
     public int TerminatedContracts { get; set; }
 }
 
-public class GetMonthlySummaryQueryHandler(IApplicationDbContext dbContext, ITenantContext tenantContext)
+public class GetMonthlySummaryQueryHandler(IApplicationDbContext dbContext)
     : IRequestHandler<GetMonthlySummaryQuery, MonthlySummaryDto>
 {
     public async Task<MonthlySummaryDto> Handle(GetMonthlySummaryQuery request, CancellationToken cancellationToken)
     {
         var connection = dbContext.Database.GetDbConnection();
-        var tenantId = tenantContext.TenantId;
+        if (connection.State != System.Data.ConnectionState.Open)
+            await dbContext.Database.OpenConnectionAsync(cancellationToken);
+
         var month = request.Month; // YYYY-MM
 
         const string sql = @"
             SELECT 
                 @month as Month,
-                (SELECT COALESCE(SUM(total_amount), 0) FROM invoices WHERE tenant_id = @tenantId AND TO_CHAR(created_at, 'YYYY-MM') = @month AND is_deleted = false) as TotalInvoiced,
-                (SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE tenant_id = @tenantId AND TO_CHAR(paid_at, 'YYYY-MM') = @month AND direction = 'income' AND is_deleted = false) as TotalCollected,
-                (SELECT COALESCE(SUM(total_amount - paid_amount), 0) FROM invoices WHERE tenant_id = @tenantId AND status = 'overdue' AND is_deleted = false) as OutstandingAmount,
-                (SELECT COUNT(*) FROM contracts WHERE tenant_id = @tenantId AND TO_CHAR(created_at, 'YYYY-MM') = @month AND is_deleted = false) as NewContracts,
-                (SELECT COUNT(*) FROM contracts WHERE tenant_id = @tenantId AND TO_CHAR(updated_at, 'YYYY-MM') = @month AND status = 'terminated' AND is_deleted = false) as TerminatedContracts
+                (SELECT COALESCE(SUM(total_amount), 0) FROM invoices WHERE TO_CHAR(created_at, 'YYYY-MM') = @month) as TotalInvoiced,
+                (SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE TO_CHAR(paid_at, 'YYYY-MM') = @month AND direction = 'Income') as TotalCollected,
+                (SELECT COALESCE(SUM(total_amount - COALESCE(partial_paid_amount, 0)), 0) FROM invoices WHERE status = 'Overdue') as OutstandingAmount,
+                (SELECT COUNT(*) FROM contracts WHERE TO_CHAR(created_at, 'YYYY-MM') = @month) as NewContracts,
+                (SELECT COUNT(*) FROM contracts WHERE TO_CHAR(updated_at, 'YYYY-MM') = @month AND status = 'Terminated') as TerminatedContracts
         ";
 
-        return await connection.QuerySingleAsync<MonthlySummaryDto>(sql, new { tenantId, month });
+        return await connection.QuerySingleAsync<MonthlySummaryDto>(sql, new { month });
     }
 }

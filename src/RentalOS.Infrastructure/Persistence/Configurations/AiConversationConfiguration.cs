@@ -15,6 +15,9 @@ public class AiConversationConfiguration : IEntityTypeConfiguration<AiConversati
         builder.Property(x => x.Title)
             .HasMaxLength(200);
 
+        builder.Property(x => x.Messages)
+            .HasColumnType("jsonb");
+
         builder.HasOne(x => x.User)
             .WithMany()
             .HasForeignKey(x => x.UserId)

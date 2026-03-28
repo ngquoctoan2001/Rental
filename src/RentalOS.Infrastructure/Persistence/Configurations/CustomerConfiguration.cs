@@ -21,7 +21,7 @@ public class CustomerConfiguration : IEntityTypeConfiguration<Customer>
             .HasMaxLength(20);
 
         builder.Property(x => x.IdCardNumber)
-            .IsRequired()
+            .IsRequired(false)
             .HasMaxLength(50);
 
         builder.HasIndex(x => x.Phone);

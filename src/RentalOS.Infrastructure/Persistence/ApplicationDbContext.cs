@@ -23,6 +23,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<Domain.Entities.AiConversation> AiConversations => Set<Domain.Entities.AiConversation>();
     public DbSet<Domain.Entities.Setting> Settings => Set<Domain.Entities.Setting>();
     public DbSet<Domain.Entities.AuditLog> AuditLogs => Set<Domain.Entities.AuditLog>();
+    public DbSet<Domain.Entities.InAppNotification> InAppNotifications => Set<Domain.Entities.InAppNotification>();
     public DbSet<Domain.Entities.PaymentLinkLog> PaymentLinkLogs => Set<Domain.Entities.PaymentLinkLog>();
 
     // ── Public-schema tables ─────────────────────────────────────────────────
