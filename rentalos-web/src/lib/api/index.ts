@@ -14,3 +14,4 @@ export * from './customers';
 export * from './transactions';
 export * from './ai';
 export * from './onboarding';
+export * from './client';

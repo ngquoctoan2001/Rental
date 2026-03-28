@@ -44,6 +44,10 @@ export default function PropertiesPage() {
   // Update selectedId when properties data arrives if not set
   const currentSelectedId = selectedId || properties[0]?.id;
   const selected = properties.find(p => p.id === currentSelectedId) || properties[0];
+  const selectedTotalRooms = selected?.roomSummary?.total ?? selected?.totalRooms ?? 0;
+  const selectedAvailableRooms = selected?.roomSummary?.available ?? selected?.availableRooms ?? 0;
+  const selectedOccupiedRooms = selected?.roomSummary?.rented ?? selected?.occupied ?? Math.max(selectedTotalRooms - selectedAvailableRooms, 0);
+  const selectedOccupancyRate = selectedTotalRooms > 0 ? Math.round((selectedOccupiedRooms / selectedTotalRooms) * 100) : 0;
 
   const { data: revenueData } = useQuery({
     queryKey: ['property-revenue', currentSelectedId],
@@ -152,14 +156,25 @@ export default function PropertiesPage() {
                     <span className="text-[10px] font-bold truncate">{prop.address}</span>
                   </div>
                   <div className="flex items-center gap-4 mt-3">
+                    {(() => {
+                      const totalRooms = prop.roomSummary?.total ?? prop.totalRooms ?? 0;
+                      const availableRooms = prop.roomSummary?.available ?? prop.availableRooms ?? 0;
+                      const occupiedRooms = prop.roomSummary?.rented ?? prop.occupied ?? Math.max(totalRooms - availableRooms, 0);
+                      const occupancy = totalRooms > 0 ? Math.round((occupiedRooms / totalRooms) * 100) : 0;
+
+                      return (
+                        <>
                      <div className="flex items-center gap-1.5">
                        <Users className="w-3 h-3 text-slate-400" />
-                       <span className="text-[10px] font-black text-slate-600">{Math.round(((prop.occupied ?? (prop.totalRooms - prop.availableRooms)) / prop.totalRooms) * 100)}%</span>
+                       <span className="text-[10px] font-black text-slate-600">{occupancy}%</span>
                      </div>
                      <div className="flex items-center gap-1.5 font-black text-indigo-500 text-[10px]">
                        <TrendingUp className="w-3 h-3" />
                        {(prop.revenue ?? 0).toLocaleString()}đ
                      </div>
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
@@ -202,7 +217,7 @@ export default function PropertiesPage() {
             <div className="grid grid-cols-4 gap-4">
               <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 space-y-2">
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tổng số phòng</p>
-                <p className="text-2xl font-black text-slate-900">{selected.totalRooms}</p>
+                <p className="text-2xl font-black text-slate-900">{selectedTotalRooms}</p>
                 <div className="flex items-center gap-1.5 mt-2">
                    <div className="flex-1 h-1 bg-slate-200 rounded-full overflow-hidden">
                       <div className="h-full bg-slate-900 w-full" />
@@ -211,20 +226,20 @@ export default function PropertiesPage() {
               </div>
               <div className="p-6 bg-indigo-50 rounded-3xl border border-indigo-100 space-y-2">
                 <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Đang ở</p>
-                <p className="text-2xl font-black text-indigo-600">{(selected.occupied ?? (selected.totalRooms - selected.availableRooms))}</p>
+                <p className="text-2xl font-black text-indigo-600">{selectedOccupiedRooms}</p>
                  <div className="flex items-center gap-1.5 mt-2">
                    <div className="flex-1 h-1 bg-indigo-200 rounded-full overflow-hidden">
-                      <div className="h-full bg-indigo-600" style={{ width: `${((selected.occupied ?? (selected.totalRooms - selected.availableRooms))/selected.totalRooms)*100}%` }} />
+                      <div className="h-full bg-indigo-600" style={{ width: `${selectedOccupancyRate}%` }} />
                    </div>
                 </div>
               </div>
               <div className="p-6 bg-emerald-50 rounded-3xl border border-emerald-100 space-y-2">
                 <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Trống</p>
-                <p className="text-2xl font-black text-emerald-600">{selected.totalRooms - (selected.occupied ?? (selected.totalRooms - selected.availableRooms))}</p>
+                <p className="text-2xl font-black text-emerald-600">{Math.max(selectedTotalRooms - selectedOccupiedRooms, 0)}</p>
               </div>
               <div className="p-6 bg-purple-50 rounded-3xl border border-purple-100 space-y-2">
                 <p className="text-[10px] font-black text-purple-400 uppercase tracking-widest">Hiệu suất tháng</p>
-                <p className="text-2xl font-black text-purple-600">{Math.round(((selected.occupied ?? (selected.totalRooms - selected.availableRooms))/selected.totalRooms)*100)}%</p>
+                <p className="text-2xl font-black text-purple-600">{selectedOccupancyRate}%</p>
               </div>
             </div>
 

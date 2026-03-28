@@ -38,7 +38,7 @@ export default function RegisterPage() {
       });
       router.push('/login?registered=true');
     } catch (err: any) {
-      const msg = err.response?.data?.message || err.response?.data?.title || err.message || 'Đăng ký không thành công. Vui lòng thử lại sau.';
+      const msg = err.message || 'Đăng ký không thành công. Vui lòng thử lại sau.';
       setError(msg);
     } finally {
       setLoading(false);

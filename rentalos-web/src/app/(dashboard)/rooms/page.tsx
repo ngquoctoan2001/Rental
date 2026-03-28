@@ -16,10 +16,12 @@ import { Room, Property } from '@/types';
 
 const STATUS_OPTIONS = [
   { value: 'available', label: 'Trống', color: 'bg-emerald-500', lightColor: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  { value: 'occupied',  label: 'Đã thuê', color: 'bg-indigo-500', lightColor: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
+  { value: 'rented',  label: 'Đã thuê', color: 'bg-indigo-500', lightColor: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
   { value: 'maintenance', label: 'Bảo trì', color: 'bg-amber-500', lightColor: 'bg-amber-50 text-amber-700 border-amber-200' },
   { value: 'reserved', label: 'Đặt trước', color: 'bg-purple-500', lightColor: 'bg-purple-50 text-purple-700 border-purple-200' },
 ];
+
+const normalizeStatus = (status: Room['status'] | string) => String(status).toLowerCase();
 
 const AMENITIES_LIST = ['Điều hòa', 'Máy nóng lạnh', 'Tủ lạnh', 'Giường', 'Bàn', 'WC riêng', 'Ban công', 'Máy giặt', 'Internet'];
 
@@ -107,16 +109,16 @@ export default function RoomsPage() {
   const filtered = useMemo(() =>
     rooms.filter(r => {
       const matchSearch = r.roomNumber.toLowerCase().includes(search.toLowerCase());
-      const matchStatus = filterStatus === 'all' || r.status === filterStatus;
+      const matchStatus = filterStatus === 'all' || normalizeStatus(r.status) === filterStatus;
       return matchSearch && matchStatus;
     }), [rooms, search, filterStatus]);
 
   // Stats
   const stats = useMemo(() => ({
     total: rooms.length,
-    available: rooms.filter(r => r.status === 'available').length,
-    occupied: rooms.filter(r => r.status === 'occupied').length,
-    maintenance: rooms.filter(r => r.status === 'maintenance').length,
+    available: rooms.filter(r => normalizeStatus(r.status) === 'available').length,
+    occupied: rooms.filter(r => normalizeStatus(r.status) === 'rented').length,
+    maintenance: rooms.filter(r => normalizeStatus(r.status) === 'maintenance').length,
   }), [rooms]);
 
   // Helpers
@@ -169,7 +171,7 @@ export default function RoomsPage() {
 
   const isPending = createMutation.isPending || updateMutation.isPending;
 
-  const getStatusCfg = (status: string) => STATUS_OPTIONS.find(s => s.value === status) ?? STATUS_OPTIONS[0];
+  const getStatusCfg = (status: string) => STATUS_OPTIONS.find(s => s.value === normalizeStatus(status)) ?? STATUS_OPTIONS[0];
 
   return (
     <div className="space-y-8 pb-10">

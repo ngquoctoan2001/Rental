@@ -20,6 +20,7 @@ export const registerSchema = z.object({
 
 export const forgotPasswordSchema = z.object({
   email: z.string().email('Email không hợp lệ'),
+  tenantSlug: z.string().min(3, 'Mã định danh (Slug) tối thiểu 3 ký tự'),
 });
 
 export const resetPasswordSchema = z.object({

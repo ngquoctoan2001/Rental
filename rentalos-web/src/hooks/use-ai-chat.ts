@@ -2,13 +2,12 @@
 
 import { useState, useCallback } from 'react';
 import { useAuthStore } from '@/lib/stores/authStore';
+import { API_BASE_URL } from '@/lib/api/client';
 
 export type Message = {
   role: 'user' | 'assistant';
   content: string;
 };
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
 
 export function useAiChat() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -21,7 +20,7 @@ export function useAiChat() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/ai/chat`, {
+      const response = await fetch(`${API_BASE_URL}/ai/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

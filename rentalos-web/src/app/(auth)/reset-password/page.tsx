@@ -36,7 +36,7 @@ function ResetPasswordForm() {
       await authApi.resetPassword({ email, token, newPassword: data.password, tenantSlug });
       router.push('/login?reset=true');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Token không hợp lệ hoặc đã hết hạn.');
+      setError(err.message || 'Token không hợp lệ hoặc đã hết hạn.');
     } finally {
       setLoading(false);
     }

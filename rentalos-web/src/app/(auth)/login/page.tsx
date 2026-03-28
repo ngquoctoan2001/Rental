@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Eye, EyeOff, Lock, Mail, Building2, ArrowRight } from 'lucide-react';
@@ -9,8 +9,9 @@ import { loginSchema, type LoginInput } from '@/lib/schemas/authSchema';
 import { authApi } from '@/lib/api/auth';
 import { useAuthStore } from '@/lib/stores/authStore';
 
-export default function LoginPage() {
+function LoginPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const setAuth = useAuthStore((state) => state.setAuth);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -19,10 +20,18 @@ export default function LoginPage() {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
   });
+
+  useEffect(() => {
+    const tenantSlug = searchParams.get('tenant') || searchParams.get('tenantSlug');
+    if (tenantSlug) {
+      setValue('tenantSlug', tenantSlug);
+    }
+  }, [searchParams, setValue]);
 
   const onSubmit = async (data: LoginInput) => {
     setLoading(true);
@@ -38,7 +47,7 @@ export default function LoginPage() {
       document.cookie = `accessToken=${response.data.accessToken}; path=/; max-age=3600; SameSite=Lax`;
       router.push('/');
     } catch (err: any) {
-      const msg = err.response?.data?.message || err.response?.data?.title || err.message || 'Email hoặc mật khẩu không chính xác';
+      const msg = err.message || 'Email hoặc mật khẩu không chính xác';
       setError(msg);
     } finally {
       setLoading(false);
@@ -169,5 +178,13 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginPageContent />
+    </Suspense>
   );
 }

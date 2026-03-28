@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Mail, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { Mail, ArrowLeft, CheckCircle2, Building2 } from 'lucide-react';
 import { forgotPasswordSchema, type ForgotPasswordInput } from '@/lib/schemas/authSchema';
 import { authApi } from '@/lib/api';
 
@@ -24,10 +24,10 @@ export default function ForgotPasswordPage() {
     setLoading(true);
     setError(null);
     try {
-      await authApi.forgotPassword(data.email);
+      await authApi.forgotPassword({ email: data.email, tenantSlug: data.tenantSlug });
       setSuccess(true);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Đã có lỗi xảy ra. Vui lòng thử lại sau.');
+      setError(err.message || 'Đã có lỗi xảy ra. Vui lòng thử lại sau.');
     } finally {
       setLoading(false);
     }
@@ -70,7 +70,23 @@ export default function ForgotPasswordPage() {
             </div>
           )}
 
-          <div>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-2">Tenant / Slug</label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-indigo-600 transition-colors">
+                  <Building2 className="w-5 h-5" />
+                </div>
+                <input
+                  {...register('tenantSlug')}
+                  className={`block w-full pl-11 pr-4 py-3.5 bg-slate-50 border ${errors.tenantSlug ? 'border-rose-300' : 'border-slate-200'} rounded-2xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium`}
+                  placeholder="vi-du: nha-tro-demo"
+                />
+              </div>
+              {errors.tenantSlug && <p className="mt-2 text-xs font-bold text-rose-500">{errors.tenantSlug.message}</p>}
+            </div>
+
+            <div>
             <label className="block text-sm font-bold text-slate-700 mb-2">Địa chỉ Email</label>
             <div className="relative group">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-indigo-600 transition-colors">
@@ -84,6 +100,7 @@ export default function ForgotPasswordPage() {
               />
             </div>
             {errors.email && <p className="mt-2 text-xs font-bold text-rose-500">{errors.email.message}</p>}
+            </div>
           </div>
 
           <button

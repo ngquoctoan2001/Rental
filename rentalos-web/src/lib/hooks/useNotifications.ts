@@ -5,6 +5,7 @@ import * as signalR from '@microsoft/signalr';
 import { useAuthStore } from '@/lib/stores/authStore';
 import { useNotificationStore } from '@/lib/stores/notificationStore';
 import { notificationsApi } from '@/lib/api';
+import { SIGNALR_URL } from '@/lib/api/client';
 
 export function useNotifications() {
   const { accessToken } = useAuthStore();
@@ -23,7 +24,7 @@ export function useNotifications() {
     if (!accessToken) return;
 
     const connection = new signalR.HubConnectionBuilder()
-      .withUrl(`${process.env.NEXT_PUBLIC_SIGNALR_URL || 'http://localhost:5272/hubs/notifications'}`, {
+      .withUrl(SIGNALR_URL, {
         accessTokenFactory: () => accessToken,
       })
       .withAutomaticReconnect()

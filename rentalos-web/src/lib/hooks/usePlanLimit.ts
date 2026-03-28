@@ -4,7 +4,6 @@ import { useAuthStore } from '@/lib/stores/authStore';
 
 export function usePlanLimit() {
   const { tenant } = useAuthStore();
-  const plan = tenant?.plan || 'starter';
 
   const limits = {
     starter: { properties: 1, rooms: 10, staff: 1, AI: false },
@@ -13,12 +12,16 @@ export function usePlanLimit() {
     expired: { properties: 0, rooms: 0, staff: 0, AI: false },
   };
 
+  type PlanKey = keyof typeof limits;
+  const plan: PlanKey = (tenant?.plan as PlanKey) || 'starter';
+
   const checkAccess = (feature: keyof typeof limits['starter']) => {
     return limits[plan][feature];
   };
 
-  const isNearLimit = (resource: string, current: number) => {
-    const limit = (limits[plan] as any)[resource] || 0;
+  const isNearLimit = (resource: keyof typeof limits['starter'], current: number) => {
+    const limit = limits[plan][resource];
+    if (typeof limit !== 'number') return false;
     if (limit === 0) return true;
     return current / limit >= 0.8;
   };

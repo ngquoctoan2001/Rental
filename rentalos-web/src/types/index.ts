@@ -1,4 +1,12 @@
 // --- AUTH & USER ---
+export interface PagedResult<T> {
+  items: T[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  totalPages?: number;
+}
+
 export interface User {
   id: string;
   email: string;
@@ -29,9 +37,21 @@ export interface Property {
   id: string;
   name: string;
   address: string;
-  city: string;
-  totalRooms: number;
-  availableRooms: number;
+  province?: string;
+  district?: string;
+  ward?: string;
+  description?: string;
+  coverImage?: string;
+  totalFloors?: number;
+  isActive?: boolean;
+  roomSummary?: {
+    total: number;
+    available: number;
+    rented: number;
+    maintenance: number;
+  };
+  totalRooms?: number;
+  availableRooms?: number;
   imageUrl?: string;
   occupied?: number;
   revenue?: number;
@@ -40,37 +60,60 @@ export interface Property {
 export interface Room {
   id: string;
   propertyId: string;
+  propertyName?: string;
   roomNumber: string;
   floor: number;
-  status: 'available' | 'occupied' | 'maintenance' | 'reserved';
+  status: 'available' | 'rented' | 'maintenance' | 'reserved' | 'Available' | 'Rented' | 'Maintenance' | 'Reserved';
   basePrice: number;
   areaSqm?: number;
+  electricityPrice?: number;
+  waterPrice?: number;
+  serviceFee?: number;
+  internetFee?: number;
+  garbageFee?: number;
   electricityReading?: number;
   waterReading?: number;
   amenities: string[];
+  notes?: string;
+  maintenanceNote?: string;
+  maintenanceSince?: string;
+  images?: string[];
 }
 
 export interface Customer {
   id: string;
   fullName: string;
+  phone: string;
   idCardNumber: string;
   phoneNumber: string;
   email?: string;
   address?: string;
+  hometown?: string;
+  currentAddress?: string;
   isBlacklisted: boolean;
+  activeContract?: {
+    contractCode: string;
+    roomNumber: string;
+    propertyName: string;
+  };
   notes?: string;
   avatarUrl?: string;
 }
 
 export interface Contract {
   id: string;
+  contractCode?: string;
   roomId: string;
+  roomNumber?: string;
   customerId: string;
+  customerName?: string;
   startDate: string;
   endDate?: string;
   depositAmount: number;
-  monthlyPrice: number;
-  status: 'active' | 'expiring' | 'terminated' | 'draft';
+  monthlyPrice?: number;
+  monthlyRent?: number;
+  depositPaid?: boolean;
+  status: 'active' | 'expired' | 'terminated' | 'renewed' | 'Active' | 'Expired' | 'Terminated' | 'Renewed';
   signedByCustomer?: boolean;
   room?: Room;
   customer?: Customer;
@@ -83,7 +126,7 @@ export interface Invoice {
   invoiceNumber?: string;
   billingMonth: string;
   dueDate: string;
-  status: 'pending' | 'paid' | 'overdue' | 'cancelled' | 'Pending' | 'Paid' | 'Overdue' | 'Cancelled';
+  status: 'pending' | 'paid' | 'overdue' | 'cancelled' | 'partial' | 'Pending' | 'Paid' | 'Overdue' | 'Cancelled' | 'Partial';
   totalAmount: number;
   customerName?: string;
   roomNumber?: string;
@@ -117,14 +160,18 @@ export interface Invoice {
 export interface Transaction {
   id: string;
   invoiceId?: string;
-  customerId: string;
+  invoiceCode?: string;
   amount: number;
-  paymentMethod: 'cash' | 'bank_transfer' | 'momo' | 'vnpay' | 'zalo';
-  type: 'income' | 'expense';
-  status: 'completed' | 'pending' | 'failed';
+  method: 'cash' | 'bankTransfer' | 'momo' | 'vnPay' | 'depositRefund' | 'Cash' | 'BankTransfer' | 'Momo' | 'VNPay' | 'DepositRefund';
+  direction: 'income' | 'expense' | 'Income' | 'Expense';
+  category: 'rent' | 'deposit' | 'depositRefund' | 'subscription' | 'other' | 'Rent' | 'Deposit' | 'DepositRefund' | 'Subscription' | 'Other';
+  status: 'success' | 'pending' | 'failed' | 'refunded' | 'Success' | 'Pending' | 'Failed' | 'Refunded';
   createdAt: string;
-  description?: string;
-  customer?: Customer;
+  paidAt?: string;
+  note?: string;
+  roomNumber?: string;
+  propertyName?: string;
+  customerName?: string;
 }
 
 // --- AI & SYSTEM ---

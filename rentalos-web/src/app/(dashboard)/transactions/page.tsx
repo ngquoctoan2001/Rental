@@ -53,13 +53,17 @@ export default function TransactionsPage() {
     },
   });
 
+  const normalizeDirection = (value: Transaction['direction']) => String(value).toLowerCase();
+  const normalizeStatus = (value: Transaction['status']) => String(value).toLowerCase();
+  const normalizeMethod = (value: Transaction['method']) => String(value).toLowerCase();
+
   // Calculate stats
   const totalIncome = transactions
-    .filter((t: Transaction) => t.type === 'income' && t.status === 'completed')
+    .filter((t: Transaction) => normalizeDirection(t.direction) === 'income' && normalizeStatus(t.status) === 'success')
     .reduce((sum: number, t: Transaction) => sum + t.amount, 0);
   
   const totalExpense = transactions
-    .filter((t: Transaction) => t.type === 'expense' && t.status === 'completed')
+    .filter((t: Transaction) => normalizeDirection(t.direction) === 'expense' && normalizeStatus(t.status) === 'success')
     .reduce((sum: number, t: Transaction) => sum + t.amount, 0);
 
   const columns = [
@@ -74,11 +78,11 @@ export default function TransactionsPage() {
       )
     },
     {
-      key: 'type',
+      key: 'direction',
       label: 'Loại',
       render: (val: string) => (
         <div className="flex items-center gap-2">
-          {val === 'income' ? (
+          {String(val).toLowerCase() === 'income' ? (
             <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
               <ArrowUpCircle className="w-5 h-5" />
             </div>
@@ -87,8 +91,8 @@ export default function TransactionsPage() {
               <ArrowDownCircle className="w-5 h-5" />
             </div>
           )}
-          <span className={`text-sm font-bold ${val === 'income' ? 'text-emerald-700' : 'text-rose-700'}`}>
-            {val === 'income' ? 'Thu' : 'Chi'}
+          <span className={`text-sm font-bold ${String(val).toLowerCase() === 'income' ? 'text-emerald-700' : 'text-rose-700'}`}>
+            {String(val).toLowerCase() === 'income' ? 'Thu' : 'Chi'}
           </span>
         </div>
       )
@@ -98,39 +102,40 @@ export default function TransactionsPage() {
       label: 'Số tiền',
       sortable: true,
       render: (val: number, row: Transaction) => (
-        <span className={`font-black text-lg ${row.type === 'income' ? 'text-emerald-600' : 'text-rose-600'}`}>
-          {row.type === 'income' ? '+' : '-'}{val.toLocaleString()}đ
+        <span className={`font-black text-lg ${normalizeDirection(row.direction) === 'income' ? 'text-emerald-600' : 'text-rose-600'}`}>
+          {normalizeDirection(row.direction) === 'income' ? '+' : '-'}{val.toLocaleString()}đ
         </span>
       )
     },
     {
-      key: 'paymentMethod',
+      key: 'method',
       label: 'Phương thức',
       render: (val: string) => {
+        const normalized = normalizeMethod(val as Transaction['method']);
         const icons = {
           cash: <Banknote className="w-3.5 h-3.5" />,
-          bank_transfer: <Landmark className="w-3.5 h-3.5" />,
+          banktransfer: <Landmark className="w-3.5 h-3.5" />,
           momo: <Smartphone className="w-3.5 h-3.5" />,
           vnpay: <Smartphone className="w-3.5 h-3.5" />,
-          zalo: <Smartphone className="w-3.5 h-3.5" />
+          depositrefund: <Landmark className="w-3.5 h-3.5" />,
         };
         const labels = {
           cash: 'Tiền mặt',
-          bank_transfer: 'Chuyển khoản',
+          banktransfer: 'Chuyển khoản',
           momo: 'Momo',
           vnpay: 'VNPay',
-          zalo: 'ZaloPay'
+          depositrefund: 'Hoàn cọc',
         };
         return (
           <div className="flex items-center gap-2 px-3 py-1 bg-slate-100 rounded-full text-slate-600 text-[10px] font-bold uppercase tracking-tight">
-            {icons[val as keyof typeof icons]}
-            {labels[val as keyof typeof labels]}
+            {icons[normalized as keyof typeof icons] ?? <Landmark className="w-3.5 h-3.5" />}
+            {labels[normalized as keyof typeof labels] ?? val}
           </div>
         );
       }
     },
     {
-      key: 'description',
+      key: 'note',
       label: 'Nội dung',
       render: (val: string) => (
         <span className="text-slate-500 text-sm italic line-clamp-1">{val || 'Bản ghi không có mô tả'}</span>
@@ -140,7 +145,7 @@ export default function TransactionsPage() {
       key: 'status',
       label: 'Trạng thái',
       render: (val: string) => (
-        <StatusBadge status={val === 'completed' ? 'active' : 'pending'} />
+        <StatusBadge status={String(val).toLowerCase()} />
       )
     }
   ];

@@ -2,9 +2,10 @@ import api from './client';
 import { Property, Room } from '@/types';
 
 export const propertiesApi = {
-  list: () => api.get<Property[]>('/properties'),
+  list: (params?: { page?: number; pageSize?: number; search?: string; isActive?: boolean }) => api.get<Property[]>('/properties', { params }),
   getById: (id: string) => api.get<Property>(`/properties/${id}`),
   getStats: (id: string) => api.get(`/properties/${id}/stats`),
+  getRooms: (id: string, params?: { page?: number; pageSize?: number }) => api.get<Room[]>(`/properties/${id}/rooms`, { params }),
   create: (data: any) => api.post('/properties', data),
   update: (id: string, data: any) => api.put(`/properties/${id}`, data),
   remove: (id: string) => api.delete(`/properties/${id}`),

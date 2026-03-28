@@ -5,8 +5,8 @@ export const customersApi = {
   list: (params?: any) => api.get<Customer[]>('/customers', { params }),
   lookup: (q: string) => api.get<Customer[]>('/customers/lookup', { params: { q } }),
   getById: (id: string) => api.get<Customer>(`/customers/${id}`),
-  create: (data: any) => api.post('/customers', data),
-  update: (id: string, data: any) => api.put(`/customers/${id}`, data),
+  create: (data: any) => api.post('/customers', mapCustomerPayload(data)),
+  update: (id: string, data: any) => api.put(`/customers/${id}`, mapCustomerPayload({ ...data, id })),
   blacklist: (id: string, data: any) => api.patch(`/customers/${id}/blacklist`, data),
   getContracts: (id: string) => api.get(`/customers/${id}/contracts`),
   getInvoices: (id: string) => api.get(`/customers/${id}/invoices`),
@@ -26,3 +26,11 @@ export const customersApi = {
     return api.post('/customers/import-csv', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
   },
 };
+
+function mapCustomerPayload(data: any) {
+  return {
+    ...data,
+    phone: data.phone ?? data.phoneNumber ?? '',
+    currentAddress: data.currentAddress ?? data.address ?? null,
+  };
+}

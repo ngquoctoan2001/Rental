@@ -1,4 +1,4 @@
-import api from './client';
+import api, { API_BASE_URL, API_ORIGIN } from './client';
 
 export const paymentApi = {
   createMomo: (data: any) => api.post('/payments/momo', data),
@@ -9,4 +9,11 @@ export const paymentApi = {
 
 export const publicApi = {
   getInvoiceByToken: (token: string) => api.get(`/public/invoice/${token}`),
+};
+
+export const paymentUrls = {
+  momoWebhook: `${API_BASE_URL}/payments/momo/webhook`,
+  vnpayWebhook: `${API_BASE_URL}/payments/vnpay/webhook`,
+  vnpayReturn: `${API_BASE_URL}/payments/vnpay/return`,
+  apiOrigin: API_ORIGIN,
 };

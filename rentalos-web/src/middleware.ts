@@ -8,6 +8,7 @@ export function middleware(request: NextRequest) {
   // Công khai các route pay và health, api, _next
   if (
     pathname.startsWith('/pay') ||
+    pathname.startsWith('/payment-status') ||
     pathname.startsWith('/api') ||
     pathname.startsWith('/_next') ||
     pathname === '/favicon.ico'
@@ -18,7 +19,8 @@ export function middleware(request: NextRequest) {
   const isAuthRoute = pathname.startsWith('/login') || 
                       pathname.startsWith('/register') || 
                       pathname.startsWith('/forgot-password') ||
-                      pathname.startsWith('/reset-password');
+                      pathname.startsWith('/reset-password') ||
+                      pathname.startsWith('/accept-invite');
 
   if (!token && !isAuthRoute) {
     const loginUrl = new URL('/login', request.url);

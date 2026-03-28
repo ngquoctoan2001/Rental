@@ -1,7 +1,14 @@
 import api from './client';
 
 export const invoicesApi = {
-  list: (params?: any) => api.get('/invoices', { params }),
+  list: (params?: any) => {
+    const nextParams = { ...params };
+    if (nextParams?.month && !nextParams.billingMonth) {
+      nextParams.billingMonth = nextParams.month;
+      delete nextParams.month;
+    }
+    return api.get('/invoices', { params: nextParams });
+  },
   getById: (id: string) => api.get(`/invoices/${id}`),
   pendingMeter: (params?: any) => api.get('/invoices/pending-meter', { params }),
   create: (data: any) => api.post('/invoices', data),

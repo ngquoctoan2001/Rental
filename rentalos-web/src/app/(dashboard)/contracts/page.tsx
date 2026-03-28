@@ -417,7 +417,7 @@ export default function ContractsPage() {
               <div className="flex justify-between">
                 <span className="text-slate-500">Tổng tiền cọc:</span>
                 <span className="font-bold text-indigo-600">
-                  {Number(form.depositAmount || 0).toLocaleString('vi-VN')}đ
+                  {(Number(form.monthlyPrice || 0) * Number(form.depositMonths || 1)).toLocaleString('vi-VN')}đ
                 </span>
               </div>
             </div>
