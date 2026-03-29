@@ -17,6 +17,7 @@ public class StaffListItemDto
     public bool IsActive { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? LastLoginAt { get; set; }
+    public List<Guid> AssignedPropertyIds { get; set; } = [];
 }
 
 public class GetStaffQueryHandler(IApplicationDbContext dbContext)
@@ -28,7 +29,7 @@ public class GetStaffQueryHandler(IApplicationDbContext dbContext)
             await dbContext.Database.OpenConnectionAsync(cancellationToken);
         var connection = dbContext.Database.GetDbConnection();
         const string sql = @"
-            SELECT id, email, full_name as FullName, role, is_active as IsActive, created_at as CreatedAt, last_login_at as LastLoginAt
+            SELECT id, email, full_name as FullName, role, is_active as IsActive, created_at as CreatedAt, last_login_at as LastLoginAt, assigned_property_ids as AssignedPropertyIds
             FROM users
             WHERE role != 'owner'
             ORDER BY created_at DESC";

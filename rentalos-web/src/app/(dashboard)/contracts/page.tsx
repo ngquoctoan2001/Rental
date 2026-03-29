@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   FilePlus, Calendar, User, Home,
   DollarSign, Clock, AlertTriangle, FileCheck, FileX,
@@ -30,7 +30,7 @@ const emptyRenew = { months: 12, newMonthlyRent: '' };
 export default function ContractsPage() {
   const queryClient = useQueryClient();
   const [isSlideOverOpen, setIsSlideOverOpen] = useState(false);
-  const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
+  const [selectedContractId, setSelectedContractId] = useState<string | null>(null);
   const [form, setForm] = useState({ ...emptyForm });
   const [terminateForm, setTerminateForm] = useState({ ...emptyTerminate });
   const [showTerminateModal, setShowTerminateModal] = useState(false);
@@ -58,22 +58,38 @@ export default function ContractsPage() {
   });
 
   const { data: contractInvoices = [] } = useQuery({
-    queryKey: ['contract-invoices', selectedContract?.id],
+    queryKey: ['contract-invoices', selectedContractId],
     queryFn: async () => {
-      const resp = await contractsApi.getInvoices(selectedContract!.id);
+      const resp = await contractsApi.getInvoices(selectedContractId!);
       return Array.isArray(resp.data) ? resp.data : [];
     },
-    enabled: !!selectedContract,
+    enabled: !!selectedContractId,
+  });
+
+  const { data: selectedContract } = useQuery<Contract | null>({
+    queryKey: ['contract-detail', selectedContractId],
+    queryFn: async () => {
+      const resp = await contractsApi.getById(selectedContractId!);
+      return (resp.data as Contract) ?? null;
+    },
+    enabled: !!selectedContractId,
   });
 
   const { data: rooms = [] } = useQuery<Room[]>({
     queryKey: ['rooms-available'],
     queryFn: async () => {
-      const resp = await roomsApi.list();
-      const body = resp.data as Room[] | { items: Room[] };
-      return Array.isArray(body) ? body : body.items ?? [];
+      const resp = await roomsApi.available();
+      return Array.isArray(resp.data) ? resp.data : ((resp.data as any)?.items ?? []);
     }
   });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const preselectedCustomerId = new URLSearchParams(window.location.search).get('customerId');
+    if (!preselectedCustomerId) return;
+    setForm(current => current.customerId === preselectedCustomerId ? current : { ...current, customerId: preselectedCustomerId });
+    setIsSlideOverOpen(true);
+  }, []);
 
   const { data: customers = [] } = useQuery<Customer[]>({
     queryKey: ['customers'],
@@ -96,14 +112,18 @@ export default function ContractsPage() {
 
   const signMutation = useMutation({
     mutationFn: (id: string) => contractsApi.sign(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['contracts'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['contracts'] });
+      queryClient.invalidateQueries({ queryKey: ['contract-detail'] });
+    },
   });
 
   const terminateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) => contractsApi.terminate(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contracts'] });
-      setSelectedContract(null);
+      queryClient.invalidateQueries({ queryKey: ['contract-detail'] });
+      setSelectedContractId(null);
       setShowTerminateModal(false);
       setTerminateForm({ ...emptyTerminate });
     },
@@ -113,6 +133,7 @@ export default function ContractsPage() {
     mutationFn: ({ id, data }: { id: string; data: any }) => contractsApi.renew(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contracts'] });
+      queryClient.invalidateQueries({ queryKey: ['contract-detail'] });
       setShowRenewModal(false);
       setRenewForm({ ...emptyRenew });
     },
@@ -122,6 +143,7 @@ export default function ContractsPage() {
     mutationFn: ({ id, data }: { id: string; data: any }) => contractsApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contracts'] });
+      queryClient.invalidateQueries({ queryKey: ['contract-detail'] });
       setIsEditContractOpen(false);
     },
   });
@@ -130,13 +152,17 @@ export default function ContractsPage() {
     mutationFn: ({ id, data }: { id: string; data: any }) => contractsApi.addCoTenant(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contracts'] });
+      queryClient.invalidateQueries({ queryKey: ['contract-detail'] });
       setCoTenantCustomerId('');
     },
   });
 
   const removeCoTenantMutation = useMutation({
     mutationFn: ({ id, customerId }: { id: string; customerId: string }) => contractsApi.removeCoTenant(id, customerId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['contracts'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['contracts'] });
+      queryClient.invalidateQueries({ queryKey: ['contract-detail'] });
+    },
   });
 
   const handleDownloadPdf = async (id: string) => {
@@ -202,31 +228,31 @@ export default function ContractsPage() {
 
   const columns = [
     {
-      key: 'room',
+      key: 'roomNumber',
       label: 'Phòng',
       sortable: true,
-      render: (room: Room) => (
+      render: (roomNumber: string, row: Contract) => (
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 font-bold">
-            {room?.roomNumber || 'N/A'}
+            {roomNumber || 'N/A'}
           </div>
           <div>
-            <p className="font-bold text-slate-900">{room?.roomNumber}</p>
-            <p className="text-xs text-slate-400">Tầng {room?.floor}</p>
+            <p className="font-bold text-slate-900">{roomNumber}</p>
+            <p className="text-xs text-slate-400">Tầng {row.roomFloor ?? '-'}</p>
           </div>
         </div>
       )
     },
     {
-      key: 'customer',
+      key: 'customerName',
       label: 'Khách thuê',
       sortable: true,
-      render: (customer: Customer) => (
+      render: (customerName: string) => (
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 text-xs font-bold">
-            {customer?.fullName?.charAt(0) || '?'}
+            {customerName?.charAt(0) || '?'}
           </div>
-          <p className="font-medium text-slate-700">{customer?.fullName || 'Khách lẻ'}</p>
+          <p className="font-medium text-slate-700">{customerName || 'Khách lẻ'}</p>
         </div>
       )
     },
@@ -247,7 +273,7 @@ export default function ContractsPage() {
       )
     },
     {
-      key: 'monthlyPrice',
+      key: 'monthlyRent',
       label: 'Giá thuê',
       sortable: true,
       render: (val: number) => (
@@ -270,7 +296,7 @@ export default function ContractsPage() {
       label: '',
       render: (_: any, row: Contract) => (
         <button
-          onClick={(e) => { e.stopPropagation(); setSelectedContract(row); }}
+          onClick={(e) => { e.stopPropagation(); setSelectedContractId(row.id); }}
           className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 transition-colors"
         >
           <ChevronRight className="w-5 h-5" />
@@ -307,7 +333,7 @@ export default function ContractsPage() {
             </div>
           </div>
           <button
-            onClick={() => setSelectedContract(expiringContracts[0])}
+            onClick={() => setSelectedContractId(expiringContracts[0].id)}
             className="px-5 py-2.5 bg-amber-600 text-white rounded-xl text-sm font-bold hover:bg-amber-700 transition-colors shadow-md shadow-amber-100"
           >
             Xem danh sách
@@ -320,7 +346,7 @@ export default function ContractsPage() {
           columns={columns}
           data={contracts}
           isLoading={isLoading}
-          onRowClick={(row) => setSelectedContract(row)}
+          onRowClick={(row) => setSelectedContractId(row.id)}
           searchPlaceholder="Tìm theo tên khách, số phòng..."
         />
       </div>
@@ -365,8 +391,10 @@ export default function ContractsPage() {
                 }}
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 outline-none appearance-none bg-white">
                 <option value="">Chọn phòng còn trống...</option>
-                {rooms.filter(r => r.status === 'available').map(r => (
-                  <option key={r.id} value={r.id}>Phòng {r.roomNumber} - {r.basePrice.toLocaleString()}đ</option>
+                {rooms.map(r => (
+                  <option key={r.id} value={r.id}>
+                    {r.propertyName ? `${r.propertyName} - ` : ''}Phòng {r.roomNumber} - Tầng {r.floor} - {r.basePrice.toLocaleString()}đ
+                  </option>
                 ))}
               </select>
             </div>
@@ -474,8 +502,8 @@ export default function ContractsPage() {
 
       {/* Contract Detail SlideOver */}
       <SlideOver
-        isOpen={!!selectedContract && !showTerminateModal && !showRenewModal}
-        onClose={() => setSelectedContract(null)}
+        isOpen={!!selectedContractId && !showTerminateModal && !showRenewModal}
+        onClose={() => setSelectedContractId(null)}
         title="Chi tiết hợp đồng"
         width="max-w-2xl"
       >
@@ -500,11 +528,11 @@ export default function ContractsPage() {
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-600 font-bold text-lg border border-slate-200 shadow-inner">
-                    {selectedContract.room?.roomNumber}
+                    {selectedContract.roomNumber}
                   </div>
                   <div>
-                    <h4 className="font-bold text-slate-900">Phòng {selectedContract.room?.roomNumber}</h4>
-                    <p className="text-sm text-slate-500">Tầng {selectedContract.room?.floor}</p>
+                    <h4 className="font-bold text-slate-900">Phòng {selectedContract.roomNumber}</h4>
+                    <p className="text-sm text-slate-500">Tầng {selectedContract.roomFloor ?? '-'}</p>
                   </div>
                 </div>
                 <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
@@ -525,11 +553,11 @@ export default function ContractsPage() {
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-lg border border-indigo-50 shadow-inner">
-                    {selectedContract.customer?.fullName?.charAt(0)}
+                    {selectedContract.customerName?.charAt(0)}
                   </div>
                   <div>
-                    <h4 className="font-bold text-slate-900">{selectedContract.customer?.fullName}</h4>
-                    <p className="text-sm text-slate-500">{selectedContract.customer?.phoneNumber}</p>
+                    <h4 className="font-bold text-slate-900">{selectedContract.customerName}</h4>
+                    <p className="text-sm text-slate-500">{selectedContract.customerPhone}</p>
                   </div>
                 </div>
                 <div className="p-4 bg-indigo-50/30 rounded-2xl border border-indigo-100">
@@ -541,7 +569,7 @@ export default function ContractsPage() {
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-indigo-600/70">Giá thuê:</span>
-                      <span className="font-bold text-indigo-700">{selectedContract.monthlyPrice?.toLocaleString()}đ</span>
+                      <span className="font-bold text-indigo-700">{(selectedContract.monthlyRent ?? selectedContract.monthlyPrice ?? 0).toLocaleString()}đ</span>
                     </div>
                   </div>
                 </div>
@@ -551,22 +579,22 @@ export default function ContractsPage() {
             <div className="space-y-4">
               <h4 className="font-bold text-slate-900 border-b border-slate-100 pb-2 flex items-center justify-between">
                 Người đồng thuê
-                <span className="text-xs font-normal text-slate-400">{((selectedContract as any).coTenants ?? []).length} người</span>
+                <span className="text-xs font-normal text-slate-400">{(selectedContract.coTenants ?? []).length} người</span>
               </h4>
               <div className="space-y-2">
-                {((selectedContract as any).coTenants ?? []).map((ct: any) => (
+                {(selectedContract.coTenants ?? []).map((ct: any) => (
                   <div key={ct.id ?? ct.customerId} className="flex items-center justify-between p-3 bg-white border border-slate-100 rounded-xl">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 text-xs font-bold">
-                        {(ct.fullName || ct.customer?.fullName || '?').charAt(0)}
+                        {(ct.fullName || '?').charAt(0)}
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-slate-800">{ct.fullName || ct.customer?.fullName}</p>
-                        <p className="text-xs text-slate-400">{ct.phoneNumber || ct.customer?.phoneNumber}</p>
+                        <p className="text-sm font-bold text-slate-800">{ct.fullName}</p>
+                        <p className="text-xs text-slate-400">{ct.phone}</p>
                       </div>
                     </div>
                     <button
-                      onClick={() => removeCoTenantMutation.mutate({ id: selectedContract.id, customerId: ct.id ?? ct.customerId })}
+                      onClick={() => removeCoTenantMutation.mutate({ id: selectedContract.id, customerId: ct.customerId })}
                       disabled={removeCoTenantMutation.isPending}
                       className="p-1.5 hover:bg-rose-50 text-slate-300 hover:text-rose-500 rounded-lg transition-colors"
                     >
@@ -583,7 +611,7 @@ export default function ContractsPage() {
                 >
                   <option value="">+ Chứn người đồng thuê...</option>
                   {customers
-                    .filter(c => c.id !== selectedContract.customer?.id && !((selectedContract as any).coTenants ?? []).some((ct: any) => (ct.id ?? ct.customerId) === c.id))
+                    .filter(c => c.id !== selectedContract.customerId && !(selectedContract.coTenants ?? []).some((ct: any) => ct.customerId === c.id))
                     .map(c => <option key={c.id} value={c.id}>{c.fullName} - {c.phoneNumber}</option>)
                   }
                 </select>
@@ -627,14 +655,14 @@ export default function ContractsPage() {
 
             <div className="flex gap-4 pt-4 border-t border-slate-100">
               <button
-                onClick={() => { setEditContractForm({ monthlyRent: String(selectedContract.monthlyPrice ?? (selectedContract as any).monthlyRent ?? ''), startDate: selectedContract.startDate ? format(new Date(selectedContract.startDate), 'yyyy-MM-dd') : '', endDate: selectedContract.endDate ? format(new Date(selectedContract.endDate), 'yyyy-MM-dd') : '' }); setIsEditContractOpen(true); }}
+                onClick={() => { setEditContractForm({ monthlyRent: String(selectedContract.monthlyRent ?? selectedContract.monthlyPrice ?? ''), startDate: selectedContract.startDate ? format(new Date(selectedContract.startDate), 'yyyy-MM-dd') : '', endDate: selectedContract.endDate ? format(new Date(selectedContract.endDate), 'yyyy-MM-dd') : '' }); setIsEditContractOpen(true); }}
                 className="flex-1 py-4 bg-slate-50 text-slate-700 rounded-3xl font-bold hover:bg-slate-100 border border-slate-200 transition-colors flex items-center justify-center gap-2"
               >
                 <Edit3 className="w-5 h-5" /> Sửa HĐ
               </button>
-              <button
-                onClick={() => setShowTerminateModal(true)}
-                disabled={selectedContract.status === 'Terminated'}
+                <button
+                  onClick={() => setShowTerminateModal(true)}
+                disabled={String(selectedContract.status).toLowerCase() === 'terminated'}
                 className="flex-1 py-4 bg-rose-50 text-rose-600 rounded-3xl font-bold hover:bg-rose-100 transition-colors flex items-center justify-center gap-2 disabled:opacity-40"
               >
                 <FileX className="w-5 h-5" /> Thanh lý HĐ
@@ -646,9 +674,9 @@ export default function ContractsPage() {
               >
                 <FileCheck className="w-5 h-5" /> {selectedContract.signedByCustomer ? 'Đã ký' : 'Xác nhận ký'}
               </button>
-              <button
-                onClick={() => setShowRenewModal(true)}
-                disabled={selectedContract.status === 'Terminated'}
+                <button
+                  onClick={() => setShowRenewModal(true)}
+                disabled={String(selectedContract.status).toLowerCase() === 'terminated'}
                 className="flex-1 py-4 bg-indigo-600 text-white rounded-3xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center justify-center gap-2 disabled:opacity-40"
               >
                 <RefreshCw className="w-5 h-5" /> Gia hạn HĐ
@@ -744,7 +772,7 @@ export default function ContractsPage() {
                   min={0}
                   value={renewForm.newMonthlyRent}
                   onChange={e => setRenewForm(f => ({ ...f, newMonthlyRent: e.target.value }))}
-                  placeholder={selectedContract.monthlyPrice?.toLocaleString()}
+                  placeholder={(selectedContract.monthlyRent ?? selectedContract.monthlyPrice ?? 0).toLocaleString()}
                   className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 outline-none"
                 />
               </div>

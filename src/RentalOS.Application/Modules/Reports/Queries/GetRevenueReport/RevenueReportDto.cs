@@ -36,4 +36,5 @@ public class RevenueByPropertyDto
     public decimal Invoiced { get; set; }
     public decimal Collected { get; set; }
     public double Rate { get; set; }
+    public double CollectionRate { get; set; }
 }

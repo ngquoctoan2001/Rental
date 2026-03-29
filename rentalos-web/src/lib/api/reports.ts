@@ -1,7 +1,7 @@
 import api from './client';
 
 export const reportsApi = {
-  dashboard: () => api.get('/reports/dashboard'),
+  dashboard: (params?: any) => api.get('/reports/dashboard', { params }),
   revenue: (params?: any) => api.get('/reports/revenue', { params }),
   occupancy: (params?: any) => api.get('/reports/occupancy', { params }),
   collectionRate: (params?: any) => api.get('/reports/collection-rate', { params }),

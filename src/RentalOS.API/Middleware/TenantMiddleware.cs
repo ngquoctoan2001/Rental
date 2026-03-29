@@ -3,9 +3,11 @@ using RentalOS.Application.Common.Interfaces;
 using RentalOS.Domain.Enums;
 using RentalOS.Infrastructure.Persistence;
 
+using Microsoft.Extensions.Caching.Memory;
+
 namespace RentalOS.API.Middleware;
 
-public class TenantMiddleware(RequestDelegate next)
+public class TenantMiddleware(RequestDelegate next, IMemoryCache memoryCache)
 {
     public async Task InvokeAsync(HttpContext context, ApplicationDbContext dbContext, RentalOS.Application.Common.Interfaces.ITenantContext tenantContext)
     {
@@ -26,11 +28,12 @@ public class TenantMiddleware(RequestDelegate next)
                     if (publicTenant != null)
                     {
                         var publicSchemaName = publicTenant.SchemaName;
-                        var publicSetSearchPathSql = $"SET search_path TO \"{publicSchemaName}\", public";
-                        await dbContext.Database.ExecuteSqlRawAsync(publicSetSearchPathSql);
                         
                         // Initialize tenant context with minimal info (no user)
-                        tenantContext.Initialize(publicTenant.Id, publicTenant.Slug, publicSchemaName, Guid.Empty, RentalOS.Domain.Enums.UserRole.Staff, RentalOS.Domain.Enums.PlanType.Trial);
+                        tenantContext.Initialize(publicTenant.Id, publicTenant.Slug, publicSchemaName, Guid.Empty, RentalOS.Domain.Enums.UserRole.Staff, RentalOS.Domain.Enums.PlanType.Trial, publicTenant.TrialEndsAt, publicTenant.PlanExpiresAt);
+
+                        var publicSetSearchPathSql = $"SET search_path TO \"{publicSchemaName}\", public";
+                        await dbContext.Database.ExecuteSqlRawAsync(publicSetSearchPathSql);
                     }
                     else
                     {
@@ -59,10 +62,15 @@ public class TenantMiddleware(RequestDelegate next)
             return;
         }
 
-        // Verify tenant exists and is active in public schema
-        var tenant = await dbContext.Tenants
-            .AsNoTracking()
-            .FirstOrDefaultAsync(t => t.Slug == tenantSlug);
+        // Verify tenant exists and is active in public schema using cache to reduce DB load
+        var cacheKey = $"tenant_{tenantSlug}";
+        var tenant = await memoryCache.GetOrCreateAsync(cacheKey, async entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10);
+            return await dbContext.Tenants
+                .AsNoTracking()
+                .FirstOrDefaultAsync(t => t.Slug == tenantSlug);
+        });
 
         if (tenant == null || !tenant.IsActive)
         {
@@ -86,24 +94,15 @@ public class TenantMiddleware(RequestDelegate next)
         var plan = Enum.TryParse<RentalOS.Domain.Enums.PlanType>(planClaim, true, out var p) ? p : RentalOS.Domain.Enums.PlanType.Trial;
 
 
-        var schemaName = $"tenant_{tenantSlug.Replace("-", "_")}";
+        var schemaName = tenant.SchemaName;
 
-        // Validate schemaName: only lowercase letters, digits, and underscores allowed
-        if (!System.Text.RegularExpressions.Regex.IsMatch(schemaName, @"^[a-z][a-z0-9_]*$"))
-        {
-            context.Response.StatusCode = StatusCodes.Status403Forbidden;
-            await context.Response.WriteAsJsonAsync(new { error = "Invalid tenant identifier" });
-            return;
-        }
+        // Initialize Scoped TenantContext FIRST so interceptors and other services have access to tenant info immediately
+        tenantContext.Initialize(tenant.Id, tenantSlug, schemaName, userId, role, plan, tenant.TrialEndsAt, tenant.PlanExpiresAt);
 
-        // Set search_path for the current request.
-        // schemaName is whitelisted via regex above — safe to interpolate.
-        // Build as a plain string variable to avoid EF1002 (not a parameterisable SET command).
+        // Set search_path for the current request. This ensures that the current DbContext
+        // uses the correct schema even if the connection was already open.
         var setSearchPathSql = $"SET search_path TO \"{schemaName}\", public";
         await dbContext.Database.ExecuteSqlRawAsync(setSearchPathSql);
-
-        // Initialize Scoped TenantContext
-        tenantContext.Initialize(tenant.Id, tenantSlug, schemaName, userId, role, plan);
 
         await next(context);
     }

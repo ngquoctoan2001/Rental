@@ -7,11 +7,11 @@ import {
   CheckCircle2, AlertCircle, Clock, Home, DollarSign,
   ChevronRight, X, Save, Layers, FileUp, Upload
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { roomsApi, propertiesApi } from '@/lib/api';
 import { Modal } from '@/components/shared/Modal';
 import { StatusBadge, StatCard } from '@/components/shared';
+import { DataTable } from '@/components/shared/DataTable';
 import { Room, Property } from '@/types';
 
 const STATUS_OPTIONS = [
@@ -23,7 +23,17 @@ const STATUS_OPTIONS = [
 
 const normalizeStatus = (status: Room['status'] | string) => String(status).toLowerCase();
 
-const AMENITIES_LIST = ['Điều hòa', 'Máy nóng lạnh', 'Tủ lạnh', 'Giường', 'Bàn', 'WC riêng', 'Ban công', 'Máy giặt', 'Internet'];
+const AMENITIES_LIST = [
+  { value: 'ac', label: 'Điều hòa' },
+  { value: 'water_heater', label: 'Máy nóng lạnh' },
+  { value: 'fridge', label: 'Tủ lạnh' },
+  { value: 'kitchen', label: 'Khu bếp' },
+  { value: 'private_wc', label: 'WC riêng' },
+  { value: 'balcony', label: 'Ban công' },
+  { value: 'washing_machine', label: 'Máy giặt' },
+  { value: 'internet', label: 'Internet' },
+  { value: 'wifi', label: 'Wifi' },
+];
 
 const emptyForm = {
   propertyId: '',
@@ -77,11 +87,13 @@ export default function RoomsPage() {
   const createMutation = useMutation({
     mutationFn: (data: any) => roomsApi.create(data),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['rooms'] }); closeForm(); },
+    onError: (error: any) => alert(error?.message || 'Không thể tạo phòng.'),
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) => roomsApi.update(id, data),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['rooms'] }); closeForm(); },
+    onError: (error: any) => alert(error?.message || 'Không thể cập nhật phòng.'),
   });
 
   const deleteMutation = useMutation({
@@ -123,21 +135,24 @@ export default function RoomsPage() {
 
   // Helpers
   const openCreate = () => { setEditingRoom(null); setForm({ ...emptyForm, propertyId: filterPropertyId !== 'all' ? filterPropertyId : '' }); setIsFormOpen(true); };
-  const openEdit = (room: Room) => {
-    setEditingRoom(room);
+  const openEdit = async (room: Room) => {
+    const resp = await roomsApi.getById(room.id);
+    const fullRoom = resp.data as Room;
+
+    setEditingRoom(fullRoom);
     setForm({
-      propertyId: (room as any).propertyId ?? '',
-      roomNumber: room.roomNumber,
-      floor: room.floor,
-      basePrice: String(room.basePrice),
-      areaSqm: String(room.areaSqm ?? ''),
-      electricityPrice: String((room as any).electricityPrice ?? ''),
-      waterPrice: String((room as any).waterPrice ?? ''),
-      serviceFee: String((room as any).serviceFee ?? ''),
-      internetFee: String((room as any).internetFee ?? ''),
-      garbageFee: String((room as any).garbageFee ?? ''),
-      amenities: [...(room.amenities ?? [])],
-      notes: (room as any).notes ?? '',
+      propertyId: fullRoom.propertyId ?? '',
+      roomNumber: fullRoom.roomNumber,
+      floor: fullRoom.floor,
+      basePrice: String(fullRoom.basePrice),
+      areaSqm: String(fullRoom.areaSqm ?? ''),
+      electricityPrice: String(fullRoom.electricityPrice ?? ''),
+      waterPrice: String(fullRoom.waterPrice ?? ''),
+      serviceFee: String(fullRoom.serviceFee ?? ''),
+      internetFee: String(fullRoom.internetFee ?? ''),
+      garbageFee: String(fullRoom.garbageFee ?? ''),
+      amenities: [...(fullRoom.amenities ?? [])],
+      notes: fullRoom.notes ?? '',
     });
     setIsFormOpen(true);
   };
@@ -154,11 +169,11 @@ export default function RoomsPage() {
       floor: Number(form.floor),
       basePrice: Number(form.basePrice),
       areaSqm: form.areaSqm ? Number(form.areaSqm) : undefined,
-      electricityPrice: form.electricityPrice ? Number(form.electricityPrice) : undefined,
-      waterPrice: form.waterPrice ? Number(form.waterPrice) : undefined,
-      serviceFee: form.serviceFee ? Number(form.serviceFee) : undefined,
-      internetFee: form.internetFee ? Number(form.internetFee) : undefined,
-      garbageFee: form.garbageFee ? Number(form.garbageFee) : undefined,
+      electricityPrice: form.electricityPrice ? Number(form.electricityPrice) : 3500,
+      waterPrice: form.waterPrice ? Number(form.waterPrice) : 15000,
+      serviceFee: form.serviceFee ? Number(form.serviceFee) : 0,
+      internetFee: form.internetFee ? Number(form.internetFee) : 0,
+      garbageFee: form.garbageFee ? Number(form.garbageFee) : 0,
       amenities: form.amenities,
       notes: form.notes,
     };
@@ -251,13 +266,9 @@ export default function RoomsPage() {
         </div>
       </div>
 
-      {/* Room Grid */}
+      {/* Room Table */}
       {isLoading ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-          {Array.from({ length: 10 }).map((_, i) => (
-            <div key={i} className="h-44 bg-white rounded-3xl border border-slate-100 animate-pulse" />
-          ))}
-        </div>
+        <div className="h-64 rounded-3xl border border-slate-100 bg-white animate-pulse" />
       ) : filtered.length === 0 ? (
         <div className="py-20 text-center bg-white rounded-3xl border border-dashed border-slate-200">
           <BedDouble className="w-14 h-14 text-slate-200 mx-auto mb-4" />
@@ -268,51 +279,63 @@ export default function RoomsPage() {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-          <AnimatePresence mode="popLayout">
-            {filtered.map(room => {
-              const cfg = getStatusCfg(room.status);
-              return (
-                <motion.div
-                  key={room.id}
-                  layout
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  whileHover={{ y: -4 }}
-                  className="group relative bg-white rounded-3xl border border-slate-100 p-5 shadow-sm hover:shadow-xl hover:shadow-slate-200/60 transition-all cursor-pointer"
-                  onClick={() => { setSelectedRoom(room); setActiveTab('info'); setIsDetailOpen(true); }}
-                >
-                  {/* Status dot */}
-                  <div className={`absolute top-4 right-4 w-2.5 h-2.5 rounded-full ${cfg.color}`} />
-
-                  <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-600 mb-4 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors">
-                    <BedDouble className="w-6 h-6" />
-                  </div>
-
-                  <h3 className="font-black text-slate-900 text-lg leading-none">Phòng {room.roomNumber}</h3>
-                  <p className="text-xs text-slate-400 font-medium mt-1">Tầng {room.floor}</p>
-
-                  <div className="mt-4 flex items-end justify-between">
-                    <div>
-                      <p className="text-xs text-slate-400">Giá thuê</p>
-                      <p className="font-black text-indigo-600 text-sm">{(room.basePrice ?? 0).toLocaleString()}đ</p>
-                    </div>
-                    <span className={`text-[10px] font-bold px-2 py-1 rounded-full border ${cfg.lightColor}`}>
-                      {cfg.label}
-                    </span>
-                  </div>
-
-                  {room.areaSqm && (
-                    <p className="text-[10px] text-slate-400 font-medium mt-3 pt-3 border-t border-slate-50">
-                      {room.areaSqm} m²
-                    </p>
-                  )}
-                </motion.div>
-              );
-            })}
-          </AnimatePresence>
-        </div>
+        <DataTable
+          data={filtered}
+          pageSize={12}
+          searchPlaceholder="Tìm phòng, khách thuê hoặc cơ sở..."
+          onRowClick={(room) => {
+            setSelectedRoom(room);
+            setActiveTab('info');
+            setIsDetailOpen(true);
+          }}
+          columns={[
+            {
+              key: 'roomNumber',
+              label: 'Phòng',
+              sortable: true,
+              render: (_value, room) => (
+                <div>
+                  <p className="font-bold text-slate-900">Phòng {room.roomNumber}</p>
+                  <p className="text-xs text-slate-500">Tầng {room.floor}</p>
+                </div>
+              ),
+            },
+            {
+              key: 'propertyName',
+              label: 'Cơ sở',
+              sortable: true,
+              render: (value) => value || 'Chưa gán cơ sở',
+            },
+            {
+              key: 'currentCustomerName',
+              label: 'Khách thuê',
+              render: (_value, room) => (
+                <div>
+                  <p className="font-medium text-slate-800">{room.currentCustomerName || 'Chưa có khách thuê'}</p>
+                  <p className="text-xs text-slate-500">{room.currentContractCode || 'Chưa có hợp đồng hoạt động'}</p>
+                </div>
+              ),
+            },
+            {
+              key: 'basePrice',
+              label: 'Giá thuê',
+              sortable: true,
+              render: (value) => <span className="font-bold text-indigo-600">{Number(value ?? 0).toLocaleString()}đ/tháng</span>,
+            },
+            {
+              key: 'areaSqm',
+              label: 'Diện tích',
+              sortable: true,
+              render: (value) => (value ? `${value} m²` : 'Chưa cập nhật'),
+            },
+            {
+              key: 'status',
+              label: 'Trạng thái',
+              sortable: true,
+              render: (value) => <StatusBadge status={value} />,
+            },
+          ]}
+        />
       )}
 
       {/* Create / Edit Modal */}
@@ -434,16 +457,16 @@ export default function RoomsPage() {
             <div className="flex flex-wrap gap-2">
               {AMENITIES_LIST.map(a => (
                 <button
-                  key={a}
+                  key={a.value}
                   type="button"
-                  onClick={() => toggleAmenity(a)}
+                  onClick={() => toggleAmenity(a.value)}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
-                    form.amenities.includes(a)
+                    form.amenities.includes(a.value)
                       ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-100'
                       : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300'
                   }`}
                 >
-                  {a}
+                  {a.label}
                 </button>
               ))}
             </div>
@@ -534,6 +557,8 @@ export default function RoomsPage() {
                     { label: 'Tầng', value: selectedRoom.floor },
                     { label: 'Giá thuê', value: `${(selectedRoom.basePrice ?? 0).toLocaleString()}đ/tháng` },
                     { label: 'Diện tích', value: selectedRoom.areaSqm ? `${selectedRoom.areaSqm} m²` : 'Chưa cập nhật' },
+                    { label: 'Khách thuê', value: selectedRoom.currentCustomerName || 'Hiện chưa có khách thuê' },
+                    { label: 'Hợp đồng', value: selectedRoom.currentContractCode || 'Chưa có hợp đồng hoạt động' },
                   ].map(i => (
                     <div key={i.label} className="bg-slate-50 rounded-2xl p-4">
                       <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{i.label}</p>
@@ -739,4 +764,3 @@ function RoomHistoryTab({ roomId }: { roomId: string }) {
     </div>
   );
 }
-

@@ -21,7 +21,7 @@ public class ReportsController(ApplicationDbContext db, ISender sender) : Contro
 {
     /// <summary>Returns key dashboard statistics for the current tenant.</summary>
     [HttpGet("dashboard")]
-    public async Task<IActionResult> GetDashboard(CancellationToken ct)
+    public async Task<IActionResult> GetDashboard([FromQuery] Guid? propertyId = null, CancellationToken ct = default)
     {
         // Use raw SQL to match tenant schema DDL (snake_case columns, string enums)
         // Open via EF Core API to trigger TenantConnectionInterceptor (sets search_path)
@@ -31,18 +31,24 @@ public class ReportsController(ApplicationDbContext db, ISender sender) : Contro
 
         var sql = """
             SELECT
-                (SELECT COUNT(*) FROM rooms)::int                                               AS total_rooms,
-                (SELECT COUNT(*) FROM rooms WHERE status = 'available')::int                   AS available_rooms,
-                (SELECT COUNT(*) FROM contracts WHERE status = 'active')::int                  AS total_tenants,
+                (SELECT COUNT(*) FROM rooms WHERE (@propertyId IS NULL OR property_id = @propertyId))::int AS total_rooms,
+                (SELECT COUNT(*) FROM rooms WHERE status = 'available' AND (@propertyId IS NULL OR property_id = @propertyId))::int AS available_rooms,
+                (SELECT COUNT(*) FROM contracts c
+                 INNER JOIN rooms r ON r.id = c.room_id
+                 WHERE c.status = 'active' AND (@propertyId IS NULL OR r.property_id = @propertyId))::int AS total_tenants,
                 COALESCE(
-                    (SELECT SUM(amount) FROM transactions
-                     WHERE paid_at >= date_trunc('month', NOW() AT TIME ZONE 'UTC')),
+                    (SELECT SUM(t.amount) FROM transactions t
+                     LEFT JOIN invoices i ON i.id = t.invoice_id
+                     LEFT JOIN contracts c ON c.id = i.contract_id
+                     LEFT JOIN rooms r ON r.id = c.room_id
+                     WHERE t.paid_at >= date_trunc('month', NOW() AT TIME ZONE 'UTC')
+                       AND (@propertyId IS NULL OR r.property_id = @propertyId)),
                     0
                 )                                                                               AS monthly_revenue
             """;
 
 #pragma warning disable DAP005
-        var result = await conn.QueryFirstOrDefaultAsync(sql);
+        var result = await conn.QueryFirstOrDefaultAsync(sql, new { propertyId });
 #pragma warning restore DAP005
 
         return Ok(new

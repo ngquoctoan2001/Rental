@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { 
   Building2, MapPin, Users, Home, Plus, 
   ChevronRight, TrendingUp, MoreVertical,
-  Layers, Search, Edit3, Save, Trash2, Loader2, Upload
+  Layers, Search, Edit3, Save, Trash2, Loader2
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { 
@@ -15,9 +15,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { propertiesApi, reportsApi } from '@/lib/api';
 import { Property } from '@/types';
 import { Modal } from '@/components/shared/Modal';
+import { usePlanLimit } from '@/lib/hooks/usePlanLimit';
 
 export default function PropertiesPage() {
   const queryClient = useQueryClient();
+  const { checkAccess } = usePlanLimit();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [createForm, setCreateForm] = useState({ name: '', address: '', totalFloors: 1, description: '' });
 
@@ -39,6 +41,9 @@ export default function PropertiesPage() {
       setIsCreateOpen(false);
       setCreateForm({ name: '', address: '', totalFloors: 1, description: '' });
     },
+    onError: (error: any) => {
+      alert(error?.message || 'Không thể tạo cơ sở mới.');
+    },
   });
 
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -50,6 +55,9 @@ export default function PropertiesPage() {
       queryClient.invalidateQueries({ queryKey: ['properties'] });
       setIsEditOpen(false);
     },
+    onError: (error: any) => {
+      alert(error?.message || 'Không thể cập nhật cơ sở.');
+    },
   });
 
   const deleteMutation = useMutation({
@@ -60,10 +68,8 @@ export default function PropertiesPage() {
     },
   });
 
-  const uploadImageMutation = useMutation({
-    mutationFn: ({ id, file }: { id: string; file: File }) => propertiesApi.uploadImage(id, file, true),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['properties'] }),
-  });
+  const propertyLimit = Number(checkAccess('properties')) || 0;
+  const canCreateProperty = propertyLimit === 0 ? false : properties.length < propertyLimit;
 
   // Update selectedId when properties data arrives if not set
   const currentSelectedId = selectedId || properties[0]?.id;
@@ -98,7 +104,13 @@ export default function PropertiesPage() {
         <Building2 className="w-16 h-16 text-slate-200 mb-4" />
         <h2 className="text-xl font-bold text-slate-400">Chưa có cơ sở kinh doanh nào</h2>
         <button
-          onClick={() => setIsCreateOpen(true)}
+          onClick={() => {
+            if (!canCreateProperty) {
+              alert('Gói hiện tại đã đạt giới hạn số cơ sở. Vui lòng nâng cấp gói để thêm cơ sở mới.');
+              return;
+            }
+            setIsCreateOpen(true);
+          }}
           className="mt-6 px-6 py-3 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100">
           Thêm cơ sở đầu tiên
         </button>
@@ -141,7 +153,13 @@ export default function PropertiesPage() {
         <div className="flex items-center justify-between">
            <h1 className="text-2xl font-black text-slate-900 tracking-tight">Cơ sở (Properties)</h1>
            <button
-             onClick={() => setIsCreateOpen(true)}
+             onClick={() => {
+               if (!canCreateProperty) {
+                 alert('Gói hiện tại đã đạt giới hạn số cơ sở. Vui lòng nâng cấp gói để thêm cơ sở mới.');
+                 return;
+               }
+               setIsCreateOpen(true);
+             }}
              className="p-3 bg-indigo-600 text-white rounded-2xl hover:bg-indigo-700 shadow-lg shadow-indigo-100 transition-all">
              <Plus className="w-5 h-5" />
            </button>
@@ -219,10 +237,6 @@ export default function PropertiesPage() {
           </button>
         </div>
         <div className="absolute top-6 right-6 z-10 flex gap-2">
-          <label className="p-3 bg-white/80 backdrop-blur-md rounded-2xl border border-white/50 shadow-sm hover:bg-white transition-all text-slate-400 cursor-pointer" title="Tải ảnh bìa">
-            <Upload className="w-4 h-4" />
-            <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f && selected) uploadImageMutation.mutate({ id: selected.id, file: f }); }} />
-          </label>
           <button
             onClick={() => { if (selected && confirm(`Xóa cơ sở "${selected.name}"? Hành động này không thể hoàn tác.`)) deleteMutation.mutate(selected.id); }}
             disabled={deleteMutation.isPending}

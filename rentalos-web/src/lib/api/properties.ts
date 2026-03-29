@@ -7,7 +7,7 @@ export const propertiesApi = {
   getStats: (id: string) => api.get(`/properties/${id}/stats`),
   getRooms: (id: string, params?: { page?: number; pageSize?: number }) => api.get<Room[]>(`/properties/${id}/rooms`, { params }),
   create: (data: any) => api.post('/properties', data),
-  update: (id: string, data: any) => api.put(`/properties/${id}`, data),
+  update: (id: string, data: any) => api.put(`/properties/${id}`, { ...data, id }),
   remove: (id: string) => api.delete(`/properties/${id}`),
   uploadImage: (id: string, file: File, isCover = false) => {
     const fd = new FormData();

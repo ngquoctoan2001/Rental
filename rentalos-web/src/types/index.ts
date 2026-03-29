@@ -78,6 +78,9 @@ export interface Room {
   maintenanceNote?: string;
   maintenanceSince?: string;
   images?: string[];
+  currentCustomerId?: string;
+  currentCustomerName?: string;
+  currentContractCode?: string;
 }
 
 export interface Customer {
@@ -105,8 +108,10 @@ export interface Contract {
   contractCode?: string;
   roomId: string;
   roomNumber?: string;
+  roomFloor?: number;
   customerId: string;
   customerName?: string;
+  customerPhone?: string;
   startDate: string;
   endDate?: string;
   depositAmount: number;
@@ -115,6 +120,12 @@ export interface Contract {
   depositPaid?: boolean;
   status: 'active' | 'expired' | 'terminated' | 'renewed' | 'Active' | 'Expired' | 'Terminated' | 'Renewed';
   signedByCustomer?: boolean;
+  coTenants?: Array<{
+    id: string;
+    customerId: string;
+    fullName: string;
+    phone: string;
+  }>;
   room?: Room;
   customer?: Customer;
 }

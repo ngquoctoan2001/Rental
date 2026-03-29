@@ -2,7 +2,9 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RentalOS.Application.Modules.Staff.Commands.AcceptInvite;
+using RentalOS.Application.Modules.Staff.Commands.DeactivateStaff;
 using RentalOS.Application.Modules.Staff.Commands.InviteStaff;
+using RentalOS.Application.Modules.Staff.Commands.UpdateStaff;
 using RentalOS.Application.Modules.Staff.Commands.UpdateStaffPermissions;
 using RentalOS.Application.Modules.Staff.Queries.GetStaff;
 using RentalOS.Application.Modules.Staff.Queries.GetStaffActivityLog;
@@ -45,17 +47,24 @@ public class StaffController(ISender mediator) : ControllerBase
         return Ok(await mediator.Send(new GetStaffActivityLogQuery(id, page)));
     }
     
-    // placeholder for remaining endpoints as requested in spec
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(Guid id) => Ok();
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(Guid id) => Ok();
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateStaffRequest request)
+    {
+        return Ok(await mediator.Send(new UpdateStaffCommand(id, request.Role, request.AssignedPropertyIds ?? [])));
+    }
 
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Deactivate(Guid id) => Ok();
+    public async Task<IActionResult> Deactivate(Guid id)
+    {
+        return Ok(await mediator.Send(new DeactivateStaffCommand(id)));
+    }
 
     [AllowAnonymous]
     [HttpGet("verify-token")]
     public async Task<IActionResult> VerifyToken([FromQuery] string token) => Ok();
 }
+
+public record UpdateStaffRequest(string Role, List<Guid>? AssignedPropertyIds);

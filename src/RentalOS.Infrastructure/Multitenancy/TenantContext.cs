@@ -11,9 +11,11 @@ public class TenantContext : ITenantContext
     public Guid UserId { get; private set; }
     public RentalOS.Domain.Enums.UserRole Role { get; private set; }
     public RentalOS.Domain.Enums.PlanType Plan { get; private set; }
+    public DateTime? TrialEndsAt { get; private set; }
+    public DateTime? PlanExpiresAt { get; private set; }
     public bool IsInitialized => !string.IsNullOrEmpty(TenantSlug);
 
-    public void Initialize(Guid tenantId, string tenantSlug, string schemaName, Guid userId, RentalOS.Domain.Enums.UserRole role, RentalOS.Domain.Enums.PlanType plan)
+    public void Initialize(Guid tenantId, string tenantSlug, string schemaName, Guid userId, RentalOS.Domain.Enums.UserRole role, RentalOS.Domain.Enums.PlanType plan, DateTime? trialEndsAt, DateTime? planExpiresAt)
     {
         TenantId = tenantId;
         TenantSlug = tenantSlug;
@@ -21,5 +23,7 @@ public class TenantContext : ITenantContext
         UserId = userId;
         Role = role;
         Plan = plan;
+        TrialEndsAt = trialEndsAt;
+        PlanExpiresAt = planExpiresAt;
     }
 }

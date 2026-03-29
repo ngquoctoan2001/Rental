@@ -88,7 +88,18 @@ public class GetRevenueReportQueryHandler(IApplicationDbContext dbContext)
         const string byPropertySql = @"
             SELECT 
                 p.name as PropertyName,
-                SUM(t.amount) as Collected
+                COALESCE(SUM(i.total_amount), 0) as Invoiced,
+                COALESCE(SUM(t.amount), 0) as Collected,
+                CASE 
+                    WHEN COALESCE(SUM(i.total_amount), 0) > 0 
+                    THEN ROUND((COALESCE(SUM(t.amount), 0) / SUM(i.total_amount)) * 100, 1)
+                    ELSE 0
+                END as Rate,
+                CASE 
+                    WHEN COALESCE(SUM(i.total_amount), 0) > 0 
+                    THEN ROUND((COALESCE(SUM(t.amount), 0) / SUM(i.total_amount)) * 100, 1)
+                    ELSE 0
+                END as CollectionRate
             FROM transactions t
             JOIN invoices i ON t.invoice_id = i.id
             JOIN contracts c ON i.contract_id = c.id

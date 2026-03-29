@@ -81,7 +81,19 @@ public class GetRoomsQueryHandler : IRequestHandler<GetRoomsQuery, PagedResult<R
                 Floor = r.Floor,
                 BasePrice = r.BasePrice,
                 Status = r.Status,
-                PropertyName = r.Property.Name
+                PropertyName = r.Property.Name,
+                CurrentCustomerId = r.Contracts
+                    .Where(c => c.Status == ContractStatus.Active)
+                    .Select(c => (Guid?)c.CustomerId)
+                    .FirstOrDefault(),
+                CurrentCustomerName = r.Contracts
+                    .Where(c => c.Status == ContractStatus.Active)
+                    .Select(c => c.Customer.FullName)
+                    .FirstOrDefault(),
+                CurrentContractCode = r.Contracts
+                    .Where(c => c.Status == ContractStatus.Active)
+                    .Select(c => c.ContractCode)
+                    .FirstOrDefault()
             })
             .ToListAsync(cancellationToken);
 

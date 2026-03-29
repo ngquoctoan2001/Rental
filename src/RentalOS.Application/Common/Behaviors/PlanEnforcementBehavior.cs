@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using RentalOS.Application.Common.Interfaces;
 using RentalOS.Application.Common.Services;
 using Microsoft.EntityFrameworkCore;
@@ -17,8 +17,13 @@ public class PlanEnforcementBehavior<TRequest, TResponse>(
         var tenantId = tenantContext.TenantId;
         if (tenantId == Guid.Empty) return await next();
 
-        var tenant = await dbContext.Tenants.FindAsync(new object[] { tenantId }, cancellationToken);
-        if (tenant == null) return await next();
+        var tenant = new RentalOS.Domain.Entities.Tenant
+        {
+            Id = tenantContext.TenantId,
+            Plan = tenantContext.Plan,
+            TrialEndsAt = tenantContext.TrialEndsAt,
+            PlanExpiresAt = tenantContext.PlanExpiresAt
+        };
 
         // 1. Check Expiration
         if (planService.IsTrialExpired(tenant) || planService.IsPlanExpired(tenant))

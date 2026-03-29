@@ -22,6 +22,9 @@ public class RoomDto
     public string? Notes { get; set; }
     public string? MaintenanceNote { get; set; }
     public DateOnly? MaintenanceSince { get; set; }
+    public Guid? CurrentCustomerId { get; set; }
+    public string? CurrentCustomerName { get; set; }
+    public string? CurrentContractCode { get; set; }
 }
 
 public class RoomListItemDto
@@ -32,6 +35,9 @@ public class RoomListItemDto
     public decimal BasePrice { get; set; }
     public RoomStatus Status { get; set; }
     public string? PropertyName { get; set; }
+    public Guid? CurrentCustomerId { get; set; }
+    public string? CurrentCustomerName { get; set; }
+    public string? CurrentContractCode { get; set; }
 }
 
 public class RoomHistoryDto

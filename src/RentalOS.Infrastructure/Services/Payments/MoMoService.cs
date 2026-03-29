@@ -118,7 +118,10 @@ public class MoMoService(
         if (tenant == null) return new MoMoWebhookResult { IsSuccess = false, ErrorMessage = "Không tìm thấy tenant" };
 
         // Switch context to tenant schema
-        tenantContext.Initialize(tenant.Id, tenant.Slug, tenant.SchemaName, Guid.Empty, RentalOS.Domain.Enums.UserRole.Owner, tenant.Plan);
+        tenantContext.Initialize(tenant.Id, tenant.Slug, tenant.SchemaName, Guid.Empty, RentalOS.Domain.Enums.UserRole.Owner, tenant.Plan, tenant.TrialEndsAt, tenant.PlanExpiresAt);
+
+        // Manually reinforce search_path for the current connection in this scope
+        await context.Database.ExecuteSqlRawAsync($"SET search_path TO \"{tenant.SchemaName}\", public");
 
         // 2. Verify Signature
         var setting = await context.Settings.FirstOrDefaultAsync(s => s.Key == "payment.momo");

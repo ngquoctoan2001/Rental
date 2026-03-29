@@ -35,14 +35,14 @@ export default function TransactionsPage() {
     queryFn: () => contractsApi.list({ status: 'active' }).then(r => Array.isArray(r.data) ? r.data : (r.data as any)?.items ?? []),
   });
 
-  const [refundForm, setRefundForm] = useState({ contractId: '', amount: '', note: '' });
+  const [refundForm, setRefundForm] = useState({ contractId: '', amount: '', method: 'cash', note: '' });
 
   const recordDepositRefundMutation = useMutation({
     mutationFn: (data: any) => transactionsApi.recordDepositRefund(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       setIsAddOpen(false);
-      setRefundForm({ contractId: '', amount: '', note: '' });
+      setRefundForm({ contractId: '', amount: '', method: 'cash', note: '' });
     },
   });
 
@@ -252,13 +252,13 @@ export default function TransactionsPage() {
       {/* Deposit Refund SlideOver */}
       <SlideOver 
         isOpen={isAddOpen} 
-        onClose={() => { setIsAddOpen(false); setRefundForm({ contractId: '', amount: '', note: '' }); }} 
+        onClose={() => { setIsAddOpen(false); setRefundForm({ contractId: '', amount: '', method: 'cash', note: '' }); }} 
         title="Ghi nhận hoàn cọc"
         width="max-w-md"
       >
         <div className="space-y-6">
 
-          <form onSubmit={e => { e.preventDefault(); recordDepositRefundMutation.mutate({ contractId: refundForm.contractId, amount: Number(refundForm.amount), note: refundForm.note || undefined }); }} className="space-y-6">
+          <form onSubmit={e => { e.preventDefault(); recordDepositRefundMutation.mutate({ contractId: refundForm.contractId, amount: Number(refundForm.amount), method: refundForm.method, paidAt: new Date().toISOString(), note: refundForm.note || undefined }); }} className="space-y-6">
             <div className="space-y-2">
               <label className="text-sm font-bold text-slate-700 ml-1">Hợp đồng</label>
               <select
@@ -269,8 +269,19 @@ export default function TransactionsPage() {
               >
                 <option value="">-- Chọn hợp đồng --</option>
                 {(activeContracts as any[]).map((c: any) => (
-                  <option key={c.id} value={c.id}>{c.customer?.fullName ?? 'N/A'} - Phòng {c.room?.roomNumber ?? 'N/A'}</option>
+                  <option key={c.id} value={c.id}>{c.customerName ?? 'N/A'} - Phòng {c.roomNumber ?? 'N/A'}</option>
                 ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-slate-700 ml-1">Phương thức hoàn cọc</label>
+              <select
+                value={refundForm.method}
+                onChange={e => setRefundForm(f => ({ ...f, method: e.target.value }))}
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 outline-none bg-white"
+              >
+                <option value="cash">Tiền mặt</option>
+                <option value="bankTransfer">Chuyển khoản</option>
               </select>
             </div>
             <div className="space-y-2">
@@ -303,7 +314,7 @@ export default function TransactionsPage() {
             <div className="flex gap-4 pt-6">
               <button
                 type="button"
-                onClick={() => { setIsAddOpen(false); setRefundForm({ contractId: '', amount: '', note: '' }); }}
+                onClick={() => { setIsAddOpen(false); setRefundForm({ contractId: '', amount: '', method: 'cash', note: '' }); }}
                 className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-colors"
               >
                 Hủy bỏ

@@ -73,6 +73,9 @@ export default function InvoicesPage() {
       setIsCreateOpen(false);
       setCreateForm({ contractId: '', otherFees: '', discount: '', notes: '' });
     },
+    onError: (error: any) => {
+      alert(error?.message || 'Không thể tạo hóa đơn.');
+    },
   });
 
   const sendInvoiceMutation = useMutation({
@@ -538,7 +541,7 @@ export default function InvoicesPage() {
               <h3 className="text-xl font-black text-slate-900">Tạo hóa đơn thủ công</h3>
               <button onClick={() => setIsCreateOpen(false)} className="p-2 hover:bg-slate-100 rounded-xl"><X className="w-5 h-5 text-slate-500" /></button>
             </div>
-            <form onSubmit={(e) => { e.preventDefault(); createInvoiceMutation.mutate({ contractId: createForm.contractId || undefined, billingMonth: selectedMonth + '-01', otherFees: createForm.otherFees ? Number(createForm.otherFees) : undefined, discount: createForm.discount ? Number(createForm.discount) : undefined, notes: createForm.notes || undefined }); }} className="space-y-4">
+            <form onSubmit={(e) => { e.preventDefault(); createInvoiceMutation.mutate({ contractId: createForm.contractId || undefined, billingMonth: selectedMonth + '-01', electricityOld: 0, electricityNew: 0, waterOld: 0, waterNew: 0, internetFee: 0, garbageFee: 0, otherFees: createForm.otherFees ? Number(createForm.otherFees) : 0, otherFeesNote: createForm.notes || undefined, discount: createForm.discount ? Number(createForm.discount) : 0, notes: createForm.notes || undefined }); }} className="space-y-4">
               <ContractSelector value={createForm.contractId} onChange={(v) => setCreateForm(f => ({ ...f, contractId: v }))} />
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -580,7 +583,7 @@ function ContractSelector({ value, onChange }: { value: string; onChange: (v: st
       <select value={value} onChange={e => onChange(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 outline-none bg-white text-sm">
         <option value="">-- Chọn hợp đồng --</option>
         {contracts.map((c: any) => (
-          <option key={c.id} value={c.id}>{c.customer?.fullName ?? 'N/A'} - Phòng {c.room?.roomNumber ?? 'N/A'}</option>
+          <option key={c.id} value={c.id}>{c.customerName ?? 'N/A'} - Phòng {c.roomNumber ?? 'N/A'}</option>
         ))}
       </select>
     </div>

@@ -21,6 +21,6 @@ export const meterReadingsApi = {
     electricityImage?: string;
     waterImage?: string;
     note?: string;
-  }) => api.put(`/meter-readings/${id}`, data),
+  }) => api.put(`/meter-readings/${id}`, { ...data, id }),
   remove: (id: string) => api.delete(`/meter-readings/${id}`),
 };

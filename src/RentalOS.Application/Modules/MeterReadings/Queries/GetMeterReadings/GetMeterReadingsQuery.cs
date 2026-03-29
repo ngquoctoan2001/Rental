@@ -28,6 +28,7 @@ public class GetMeterReadingsQueryHandler : IRequestHandler<GetMeterReadingsQuer
     {
         var query = _context.MeterReadings
             .Include(m => m.Room)
+            .ThenInclude(r => r.Property)
             .AsNoTracking();
 
         if (request.RoomId.HasValue)
@@ -56,6 +57,7 @@ public class GetMeterReadingsQueryHandler : IRequestHandler<GetMeterReadingsQuer
                 Id = m.Id,
                 RoomId = m.RoomId,
                 RoomNumber = m.Room.RoomNumber,
+                PropertyName = m.Room.Property.Name,
                 ReadingDate = m.ReadingDate,
                 ElectricityReading = m.ElectricityReading,
                 WaterReading = m.WaterReading,

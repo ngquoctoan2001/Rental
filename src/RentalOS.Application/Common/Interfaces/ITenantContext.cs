@@ -10,7 +10,9 @@ public interface ITenantContext
     Guid UserId { get; }
     RentalOS.Domain.Enums.UserRole Role { get; }
     RentalOS.Domain.Enums.PlanType Plan { get; }
+    DateTime? TrialEndsAt { get; }
+    DateTime? PlanExpiresAt { get; }
     bool IsInitialized { get; }
 
-    void Initialize(Guid tenantId, string tenantSlug, string schemaName, Guid userId, RentalOS.Domain.Enums.UserRole role, RentalOS.Domain.Enums.PlanType plan);
+    void Initialize(Guid tenantId, string tenantSlug, string schemaName, Guid userId, RentalOS.Domain.Enums.UserRole role, RentalOS.Domain.Enums.PlanType plan, DateTime? trialEndsAt, DateTime? planExpiresAt);
 }

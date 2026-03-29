@@ -23,6 +23,8 @@ public class GetContractByIdQueryHandler : IRequestHandler<GetContractByIdQuery,
         var contract = await _context.Contracts
             .Include(c => c.Room)
             .Include(c => c.Customer)
+            .Include(c => c.CoTenants)
+                .ThenInclude(ct => ct.Customer)
             .FirstOrDefaultAsync(c => c.Id == request.Id, cancellationToken);
         
         if (contract == null) return Result<ContractDto>.Fail("CONTRACT_NOT_FOUND", "Không tìm thấy hợp đồng.");
@@ -33,15 +35,29 @@ public class GetContractByIdQueryHandler : IRequestHandler<GetContractByIdQuery,
             ContractCode = contract.ContractCode,
             RoomId = contract.RoomId,
             RoomNumber = contract.Room.RoomNumber,
+            RoomFloor = contract.Room.Floor,
             CustomerId = contract.CustomerId,
             CustomerName = contract.Customer.FullName,
+            CustomerPhone = contract.Customer.Phone,
             StartDate = contract.StartDate,
             EndDate = contract.EndDate,
             MonthlyRent = contract.MonthlyRent,
             DepositAmount = contract.DepositAmount,
             DepositPaid = contract.DepositPaid,
+            SignedByCustomer = contract.SignedByCustomer,
             Status = contract.Status,
-            PdfUrl = contract.PdfUrl
+            PdfUrl = contract.PdfUrl,
+            CoTenants = contract.CoTenants
+                .OrderByDescending(ct => ct.IsPrimary)
+                .ThenBy(ct => ct.MovedInAt)
+                .Select(ct => new ContractCoTenantDto
+                {
+                    Id = ct.Id,
+                    CustomerId = ct.CustomerId,
+                    FullName = ct.Customer.FullName,
+                    Phone = ct.Customer.Phone
+                })
+                .ToList()
         };
 
         return Result<ContractDto>.Ok(dto);

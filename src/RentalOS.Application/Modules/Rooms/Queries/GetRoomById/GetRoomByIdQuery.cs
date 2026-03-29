@@ -21,6 +21,8 @@ public class GetRoomByIdQueryHandler : IRequestHandler<GetRoomByIdQuery, RoomDto
     {
         var r = await _context.Rooms
             .Include(r => r.Property)
+            .Include(r => r.Contracts)
+                .ThenInclude(c => c.Customer)
             .AsNoTracking()
             .FirstOrDefaultAsync(r => r.Id == request.Id, cancellationToken);
 
@@ -48,7 +50,19 @@ public class GetRoomByIdQueryHandler : IRequestHandler<GetRoomByIdQuery, RoomDto
             Images = string.IsNullOrEmpty(r.Images) ? new List<string>() : JsonSerializer.Deserialize<List<string>>(r.Images)!,
             Notes = r.Notes,
             MaintenanceNote = r.MaintenanceNote,
-            MaintenanceSince = r.MaintenanceSince
+            MaintenanceSince = r.MaintenanceSince,
+            CurrentCustomerId = r.Contracts
+                .Where(c => c.Status == RentalOS.Domain.Enums.ContractStatus.Active)
+                .Select(c => (Guid?)c.CustomerId)
+                .FirstOrDefault(),
+            CurrentCustomerName = r.Contracts
+                .Where(c => c.Status == RentalOS.Domain.Enums.ContractStatus.Active)
+                .Select(c => c.Customer.FullName)
+                .FirstOrDefault(),
+            CurrentContractCode = r.Contracts
+                .Where(c => c.Status == RentalOS.Domain.Enums.ContractStatus.Active)
+                .Select(c => c.ContractCode)
+                .FirstOrDefault()
         };
     }
 }

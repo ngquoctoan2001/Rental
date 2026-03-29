@@ -58,13 +58,16 @@ public class GetContractsQueryHandler : IRequestHandler<GetContractsQuery, Resul
                 ContractCode = c.ContractCode,
                 RoomId = c.RoomId,
                 RoomNumber = c.Room.RoomNumber,
+                RoomFloor = c.Room.Floor,
                 CustomerId = c.CustomerId,
                 CustomerName = c.Customer.FullName,
+                CustomerPhone = c.Customer.Phone,
                 StartDate = c.StartDate,
                 EndDate = c.EndDate,
                 MonthlyRent = c.MonthlyRent,
                 DepositAmount = c.DepositAmount,
                 DepositPaid = c.DepositPaid,
+                SignedByCustomer = c.SignedByCustomer,
                 Status = c.Status,
                 PdfUrl = c.PdfUrl
             })

@@ -90,7 +90,10 @@ export default function MeterReadingsPage() {
   });
 
   const handleOpenDetail = (reading: any) => {
-    setSelectedReading(reading);
+    setSelectedReading({
+      ...reading,
+      note: reading.note ?? '',
+    });
     setIsDetailModalOpen(true);
   };
 
@@ -421,7 +424,13 @@ export default function MeterReadingsPage() {
                   <Zap className="w-4 h-4 text-yellow-600" />
                   <span className="text-xs font-bold text-yellow-700">Điện</span>
                 </div>
-                <p className="text-2xl font-bold text-yellow-900">{selectedReading.electricityReading}</p>
+                <input
+                  type="number"
+                  min={0}
+                  value={selectedReading.electricityReading}
+                  onChange={(e) => setSelectedReading((prev: any) => ({ ...prev, electricityReading: Number(e.target.value) }))}
+                  className="w-full bg-transparent text-2xl font-bold text-yellow-900 outline-none"
+                />
                 <p className="text-xs text-yellow-600 mt-1">kWh</p>
               </div>
 
@@ -430,17 +439,26 @@ export default function MeterReadingsPage() {
                   <Droplet className="w-4 h-4 text-blue-600" />
                   <span className="text-xs font-bold text-blue-700">Nước</span>
                 </div>
-                <p className="text-2xl font-bold text-blue-900">{selectedReading.waterReading}</p>
+                <input
+                  type="number"
+                  min={0}
+                  value={selectedReading.waterReading}
+                  onChange={(e) => setSelectedReading((prev: any) => ({ ...prev, waterReading: Number(e.target.value) }))}
+                  className="w-full bg-transparent text-2xl font-bold text-blue-900 outline-none"
+                />
                 <p className="text-xs text-blue-600 mt-1">m³</p>
               </div>
             </div>
 
-            {selectedReading.note && (
-              <div>
-                <label className="block text-xs font-bold text-slate-600 mb-1">Ghi chú</label>
-                <p className="text-sm text-slate-900">{selectedReading.note}</p>
-              </div>
-            )}
+            <div>
+              <label className="block text-xs font-bold text-slate-600 mb-1">Ghi chú</label>
+              <textarea
+                rows={3}
+                value={selectedReading.note ?? ''}
+                onChange={(e) => setSelectedReading((prev: any) => ({ ...prev, note: e.target.value }))}
+                className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all resize-none"
+              />
+            </div>
 
             <div className="flex gap-3 pt-4 border-t border-slate-100">
               <button
@@ -451,6 +469,20 @@ export default function MeterReadingsPage() {
                 className="flex-1 px-4 py-2 border border-slate-200 rounded-lg font-bold text-slate-600 hover:bg-slate-50 transition-all"
               >
                 Đóng
+              </button>
+              <button
+                onClick={() => updateMutation.mutate({
+                  readingDate: selectedReading.readingDate,
+                  electricityReading: selectedReading.electricityReading,
+                  waterReading: selectedReading.waterReading,
+                  note: selectedReading.note,
+                  electricityImage: selectedReading.electricityImage,
+                  waterImage: selectedReading.waterImage,
+                })}
+                disabled={updateMutation.isPending}
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 transition-all disabled:opacity-50"
+              >
+                {updateMutation.isPending ? 'Đang lưu...' : 'Lưu'}
               </button>
               <button
                 onClick={() => deleteMutation.mutate(selectedReading.id)}

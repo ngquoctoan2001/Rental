@@ -1,11 +1,17 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { 
-  ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
-  ArrowUpDown, Search, Filter, Download
+import { useMemo, useState } from 'react';
+import {
+  ArrowUpDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  Download,
+  Filter,
+  Search,
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 
 interface Column {
   key: string;
@@ -23,48 +29,43 @@ interface DataTableProps {
   pageSize?: number;
 }
 
-export function DataTable({ 
-  columns, 
-  data, 
-  isLoading, 
-  onRowClick, 
-  searchPlaceholder = "Tìm kiếm...",
-  pageSize = 10 
+export function DataTable({
+  columns,
+  data,
+  isLoading,
+  onRowClick,
+  searchPlaceholder = 'Tìm kiếm...',
+  pageSize = 10,
 }: DataTableProps) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>(null);
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Sorting
   const sortedData = useMemo(() => {
     let sortableItems = [...data];
+
     if (searchTerm) {
-      sortableItems = sortableItems.filter((item: any) => 
-        Object.values(item).some(
-          (val) => val && val.toString().toLowerCase().includes(searchTerm.toLowerCase())
-        )
+      sortableItems = sortableItems.filter((item: any) =>
+        Object.values(item).some((val) => val && val.toString().toLowerCase().includes(searchTerm.toLowerCase())),
       );
     }
+
     if (sortConfig !== null) {
       sortableItems.sort((a, b) => {
-        if (a[sortConfig.key] < b[sortConfig.key]) {
-          return sortConfig.direction === 'asc' ? -1 : 1;
-        }
-        if (a[sortConfig.key] > b[sortConfig.key]) {
-          return sortConfig.direction === 'asc' ? 1 : -1;
-        }
+        if (a[sortConfig.key] < b[sortConfig.key]) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (a[sortConfig.key] > b[sortConfig.key]) return sortConfig.direction === 'asc' ? 1 : -1;
         return 0;
       });
     }
-    return sortableItems;
-  }, [data, sortConfig, searchTerm]);
 
-  // Pagination
+    return sortableItems;
+  }, [data, searchTerm, sortConfig]);
+
   const totalPages = Math.ceil(sortedData.length / pageSize);
   const paginatedData = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
     return sortedData.slice(start, start + pageSize);
-  }, [sortedData, currentPage, pageSize]);
+  }, [currentPage, pageSize, sortedData]);
 
   const requestSort = (key: string) => {
     let direction: 'asc' | 'desc' = 'asc';
@@ -76,52 +77,53 @@ export function DataTable({
 
   if (isLoading) {
     return (
-      <div className="w-full h-64 flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+      <div className="flex h-64 w-full items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
       </div>
     );
   }
 
   return (
     <div className="w-full">
-      {/* Table Header / Filters */}
-      <div className="flex flex-col md:flex-row gap-4 mb-6 items-center justify-between">
+      <div className="mb-6 flex flex-col items-center justify-between gap-4 md:flex-row">
         <div className="relative w-full md:w-96">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
             placeholder={searchPlaceholder}
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all placeholder:text-slate-400 text-sm shadow-sm"
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm shadow-sm outline-none transition-all placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500"
           />
         </div>
         <div className="flex items-center gap-2">
-          <button className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors shadow-sm">
-            <Filter className="w-4 h-4" />
+          <button className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 shadow-sm transition-colors hover:bg-slate-50">
+            <Filter className="h-4 w-4" />
             Lọc
           </button>
-          <button className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-100">
-            <Download className="w-4 h-4" />
+          <button className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white shadow-lg shadow-indigo-100 transition-colors hover:bg-indigo-700">
+            <Download className="h-4 w-4" />
             Xuất file
           </button>
         </div>
       </div>
 
-      {/* Main Table */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden overflow-x-auto custom-scrollbar">
-        <table className="w-full text-left border-collapse">
+      <div className="custom-scrollbar overflow-hidden overflow-x-auto rounded-2xl border border-slate-100 bg-white shadow-sm">
+        <table className="w-full border-collapse text-left">
           <thead>
-            <tr className="bg-slate-50/50 border-b border-slate-100">
+            <tr className="border-b border-slate-100 bg-slate-50/50">
               {columns.map((col) => (
-                <th 
+                <th
                   key={col.key}
                   onClick={() => col.sortable && requestSort(col.key)}
-                  className={`px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider ${col.sortable ? 'cursor-pointer hover:text-indigo-600 transition-colors' : ''}`}
+                  className={`px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 ${col.sortable ? 'cursor-pointer transition-colors hover:text-indigo-600' : ''}`}
                 >
                   <div className="flex items-center gap-2">
                     {col.label}
-                    {col.sortable && <ArrowUpDown className="w-3 h-3" />}
+                    {col.sortable && <ArrowUpDown className="h-3 w-3" />}
                   </div>
                 </th>
               ))}
@@ -135,9 +137,9 @@ export function DataTable({
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.98 }}
-                  transition={{ delay: idx * 0.05 }}
+                  transition={{ delay: idx * 0.04 }}
                   onClick={() => onRowClick?.(row)}
-                  className={`border-b border-slate-50 last:border-0 hover:bg-slate-50/50 transition-colors group ${onRowClick ? 'cursor-pointer' : ''}`}
+                  className={`group border-b border-slate-50 transition-colors last:border-0 hover:bg-slate-50/50 ${onRowClick ? 'cursor-pointer' : ''}`}
                 >
                   {columns.map((col) => (
                     <td key={col.key} className="px-6 py-4 text-sm text-slate-600">
@@ -149,7 +151,7 @@ export function DataTable({
             </AnimatePresence>
             {paginatedData.length === 0 && (
               <tr>
-                <td colSpan={columns.length} className="px-6 py-12 text-center text-slate-400 italic">
+                <td colSpan={columns.length} className="px-6 py-12 text-center italic text-slate-400">
                   Không tìm thấy dữ liệu phù hợp.
                 </td>
               </tr>
@@ -158,54 +160,54 @@ export function DataTable({
         </table>
       </div>
 
-      {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-6 px-2">
+        <div className="mt-6 flex items-center justify-between px-2">
           <p className="text-sm text-slate-500">
-            Hiển thị <span className="font-bold text-slate-800">{(currentPage - 1) * pageSize + 1}</span> - <span className="font-bold text-slate-800">{Math.min(currentPage * pageSize, sortedData.length)}</span> trong <span className="font-bold text-slate-800">{sortedData.length}</span> kết quả
+            Hiển thị <span className="font-bold text-slate-800">{(currentPage - 1) * pageSize + 1}</span> -{' '}
+            <span className="font-bold text-slate-800">{Math.min(currentPage * pageSize, sortedData.length)}</span> trong{' '}
+            <span className="font-bold text-slate-800">{sortedData.length}</span> kết quả
           </p>
           <div className="flex items-center gap-1">
-            <button 
+            <button
               onClick={() => setCurrentPage(1)}
               disabled={currentPage === 1}
-              className="p-2 rounded-lg hover:bg-slate-100 text-slate-400 disabled:opacity-30 transition-colors"
+              className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-slate-100 disabled:opacity-30"
             >
-              <ChevronsLeft className="w-4 h-4" />
+              <ChevronsLeft className="h-4 w-4" />
             </button>
-            <button 
-              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            <button
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
-              className="p-2 rounded-lg hover:bg-slate-100 text-slate-400 disabled:opacity-30 transition-colors"
+              className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-slate-100 disabled:opacity-30"
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronLeft className="h-4 w-4" />
             </button>
-            <div className="flex items-center gap-1 mx-2">
+            <div className="mx-2 flex items-center gap-1">
               {Array.from({ length: totalPages }, (_, i) => i + 1)
-                .filter(p => p >= currentPage - 1 && p <= currentPage + 1)
-                .map(p => (
+                .filter((p) => p >= currentPage - 1 && p <= currentPage + 1)
+                .map((p) => (
                   <button
                     key={p}
                     onClick={() => setCurrentPage(p)}
-                    className={`w-8 h-8 rounded-lg text-sm font-bold transition-all ${currentPage === p ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100' : 'text-slate-500 hover:bg-slate-100'}`}
+                    className={`h-8 w-8 rounded-lg text-sm font-bold transition-all ${currentPage === p ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100' : 'text-slate-500 hover:bg-slate-100'}`}
                   >
                     {p}
                   </button>
-                ))
-              }
+                ))}
             </div>
-            <button 
-              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+            <button
+              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
               disabled={currentPage === totalPages}
-              className="p-2 rounded-lg hover:bg-slate-100 text-slate-400 disabled:opacity-30 transition-colors"
+              className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-slate-100 disabled:opacity-30"
             >
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="h-4 w-4" />
             </button>
-            <button 
+            <button
               onClick={() => setCurrentPage(totalPages)}
               disabled={currentPage === totalPages}
-              className="p-2 rounded-lg hover:bg-slate-100 text-slate-400 disabled:opacity-30 transition-colors"
+              className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-slate-100 disabled:opacity-30"
             >
-              <ChevronsRight className="w-4 h-4" />
+              <ChevronsRight className="h-4 w-4" />
             </button>
           </div>
         </div>

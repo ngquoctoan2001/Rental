@@ -2,20 +2,23 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
 import { 
   LayoutDashboard, Building2, Bed, Users, FileText, 
   Receipt, Wallet, BarChart3, Bot, Settings, LogOut, 
-  CreditCard, Menu, X, Gauge
+  CreditCard, Menu, Gauge
 } from 'lucide-react';
 import { useUIStore } from '@/lib/stores/uiStore';
 import { useAuthStore } from '@/lib/stores/authStore';
 import { usePlanLimit } from '@/lib/hooks/usePlanLimit';
+import { propertiesApi } from '@/lib/api';
+import { Property } from '@/types';
 
 const navItems = [
   { name: 'Tổng quan', href: '/', icon: LayoutDashboard },
   { name: 'Nhà trọ', href: '/properties', icon: Building2 },
   { name: 'Phòng trọ', href: '/rooms', icon: Bed },
-  { name: 'Khách thuê', href: '/tenants', icon: Users },
+  { name: 'Khách thuê', href: '/customers', icon: Users },
   { name: 'Hợp đồng', href: '/contracts', icon: FileText },
   { name: 'Hóa đơn', href: '/invoices', icon: Receipt },
   { name: 'Chỉ số mét', href: '/meter-readings', icon: Gauge },
@@ -28,9 +31,30 @@ const navItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const { sidebarOpen, toggleSidebar } = useUIStore();
+  const { sidebarOpen, toggleSidebar, activePropertyId, setActiveProperty } = useUIStore();
   const { user, logout } = useAuthStore();
   const { plan } = usePlanLimit();
+  const { data: properties = [] } = useQuery<Property[]>({
+    queryKey: ['sidebar-properties'],
+    queryFn: async () => {
+      const resp = await propertiesApi.list({ pageSize: 100 });
+      const body = resp.data as Property[] | { items: Property[] };
+      return Array.isArray(body) ? body : body.items ?? [];
+    },
+  });
+
+  const activeProperty = properties.find((property) => property.id === activePropertyId);
+  const visibleNavItems = navItems.filter((item) => {
+    if (user?.role === 'staff') {
+      return !['/reports', '/ai-assistant', '/settings'].includes(item.href);
+    }
+
+    if (user?.role === 'manager') {
+      return !['/staff', '/settings'].includes(item.href);
+    }
+
+    return true;
+  });
 
   return (
     <>
@@ -50,9 +74,37 @@ export default function Sidebar() {
           </div>
 
           {/* Navigation */}
+          <div className="px-4 pt-4">
+            <div className="rounded-2xl border border-slate-800 bg-slate-950/80 p-3 space-y-3">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Nha tro dang xem</p>
+                <select
+                  value={activePropertyId ?? ''}
+                  onChange={(e) => setActiveProperty(e.target.value || null)}
+                  className="mt-2 w-full rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-sm font-semibold text-white outline-none"
+                >
+                  <option value="">Tat ca nha tro</option>
+                  {properties.map((property) => (
+                    <option key={property.id} value={property.id}>
+                      {property.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-center justify-between rounded-xl bg-slate-900 px-3 py-2">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Goi hien tai</p>
+                  <p className="mt-1 text-sm font-bold text-white capitalize">{plan}</p>
+                </div>
+                <span className="rounded-full bg-indigo-500/20 px-2 py-1 text-[10px] font-black uppercase tracking-widest text-indigo-300">
+                  {activeProperty ? 'Dang loc' : 'Toan bo'}
+                </span>
+              </div>
+            </div>
+          </div>
+
           <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
-            {navItems.map((item) => {
-              if (item.role && user?.role !== item.role) return null;
+            {visibleNavItems.map((item) => {
               const isActive = pathname === item.href;
               return (
                 <Link
@@ -72,13 +124,20 @@ export default function Sidebar() {
 
           {/* User Info & Footer */}
           <div className="p-4 bg-slate-950">
+            <div className="mb-3 rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-2">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Bo loc hien tai</p>
+              <p className="mt-1 truncate text-sm font-semibold text-white">
+                {activeProperty?.name || 'Tat ca nha tro'}
+              </p>
+            </div>
+
             <div className="flex items-center gap-3 mb-4 p-2 rounded-lg hover:bg-slate-800 transition-colors">
               <div className="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-slate-400 overflow-hidden">
                 {user?.avatarUrl ? <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" /> : user?.fullName?.[0]}
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold truncate text-white">{user?.fullName}</p>
-                <p className="text-xs text-slate-500 truncate capitalize">{plan} Plan</p>
+                <p className="text-xs text-slate-500 truncate capitalize">{user?.role || plan}</p>
               </div>
             </div>
             

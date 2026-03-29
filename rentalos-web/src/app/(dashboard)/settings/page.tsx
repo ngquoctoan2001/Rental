@@ -13,9 +13,6 @@ import { settingsApi } from '@/lib/api';
 const TABS = [
   { id: 'payment', label: 'Thanh toán', icon: CreditCard },
   { id: 'billing', label: 'Hóa đơn & Nhắc nhở', icon: Receipt },
-  { id: 'notification', label: 'Thông báo', icon: Bell },
-  { id: 'profile', label: 'Hồ sơ nhà trọ', icon: BuildingLarge },
-  { id: 'security', label: 'Bảo mật', icon: Shield },
 ];
 
 function BuildingLarge(props: any) {
@@ -91,10 +88,6 @@ export default function SettingsPage() {
       if (bank.accountNumber) saveBank.mutate();
     } else if (activeTab === 'billing') {
       saveBilling.mutate();
-    } else if (activeTab === 'notification') {
-      saveSms.mutate();
-      saveEmail.mutate();
-      saveZalo.mutate();
     }
   };
 

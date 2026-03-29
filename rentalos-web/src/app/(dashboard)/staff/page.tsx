@@ -50,12 +50,19 @@ export default function StaffPage() {
 
   const { data: staffList = [], isLoading } = useQuery({
     queryKey: ['staff'],
-    queryFn: () => staffApi.list().then((r: any) => r.data ?? r),
+    queryFn: async () => {
+      const resp = await staffApi.list();
+      return Array.isArray(resp.data) ? resp.data : [];
+    },
   });
 
   const { data: properties = [] } = useQuery({
     queryKey: ['properties'],
-    queryFn: () => propertiesApi.list().then((r: any) => r.data ?? r),
+    queryFn: async () => {
+      const resp = await propertiesApi.list();
+      const body = resp.data as any[] | { items: any[] };
+      return Array.isArray(body) ? body : body.items ?? [];
+    },
   });
 
   const activeStaff = (staffList as any[]).filter((s: any) => s.isActive);

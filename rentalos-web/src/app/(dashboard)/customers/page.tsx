@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { 
   UserPlus, Search, Filter, MoreVertical, Phone, Mail, 
   MapPin, CreditCard, ShieldAlert, History, FileText, 
@@ -12,6 +13,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { customersApi } from '@/lib/api';
 import { Modal } from '@/components/shared/Modal';
 import { StatCard, StatusBadge } from '@/components/shared';
+import { DataTable } from '@/components/shared/DataTable';
 import { Customer } from '@/types';
 import { format } from 'date-fns';
 
@@ -208,8 +210,64 @@ export default function CustomersPage() {
         </div>
       </div>
 
-      {/* Customer Grid */}
-      {isLoading ? (
+      {/* Customer Table */}
+      {isLoading && (
+        <div className="h-64 rounded-3xl border border-slate-100 bg-white animate-pulse" />
+      )}
+
+      {!isLoading && filteredCustomers.length > 0 && (
+        <DataTable
+          data={filteredCustomers}
+          pageSize={10}
+          searchPlaceholder="Tìm khách thuê, số điện thoại hoặc CCCD..."
+          onRowClick={(customer) => handleOpenDetail(customer)}
+          columns={[
+            {
+              key: 'fullName',
+              label: 'Khách thuê',
+              sortable: true,
+              render: (value, customer) => (
+                <div>
+                  <p className="font-bold text-slate-900">{value}</p>
+                  <div className="mt-1">
+                    <StatusBadge status={customer.isBlacklisted ? 'danger' : 'active'}>
+                      {customer.isBlacklisted ? 'Danh sách đen' : 'Đang hoạt động'}
+                    </StatusBadge>
+                  </div>
+                </div>
+              ),
+            },
+            {
+              key: 'phoneNumber',
+              label: 'Liên hệ',
+              sortable: true,
+              render: (value, customer) => (
+                <div>
+                  <p>{value || 'Chưa cập nhật'}</p>
+                  <p className="text-xs text-slate-500">{customer.email || 'Chưa có email'}</p>
+                </div>
+              ),
+            },
+            {
+              key: 'idCardNumber',
+              label: 'CCCD',
+              sortable: true,
+            },
+            {
+              key: 'activeContract',
+              label: 'Phòng đang ở',
+              render: (value) => value ? `${value.propertyName} - Phòng ${value.roomNumber}` : 'Chưa gán phòng',
+            },
+            {
+              key: 'address',
+              label: 'Địa chỉ',
+              render: (value, customer) => value || customer.currentAddress || 'Chưa cập nhật',
+            },
+          ]}
+        />
+      )}
+
+      {false && (isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {[1, 2, 3, 4, 5, 6].map(i => (
             <div key={i} className="h-64 bg-white rounded-3xl border border-slate-100 animate-pulse shadow-sm" />
@@ -254,6 +312,14 @@ export default function CustomersPage() {
                 <div className="mt-6 space-y-3 relative z-10">
                   <div className="flex items-center gap-3 text-sm text-slate-600">
                     <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400">
+                      <History className="w-4 h-4" />
+                    </div>
+                    <span className="line-clamp-1">
+                      {customer.activeContract ? `${customer.activeContract.propertyName} - Phòng ${customer.activeContract.roomNumber}` : 'Chưa gán phòng'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3 text-sm text-slate-600">
+                    <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400">
                       <Phone className="w-4 h-4" />
                     </div>
                     <span>{customer.phoneNumber}</span>
@@ -285,7 +351,7 @@ export default function CustomersPage() {
             ))}
           </AnimatePresence>
         </div>
-      )}
+      ))}
 
       {filteredCustomers.length === 0 && !isLoading && (
         <div className="py-20 text-center bg-white rounded-3xl border border-dashed border-slate-200">
@@ -533,7 +599,24 @@ export default function CustomersPage() {
             </div>
             <div className="flex-1 min-w-0">
               {detailTab === 'profile' && (
-                <div className="bg-slate-50 rounded-3xl p-6 border border-slate-100 grid grid-cols-2 gap-y-6">
+                <div className="space-y-4">
+                  <div className="flex flex-col gap-3 rounded-3xl border border-indigo-100 bg-indigo-50/40 p-5 md:flex-row md:items-center md:justify-between">
+                    <div>
+                      <p className="text-xs font-black uppercase tracking-widest text-indigo-400">Gan phong cho khach thue</p>
+                      <p className="mt-1 text-sm font-medium text-slate-600">
+                        {selectedCustomer.activeContract
+                          ? `Dang o phong ${selectedCustomer.activeContract.roomNumber} - ${selectedCustomer.activeContract.propertyName}`
+                          : 'Khach thue nay chua duoc gan vao phong nao.'}
+                      </p>
+                    </div>
+                    <Link
+                      href={`/contracts?customerId=${selectedCustomer.id}`}
+                      className="inline-flex items-center justify-center rounded-2xl bg-indigo-600 px-5 py-3 text-sm font-bold text-white transition-all hover:bg-indigo-700"
+                    >
+                      {selectedCustomer.activeContract ? 'Tao hop dong moi' : 'Gan vao phong'}
+                    </Link>
+                  </div>
+                  <div className="bg-slate-50 rounded-3xl p-6 border border-slate-100 grid grid-cols-2 gap-y-6">
                   <div>
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Họ và tên</p>
                     <p className="font-bold text-slate-800 text-lg">{selectedCustomer.fullName}</p>
@@ -554,12 +637,21 @@ export default function CustomersPage() {
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Địa chỉ</p>
                     <p className="font-bold text-slate-800">{(selectedCustomer as any).currentAddress || (selectedCustomer as any).address || 'Chưa cập nhật'}</p>
                   </div>
+                  <div className="col-span-2">
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Phòng đang ở</p>
+                    <p className="font-bold text-slate-800">
+                      {selectedCustomer.activeContract
+                        ? `${selectedCustomer.activeContract.propertyName} - Phòng ${selectedCustomer.activeContract.roomNumber}`
+                        : 'Hiện chưa có hợp đồng hoạt động'}
+                    </p>
+                  </div>
                   {(selectedCustomer as any).notes && (
                     <div className="col-span-2">
                       <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Ghi chú</p>
                       <p className="text-slate-600 text-sm">{(selectedCustomer as any).notes}</p>
                     </div>
                   )}
+                  </div>
                 </div>
               )}
               {detailTab === 'contracts' && <CustomerContractsTab customerId={selectedCustomer.id} />}
@@ -662,8 +754,8 @@ function CustomerContractsTab({ customerId }: { customerId: string }) {
             <p className="text-xs text-slate-500 mt-0.5">{c.startDate ? format(new Date(c.startDate), 'dd/MM/yyyy') : ''} — {c.endDate ? format(new Date(c.endDate), 'dd/MM/yyyy') : ''}</p>
             <p className="text-xs text-slate-400 mt-1">Phòng: {c.room?.roomNumber ?? c.roomNumber ?? 'N/A'} · {(c.monthlyRent ?? c.basePrice ?? 0).toLocaleString()}đ/tháng</p>
           </div>
-          <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${c.status?.toLowerCase() === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
-            {c.status?.toLowerCase() === 'active' ? 'Đang thuê' : c.status ?? 'N/A'}
+          <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${String(c.status ?? '').toLowerCase() === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+            {String(c.status ?? '').toLowerCase() === 'active' ? 'Đang thuê' : c.status ?? 'N/A'}
           </span>
         </div>
       ))}

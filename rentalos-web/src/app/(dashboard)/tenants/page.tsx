@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import Link from 'next/link';
 import { 
   Users, Search, Filter, MoreVertical, Phone, Mail, 
   MapPin, CreditCard, Home, FileText, Calendar, TrendingUp,
-  AlertCircle, CheckCircle2, Clock, DollarSign
+  AlertCircle, CheckCircle2, Clock, DollarSign, UserPlus
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -50,14 +51,33 @@ export default function TenantsPage() {
   });
 
   // Enrich customers with contract and invoice data
+  const contractsByCustomer = useMemo(
+    () => new Map(contracts.map(contract => [contract.customerId, contract])),
+    [contracts]
+  );
+
+  const invoicesByContract = useMemo(() => {
+    const map = new Map<string, Invoice[]>();
+
+    for (const invoice of invoices) {
+      const current = map.get(invoice.contractId) ?? [];
+      current.push(invoice);
+      map.set(invoice.contractId, current);
+    }
+
+    return map;
+  }, [invoices]);
+
   const tenantsWithData = customers
-    .map(customer => ({
-      ...customer,
-      contract: contracts.find(c => c.customerId === customer.id),
-      invoices: invoices.filter(i => invoices.some(inv => 
-        contracts.find(c => c.customerId === customer.id && c.id === inv.contractId)
-      ))
-    }))
+    .map(customer => {
+      const contract = contractsByCustomer.get(customer.id);
+
+      return {
+        ...customer,
+        contract,
+        invoices: contract ? invoicesByContract.get(contract.id) ?? [] : [],
+      };
+    })
     .filter(tenant => {
       const searchLower = searchTerm.toLowerCase();
       const matchesSearch = 
@@ -112,6 +132,13 @@ export default function TenantsPage() {
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Khách thuê</h1>
           <p className="text-slate-500 mt-1">Quản lý danh sách người thuê hiện tại và theo dõi hợp đồng của họ.</p>
         </div>
+        <Link
+          href="/customers"
+          className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100"
+        >
+          <UserPlus className="w-5 h-5" />
+          Thêm khách thuê
+        </Link>
       </div>
 
       {/* Stats Summary */}

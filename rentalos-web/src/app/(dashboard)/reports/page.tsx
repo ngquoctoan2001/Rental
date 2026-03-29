@@ -83,11 +83,11 @@ export default function ReportsPage() {
   }, [revenue]);
 
   const methodChartData = useMemo(() => {
-    if (!revenue?.byMethod?.length) return [];
-    return revenue.byMethod.map((m: any) => ({
-      name: METHOD_LABELS[m.method] ?? m.method,
-      value: m.amount ?? 0,
-      color: METHOD_COLORS[m.method] ?? '#94a3b8',
+    if (!revenue?.byMethod) return [];
+    return Object.entries(revenue.byMethod).map(([method, amount]) => ({
+      name: METHOD_LABELS[method] ?? method,
+      value: Number(amount ?? 0),
+      color: METHOD_COLORS[method] ?? '#94a3b8',
     }));
   }, [revenue]);
 
@@ -97,17 +97,17 @@ export default function ReportsPage() {
       id: String(i),
       name: p.propertyName,
       income: p.collected ?? 0,
-      rate: p.collectionRate ?? 0,
+      rate: p.rate ?? 0,
       status: (p.collectionRate ?? 0) >= 90 ? 'Hoàn hảo' : (p.collectionRate ?? 0) >= 70 ? 'Ổn định' : 'Cần chú ý',
     }));
   }, [revenue]);
 
   // KPI values
-  const totalRevenue = revenue?.summary?.totalRevenue ?? dashboard?.revenue?.thisMonth ?? 0;
+  const totalRevenue = revenue?.summary?.totalRevenue ?? dashboard?.monthlyRevenue ?? 0;
   const collected = revenue ? (totalRevenue * (revenue.summary?.collectionRate ?? 100) / 100) : 0;
   const outstanding = totalRevenue - collected;
   const collectionRate = revenue?.summary?.collectionRate ?? 0;
-  const revenueChange = dashboard?.revenue?.changePercent ?? 0;
+  const revenueChange = 0;
 
   const columns = [
     {

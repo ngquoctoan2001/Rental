@@ -13,7 +13,7 @@ namespace RentalOS.API.Controllers;
 
 [Authorize]
 [ApiController]
-[Route("api/v1/[controller]")]
+[Route("api/v1/meter-readings")]
 public class MeterReadingsController(IMediator mediator) : ControllerBase
 {
     [HttpGet]
