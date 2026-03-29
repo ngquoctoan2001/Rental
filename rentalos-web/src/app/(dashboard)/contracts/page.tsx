@@ -4,7 +4,8 @@ import { useState } from 'react';
 import {
   FilePlus, Calendar, User, Home,
   DollarSign, Clock, AlertTriangle, FileCheck, FileX,
-  ChevronRight, Download, RefreshCw, FileText, Save, Loader2, X
+  ChevronRight, Download, RefreshCw, FileText, Save, Loader2, X,
+  Edit3, UserPlus, Trash2
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { contractsApi, roomsApi, customersApi } from '@/lib/api';
@@ -35,6 +36,9 @@ export default function ContractsPage() {
   const [showTerminateModal, setShowTerminateModal] = useState(false);
   const [renewForm, setRenewForm] = useState({ ...emptyRenew });
   const [showRenewModal, setShowRenewModal] = useState(false);
+  const [isEditContractOpen, setIsEditContractOpen] = useState(false);
+  const [editContractForm, setEditContractForm] = useState({ monthlyRent: '', startDate: '', endDate: '' });
+  const [coTenantCustomerId, setCoTenantCustomerId] = useState('');
 
   const { data: contracts = [], isLoading } = useQuery<Contract[]>({
     queryKey: ['contracts'],
@@ -112,6 +116,27 @@ export default function ContractsPage() {
       setShowRenewModal(false);
       setRenewForm({ ...emptyRenew });
     },
+  });
+
+  const updateContractMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => contractsApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['contracts'] });
+      setIsEditContractOpen(false);
+    },
+  });
+
+  const addCoTenantMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => contractsApi.addCoTenant(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['contracts'] });
+      setCoTenantCustomerId('');
+    },
+  });
+
+  const removeCoTenantMutation = useMutation({
+    mutationFn: ({ id, customerId }: { id: string; customerId: string }) => contractsApi.removeCoTenant(id, customerId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['contracts'] }),
   });
 
   const handleDownloadPdf = async (id: string) => {
@@ -524,6 +549,56 @@ export default function ContractsPage() {
             </div>
 
             <div className="space-y-4">
+              <h4 className="font-bold text-slate-900 border-b border-slate-100 pb-2 flex items-center justify-between">
+                Người đồng thuê
+                <span className="text-xs font-normal text-slate-400">{((selectedContract as any).coTenants ?? []).length} người</span>
+              </h4>
+              <div className="space-y-2">
+                {((selectedContract as any).coTenants ?? []).map((ct: any) => (
+                  <div key={ct.id ?? ct.customerId} className="flex items-center justify-between p-3 bg-white border border-slate-100 rounded-xl">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 text-xs font-bold">
+                        {(ct.fullName || ct.customer?.fullName || '?').charAt(0)}
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-slate-800">{ct.fullName || ct.customer?.fullName}</p>
+                        <p className="text-xs text-slate-400">{ct.phoneNumber || ct.customer?.phoneNumber}</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => removeCoTenantMutation.mutate({ id: selectedContract.id, customerId: ct.id ?? ct.customerId })}
+                      disabled={removeCoTenantMutation.isPending}
+                      className="p-1.5 hover:bg-rose-50 text-slate-300 hover:text-rose-500 rounded-lg transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <select
+                  value={coTenantCustomerId}
+                  onChange={e => setCoTenantCustomerId(e.target.value)}
+                  className="flex-1 px-3 py-2 text-sm rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 outline-none bg-white"
+                >
+                  <option value="">+ Chứn người đồng thuê...</option>
+                  {customers
+                    .filter(c => c.id !== selectedContract.customer?.id && !((selectedContract as any).coTenants ?? []).some((ct: any) => (ct.id ?? ct.customerId) === c.id))
+                    .map(c => <option key={c.id} value={c.id}>{c.fullName} - {c.phoneNumber}</option>)
+                  }
+                </select>
+                <button
+                  onClick={() => { if (coTenantCustomerId) addCoTenantMutation.mutate({ id: selectedContract.id, data: { customerId: coTenantCustomerId } }); }}
+                  disabled={!coTenantCustomerId || addCoTenantMutation.isPending}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 disabled:opacity-60 flex items-center gap-2"
+                >
+                  {addCoTenantMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserPlus className="w-3.5 h-3.5" />}
+                  Thêm
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-4">
               <h4 className="font-bold text-slate-900 border-b border-slate-100 pb-2">Lịch sử hóa đơn</h4>
               <div className="space-y-3 max-h-60 overflow-y-auto">
                 {contractInvoices.length === 0 && (
@@ -551,6 +626,12 @@ export default function ContractsPage() {
             </div>
 
             <div className="flex gap-4 pt-4 border-t border-slate-100">
+              <button
+                onClick={() => { setEditContractForm({ monthlyRent: String(selectedContract.monthlyPrice ?? (selectedContract as any).monthlyRent ?? ''), startDate: selectedContract.startDate ? format(new Date(selectedContract.startDate), 'yyyy-MM-dd') : '', endDate: selectedContract.endDate ? format(new Date(selectedContract.endDate), 'yyyy-MM-dd') : '' }); setIsEditContractOpen(true); }}
+                className="flex-1 py-4 bg-slate-50 text-slate-700 rounded-3xl font-bold hover:bg-slate-100 border border-slate-200 transition-colors flex items-center justify-center gap-2"
+              >
+                <Edit3 className="w-5 h-5" /> Sửa HĐ
+              </button>
               <button
                 onClick={() => setShowTerminateModal(true)}
                 disabled={selectedContract.status === 'Terminated'}
@@ -674,6 +755,41 @@ export default function ContractsPage() {
                 <button type="submit" disabled={renewMutation.isPending} className="flex-1 py-3 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 disabled:opacity-60 flex items-center justify-center gap-2">
                   {renewMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
                   Xác nhận gia hạn
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Contract Modal */}
+      {isEditContractOpen && selectedContract && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-[2rem] shadow-2xl p-8 w-full max-w-md space-y-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-black text-slate-900">Chỉnh sửa hợp đồng</h3>
+              <button onClick={() => setIsEditContractOpen(false)} className="p-2 hover:bg-slate-100 rounded-xl"><X className="w-5 h-5 text-slate-500" /></button>
+            </div>
+            <form onSubmit={(e) => { e.preventDefault(); updateContractMutation.mutate({ id: selectedContract.id, data: { monthlyRent: Number(editContractForm.monthlyRent), startDate: editContractForm.startDate, endDate: editContractForm.endDate } }); }} className="space-y-4">
+              <div>
+                <label className="text-sm font-bold text-slate-700 mb-2 block">Giá thuê hàng tháng (đ)</label>
+                <input type="number" min={0} value={editContractForm.monthlyRent} onChange={e => setEditContractForm(f => ({ ...f, monthlyRent: e.target.value }))} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 outline-none" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-bold text-slate-700 mb-2 block">Ngày bắt đầu</label>
+                  <input type="date" value={editContractForm.startDate} onChange={e => setEditContractForm(f => ({ ...f, startDate: e.target.value }))} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 outline-none" />
+                </div>
+                <div>
+                  <label className="text-sm font-bold text-slate-700 mb-2 block">Ngày kết thúc</label>
+                  <input type="date" value={editContractForm.endDate} onChange={e => setEditContractForm(f => ({ ...f, endDate: e.target.value }))} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 outline-none" />
+                </div>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button type="button" onClick={() => setIsEditContractOpen(false)} className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200">Hủy</button>
+                <button type="submit" disabled={updateContractMutation.isPending} className="flex-1 py-3 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 disabled:opacity-60 flex items-center justify-center gap-2">
+                  {updateContractMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+                  Lưu thay đổi
                 </button>
               </div>
             </form>

@@ -36,6 +36,11 @@ const PERMISSIONS = [
 
 export default function StaffPage() {
   const [isInviteOpen, setIsInviteOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editingStaff, setEditingStaff] = useState<any>(null);
+  const [editForm, setEditForm] = useState({ role: '', assignedPropertyIds: [] as string[] });
+  const [isActivityLogOpen, setIsActivityLogOpen] = useState(false);
+  const [activityLogStaffId, setActivityLogStaffId] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<InviteFormData>({
@@ -74,6 +79,23 @@ export default function StaffPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['staff'] }),
   });
 
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => staffApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['staff'] });
+      setIsEditOpen(false);
+      setEditingStaff(null);
+    },
+  });
+
+  const { data: activityLog = [] } = useQuery({
+    queryKey: ['staff-activity', activityLogStaffId],
+    queryFn: () => activityLogStaffId
+      ? staffApi.getActivityLog(activityLogStaffId).then(r => Array.isArray(r.data) ? r.data : (r.data as any)?.items ?? [])
+      : Promise.resolve([]),
+    enabled: !!activityLogStaffId && isActivityLogOpen,
+  });
+
   const onInvite = (data: InviteFormData) => {
     inviteMutation.mutate(data);
   };
@@ -110,7 +132,25 @@ export default function StaffPage() {
                 animate={{ opacity: 1, y: 0 }}
                 className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-6 relative group overflow-hidden"
               >
-                <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                  <button
+                    onClick={() => {
+                      setEditingStaff(staff);
+                      setEditForm({ role: staff.role ?? '', assignedPropertyIds: staff.assignedPropertyIds ?? [] });
+                      setIsEditOpen(true);
+                    }}
+                    className="p-2 hover:bg-indigo-50 rounded-xl text-slate-400 hover:text-indigo-500 transition-colors"
+                    title="Chỉnh sửa"
+                  >
+                    <Edit3 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => { setActivityLogStaffId(staff.id); setIsActivityLogOpen(true); }}
+                    className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 hover:text-slate-600 transition-colors"
+                    title="Lịch sử hoạt động"
+                  >
+                    <Eye className="w-4 h-4" />
+                  </button>
                   <button
                     onClick={() => deactivateMutation.mutate(staff.id)}
                     disabled={deactivateMutation.isPending}
@@ -300,6 +340,87 @@ export default function StaffPage() {
           </div>
         </form>
       </SlideOver>
+      {/* Edit Staff Modal */}
+      {isEditOpen && editingStaff && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-[2rem] shadow-2xl p-8 w-full max-w-md space-y-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-black text-slate-900">Sửa thông tin nhân viên</h3>
+              <button onClick={() => { setIsEditOpen(false); setEditingStaff(null); }} className="p-2 hover:bg-slate-100 rounded-xl">
+                <X className="w-5 h-5 text-slate-500" />
+              </button>
+            </div>
+            <div className="text-sm text-slate-500">{editingStaff.email}</div>
+            <form onSubmit={e => { e.preventDefault(); updateMutation.mutate({ id: editingStaff.id, data: { role: editForm.role, assignedPropertyIds: editForm.assignedPropertyIds } }); }} className="space-y-4">
+              <div>
+                <label className="text-sm font-bold text-slate-700 mb-2 block">Vai trò</label>
+                <div className="grid grid-cols-2 gap-3">
+                  {(['manager', 'staff'] as const).map(role => (
+                    <button type="button" key={role} onClick={() => setEditForm(f => ({ ...f, role }))} className={`py-3 rounded-xl border-2 font-bold text-sm transition-all ${editForm.role === role ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-slate-200 text-slate-500'}`}>
+                      {role === 'manager' ? 'Quản lý' : 'Nhân viên'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {(properties as any[]).length > 0 && (
+                <div>
+                  <label className="text-sm font-bold text-slate-700 mb-2 block">Phụ trách nhà trọ</label>
+                  <div className="space-y-2 p-4 bg-slate-50 rounded-xl border border-slate-100">
+                    {(properties as any[]).map((p: any) => (
+                      <label key={p.id} className="flex items-center gap-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={editForm.assignedPropertyIds.includes(p.id)}
+                          onChange={e => setEditForm(f => ({ ...f, assignedPropertyIds: e.target.checked ? [...f.assignedPropertyIds, p.id] : f.assignedPropertyIds.filter((id: string) => id !== p.id) }))}
+                          className="w-4 h-4 rounded text-indigo-600"
+                        />
+                        <span className="text-sm font-medium text-slate-700">{p.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div className="flex gap-3 pt-2">
+                <button type="button" onClick={() => { setIsEditOpen(false); setEditingStaff(null); }} className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200">Hủy</button>
+                <button type="submit" disabled={updateMutation.isPending} className="flex-1 py-3 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 disabled:opacity-60 flex items-center justify-center gap-2">
+                  {updateMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+                  Lưu thay đổi
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Activity Log Modal */}
+      {isActivityLogOpen && activityLogStaffId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={() => setIsActivityLogOpen(false)}>
+          <div className="bg-white rounded-[2rem] shadow-2xl p-8 w-full max-w-lg space-y-6 max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-black text-slate-900">Lịch sử hoạt động</h3>
+              <button onClick={() => setIsActivityLogOpen(false)} className="p-2 hover:bg-slate-100 rounded-xl">
+                <X className="w-5 h-5 text-slate-500" />
+              </button>
+            </div>
+            <div className="overflow-y-auto space-y-3 flex-1">
+              {(activityLog as any[]).length === 0 ? (
+                <p className="text-center text-slate-400 py-8">Không có hoạt động nào</p>
+              ) : (
+                (activityLog as any[]).map((log: any, i: number) => (
+                  <div key={log.id ?? i} className="flex gap-3 p-3 bg-slate-50 rounded-xl">
+                    <div className="w-2 h-2 mt-2 rounded-full bg-indigo-400 shrink-0" />
+                    <div>
+                      <p className="text-sm font-bold text-slate-700">{log.action ?? log.description ?? log.event ?? 'Hoạt động'}</p>
+                      {log.details && <p className="text-xs text-slate-400 mt-0.5">{typeof log.details === 'string' ? log.details : JSON.stringify(log.details)}</p>}
+                      <p className="text-[10px] text-slate-300 mt-1">{log.createdAt ? format(new Date(log.createdAt), 'dd/MM/yyyy HH:mm') : ''}</p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

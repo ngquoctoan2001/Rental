@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { 
   LayoutDashboard, Building2, Bed, Users, FileText, 
   Receipt, Wallet, BarChart3, Bot, Settings, LogOut, 
-  CreditCard, Menu, X 
+  CreditCard, Menu, X, Gauge
 } from 'lucide-react';
 import { useUIStore } from '@/lib/stores/uiStore';
 import { useAuthStore } from '@/lib/stores/authStore';
@@ -15,9 +15,10 @@ const navItems = [
   { name: 'Tổng quan', href: '/', icon: LayoutDashboard },
   { name: 'Nhà trọ', href: '/properties', icon: Building2 },
   { name: 'Phòng trọ', href: '/rooms', icon: Bed },
-  { name: 'Khách thuê', href: '/customers', icon: Users },
+  { name: 'Khách thuê', href: '/tenants', icon: Users },
   { name: 'Hợp đồng', href: '/contracts', icon: FileText },
   { name: 'Hóa đơn', href: '/invoices', icon: Receipt },
+  { name: 'Chỉ số mét', href: '/meter-readings', icon: Gauge },
   { name: 'Giao dịch', href: '/transactions', icon: Wallet },
   { name: 'Báo cáo', href: '/reports', icon: BarChart3, role: 'owner' },
   { name: 'AI Assistant', href: '/ai-assistant', icon: Bot, isNew: true },

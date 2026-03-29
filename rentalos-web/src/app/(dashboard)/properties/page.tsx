@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { 
   Building2, MapPin, Users, Home, Plus, 
   ChevronRight, TrendingUp, MoreVertical,
-  Layers, Search, Edit3, Save
+  Layers, Search, Edit3, Save, Trash2, Loader2, Upload
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { 
@@ -39,6 +39,30 @@ export default function PropertiesPage() {
       setIsCreateOpen(false);
       setCreateForm({ name: '', address: '', totalFloors: 1, description: '' });
     },
+  });
+
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editForm, setEditForm] = useState({ name: '', address: '', totalFloors: 1, description: '' });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => propertiesApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['properties'] });
+      setIsEditOpen(false);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => propertiesApi.remove(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['properties'] });
+      setSelectedId(null);
+    },
+  });
+
+  const uploadImageMutation = useMutation({
+    mutationFn: ({ id, file }: { id: string; file: File }) => propertiesApi.uploadImage(id, file, true),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['properties'] }),
   });
 
   // Update selectedId when properties data arrives if not set
@@ -186,13 +210,26 @@ export default function PropertiesPage() {
       {/* Main: Property Details */}
       <main className="flex-1 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col relative">
         <div className="absolute top-6 left-6 z-10">
-          <button className="p-3 bg-white/80 backdrop-blur-md rounded-2xl border border-white/50 shadow-sm hover:bg-white transition-all text-slate-600">
+          <button
+            onClick={() => { if (selected) { setEditForm({ name: selected.name, address: selected.address, totalFloors: (selected as any).totalFloors ?? 1, description: (selected as any).description ?? '' }); setIsEditOpen(true); } }}
+            className="p-3 bg-white/80 backdrop-blur-md rounded-2xl border border-white/50 shadow-sm hover:bg-white transition-all text-slate-600"
+            title="Chỉnh sửa thông tin"
+          >
             <Edit3 className="w-4 h-4" />
           </button>
         </div>
         <div className="absolute top-6 right-6 z-10 flex gap-2">
-          <button className="p-3 bg-white/80 backdrop-blur-md rounded-2xl border border-white/50 shadow-sm hover:bg-white transition-all text-slate-400">
-            <MoreVertical className="w-4 h-4" />
+          <label className="p-3 bg-white/80 backdrop-blur-md rounded-2xl border border-white/50 shadow-sm hover:bg-white transition-all text-slate-400 cursor-pointer" title="Tải ảnh bìa">
+            <Upload className="w-4 h-4" />
+            <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f && selected) uploadImageMutation.mutate({ id: selected.id, file: f }); }} />
+          </label>
+          <button
+            onClick={() => { if (selected && confirm(`Xóa cơ sở "${selected.name}"? Hành động này không thể hoàn tác.`)) deleteMutation.mutate(selected.id); }}
+            disabled={deleteMutation.isPending}
+            className="p-3 bg-white/80 backdrop-blur-md rounded-2xl border border-white/50 shadow-sm hover:bg-rose-50 hover:border-rose-200 hover:text-rose-600 transition-all text-slate-400 disabled:opacity-60"
+            title="Xóa cơ sở"
+          >
+            <Trash2 className="w-4 h-4" />
           </button>
         </div>
 
@@ -356,6 +393,35 @@ export default function PropertiesPage() {
                 <Save className="w-5 h-5" />
               )}
               Tạo cơ sở
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Edit Property Modal */}
+      <Modal isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} title="Chỉnh sửa cơ sở" size="md">
+        <form className="space-y-5" onSubmit={(e) => { e.preventDefault(); if (selected) updateMutation.mutate({ id: selected.id, data: editForm }); }}>
+          <div className="space-y-1.5">
+            <label className="text-sm font-bold text-slate-700">Tên cơ sở *</label>
+            <input required value={editForm.name} onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none" />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-sm font-bold text-slate-700">Địa chỉ *</label>
+            <input required value={editForm.address} onChange={e => setEditForm(f => ({ ...f, address: e.target.value }))} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none" />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-sm font-bold text-slate-700">Số tầng</label>
+            <input type="number" min={1} value={editForm.totalFloors} onChange={e => setEditForm(f => ({ ...f, totalFloors: Number(e.target.value) }))} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none" />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-sm font-bold text-slate-700">Mô tả</label>
+            <textarea rows={3} value={editForm.description} onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none resize-none" />
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={() => setIsEditOpen(false)} className="flex-1 py-3.5 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-colors">Hủy</button>
+            <button type="submit" disabled={updateMutation.isPending} className="flex-[2] py-3.5 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 disabled:opacity-60 flex items-center justify-center gap-2">
+              {updateMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+              Lưu thay đổi
             </button>
           </div>
         </form>

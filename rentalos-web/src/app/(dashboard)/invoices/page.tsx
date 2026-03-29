@@ -4,10 +4,10 @@ import { useState, useMemo } from 'react';
 import {
   FileText, CreditCard, Send, CheckCircle2,
   AlertCircle, Zap, Droplets, ArrowRight,
-  Calculator, Download, Clock, Loader2, X
+  Calculator, Download, Clock, Loader2, X, Plus
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { invoicesApi, transactionsApi } from '@/lib/api';
+import { invoicesApi, transactionsApi, contractsApi } from '@/lib/api';
 import { Modal } from '@/components/shared/Modal';
 import { DataTable } from '@/components/shared/DataTable';
 import { StatusBadge, StatCard } from '@/components/shared';
@@ -40,6 +40,8 @@ export default function InvoicesPage() {
   const [cashAmount, setCashAmount] = useState('');
   const [showCashModal, setShowCashModal] = useState(false);
   const [meterEntries, setMeterEntries] = useState<Record<string, MeterEntry>>({});
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [createForm, setCreateForm] = useState({ contractId: '', otherFees: '', discount: '', notes: '' });
 
   const { data: invoices = [], isLoading: isInvoicesLoading } = useQuery<Invoice[]>({
     queryKey: ['invoices', selectedMonth],
@@ -62,6 +64,15 @@ export default function InvoicesPage() {
   const bulkGenerateMutation = useMutation({
     mutationFn: () => invoicesApi.bulkGenerate({ billingMonth: selectedMonth + '-01', sendNotification: false, overwriteExisting: false }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['invoices'] }),
+  });
+
+  const createInvoiceMutation = useMutation({
+    mutationFn: (data: any) => invoicesApi.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      setIsCreateOpen(false);
+      setCreateForm({ contractId: '', otherFees: '', discount: '', notes: '' });
+    },
   });
 
   const sendInvoiceMutation = useMutation({
@@ -202,6 +213,13 @@ export default function InvoicesPage() {
           >
             {MONTHS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
           </select>
+          <button
+            onClick={() => setIsCreateOpen(true)}
+            className="flex items-center justify-center gap-2 px-5 py-3 bg-white border border-slate-200 text-slate-700 rounded-2xl font-bold hover:bg-slate-50 transition-all"
+          >
+            <Plus className="w-5 h-5" />
+            Tạo thủ công
+          </button>
           <button
             onClick={() => { if (confirm(`Tạo hóa đơn tháng ${selectedMonth} cho tất cả hợp đồng đang hoạt động?`)) bulkGenerateMutation.mutate(); }}
             disabled={bulkGenerateMutation.isPending}
@@ -511,6 +529,60 @@ export default function InvoicesPage() {
           </div>
         </div>
       )}
+
+      {/* Manual Create Invoice Modal */}
+      {isCreateOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-[2rem] shadow-2xl p-8 w-full max-w-md space-y-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-black text-slate-900">Tạo hóa đơn thủ công</h3>
+              <button onClick={() => setIsCreateOpen(false)} className="p-2 hover:bg-slate-100 rounded-xl"><X className="w-5 h-5 text-slate-500" /></button>
+            </div>
+            <form onSubmit={(e) => { e.preventDefault(); createInvoiceMutation.mutate({ contractId: createForm.contractId || undefined, billingMonth: selectedMonth + '-01', otherFees: createForm.otherFees ? Number(createForm.otherFees) : undefined, discount: createForm.discount ? Number(createForm.discount) : undefined, notes: createForm.notes || undefined }); }} className="space-y-4">
+              <ContractSelector value={createForm.contractId} onChange={(v) => setCreateForm(f => ({ ...f, contractId: v }))} />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-bold text-slate-700 mb-2 block">Phí khác (đ)</label>
+                  <input type="number" min={0} value={createForm.otherFees} onChange={e => setCreateForm(f => ({ ...f, otherFees: e.target.value }))} placeholder="0" className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 outline-none" />
+                </div>
+                <div>
+                  <label className="text-sm font-bold text-slate-700 mb-2 block">Giảm giá (đ)</label>
+                  <input type="number" min={0} value={createForm.discount} onChange={e => setCreateForm(f => ({ ...f, discount: e.target.value }))} placeholder="0" className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 outline-none" />
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-bold text-slate-700 mb-2 block">Ghi chú</label>
+                <textarea rows={2} value={createForm.notes} onChange={e => setCreateForm(f => ({ ...f, notes: e.target.value }))} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 outline-none resize-none text-sm" />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button type="button" onClick={() => setIsCreateOpen(false)} className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200">Hủy</button>
+                <button type="submit" disabled={createInvoiceMutation.isPending} className="flex-1 py-3 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 disabled:opacity-60 flex items-center justify-center gap-2">
+                  {createInvoiceMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+                  Tạo hóa đơn
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ContractSelector({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const { data: contracts = [] } = useQuery({
+    queryKey: ['contracts-active'],
+    queryFn: () => contractsApi.list({ status: 'active' }).then(r => Array.isArray(r.data) ? r.data : (r.data as any)?.items ?? []),
+  });
+  return (
+    <div>
+      <label className="text-sm font-bold text-slate-700 mb-2 block">Hợp đồng</label>
+      <select value={value} onChange={e => onChange(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 outline-none bg-white text-sm">
+        <option value="">-- Chọn hợp đồng --</option>
+        {contracts.map((c: any) => (
+          <option key={c.id} value={c.id}>{c.customer?.fullName ?? 'N/A'} - Phòng {c.room?.roomNumber ?? 'N/A'}</option>
+        ))}
+      </select>
     </div>
   );
 }
