@@ -25,32 +25,28 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthResultDto>
 
     public async Task<AuthResultDto> Handle(LoginCommand request, CancellationToken cancellationToken)
     {
-        // 1. Find tenant in public schema
         var tenant = await _context.Tenants
             .FirstOrDefaultAsync(t => t.Slug == request.TenantSlug && t.IsActive, cancellationToken);
 
-        if (tenant == null) throw new UnauthorizedAccessException("Không tìm thấy nhà trọ hoặc đã bị vô hiệu hóa.");
+        if (tenant == null)
+            throw new UnauthorizedAccessException("Không tìm thấy tenant hoặc tenant đã bị vô hiệu hóa.");
 
-        // 2. Find user in public.users — Identity tables always live in the public schema.
-        //    Do NOT switch search_path here; the tenant DDL users table uses snake_case columns
-        //    which are incompatible with EF/Identity PascalCase queries.
         var user = await _userManager.FindByEmailAsync(request.Email);
         if (user == null || !user.IsActive)
-            throw new UnauthorizedAccessException("Email không tồn tại hoặc tài khoản bị khóa.");
+            throw new UnauthorizedAccessException("Email không tồn tại hoặc tài khoản đang bị khóa.");
 
-        // 3. Ensure user belongs to the requested tenant
-        if (user.TenantId != tenant.Id)
-            throw new UnauthorizedAccessException("Tài khoản không thuộc nhà trọ này.");
+        var normalizedRole = (user.Role ?? string.Empty).ToLowerInvariant();
+        var isSystemAdmin = normalizedRole == "admin";
 
-        // 4. Verify password
+        if (!isSystemAdmin && user.TenantId != tenant.Id)
+            throw new UnauthorizedAccessException("Tài khoản không thuộc tenant này.");
+
         if (!await _userManager.CheckPasswordAsync(user, request.Password))
             throw new UnauthorizedAccessException("Mật khẩu không chính xác.");
 
-        // 5. Update last login
         user.LastLoginAt = DateTime.UtcNow;
         await _userManager.UpdateAsync(user);
 
-        // 6. Generate tokens
         var accessToken = _jwtService.GenerateAccessToken(
             user.Id.ToString(),
             tenant.Slug,
@@ -59,8 +55,6 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthResultDto>
             tenant.Plan.ToString());
 
         var refreshToken = _jwtService.GenerateRefreshToken();
-
-        // 7. Save refresh token (Skip for now)
 
         return new AuthResultDto
         {

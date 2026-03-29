@@ -5,7 +5,7 @@ using RentalOS.Application.Modules.Subscriptions.Queries.GetCurrentSubscription;
 
 namespace RentalOS.API.Controllers;
 
-[Authorize(Roles = "owner")]
+[Authorize(Roles = "admin,landlord")]
 [ApiController]
 [Route("api/v1/[controller]")]
 public class SubscriptionsController(ISender mediator) : ControllerBase

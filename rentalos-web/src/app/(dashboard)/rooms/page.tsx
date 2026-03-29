@@ -12,6 +12,7 @@ import { roomsApi, propertiesApi } from '@/lib/api';
 import { Modal } from '@/components/shared/Modal';
 import { StatusBadge, StatCard } from '@/components/shared';
 import { DataTable } from '@/components/shared/DataTable';
+import { useAuthStore } from '@/lib/stores/authStore';
 import { Room, Property } from '@/types';
 
 const STATUS_OPTIONS = [
@@ -52,6 +53,7 @@ const emptyForm = {
 
 export default function RoomsPage() {
   const queryClient = useQueryClient();
+  const { user } = useAuthStore();
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterPropertyId, setFilterPropertyId] = useState<string>('all');
@@ -63,6 +65,7 @@ export default function RoomsPage() {
   const [activeTab, setActiveTab] = useState<'info' | 'meter' | 'history'>('info');
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [importResult, setImportResult] = useState<{ imported: number; skipped: number; errors: string[] } | null>(null);
+  const canManageRooms = user?.role !== 'tenant';
 
   // Data
   const { data: rooms = [], isLoading } = useQuery<Room[]>({

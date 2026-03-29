@@ -81,7 +81,7 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, AuthResul
             FullName = request.OwnerName,
             Phone = request.Phone,
             TenantId = tenant.Id,
-            Role = "owner",
+            Role = "landlord",
             IsActive = true,
             CreatedAt = DateTime.UtcNow
         };
@@ -92,13 +92,11 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, AuthResul
             throw new Exception($"Lỗi tạo user: {string.Join(", ", result.Errors.Select(e => e.Description))}");
         }
 
-        // 5. (Back to step 5 from prompt: Gán Role 'owner')
-        // We need to ensure the role exists in the new schema
-        if (!await _roleManager.RoleExistsAsync("owner"))
+        if (!await _roleManager.RoleExistsAsync("landlord"))
         {
-            await _roleManager.CreateAsync(new ApplicationRole { Name = "owner" });
+            await _roleManager.CreateAsync(new ApplicationRole { Name = "landlord" });
         }
-        await _userManager.AddToRoleAsync(user, "owner");
+        await _userManager.AddToRoleAsync(user, "landlord");
 
         // 9. INSERT settings (already done by TenantSchemaManager DDL template)
         
@@ -106,7 +104,7 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, AuthResul
         var accessToken = _jwtService.GenerateAccessToken(
             user.Id.ToString(), 
             tenant.Slug, 
-            "owner", 
+            "landlord", 
             user.Email!, 
             tenant.Plan.ToString());
             
@@ -125,7 +123,7 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, AuthResul
                 Id = user.Id,
                 Email = user.Email!,
                 FullName = user.FullName,
-                Role = "owner"
+                Role = "landlord"
             },
             Tenant = new TenantDto
             {

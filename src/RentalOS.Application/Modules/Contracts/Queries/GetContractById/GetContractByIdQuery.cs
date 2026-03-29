@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using RentalOS.Application.Common.Interfaces;
 using RentalOS.Application.Common.Models;
 using RentalOS.Application.Modules.Contracts.Dtos;
-using RentalOS.Domain.Entities;
 
 namespace RentalOS.Application.Modules.Contracts.Queries.GetContractById;
 
@@ -12,21 +11,39 @@ public record GetContractByIdQuery(Guid Id) : IRequest<Result<ContractDto>>;
 public class GetContractByIdQueryHandler : IRequestHandler<GetContractByIdQuery, Result<ContractDto>>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ICurrentUserService _currentUserService;
 
-    public GetContractByIdQueryHandler(IApplicationDbContext context)
+    public GetContractByIdQueryHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
     {
         _context = context;
+        _currentUserService = currentUserService;
     }
 
     public async Task<Result<ContractDto>> Handle(GetContractByIdQuery request, CancellationToken cancellationToken)
     {
-        var contract = await _context.Contracts
+        var query = _context.Contracts
             .Include(c => c.Room)
             .Include(c => c.Customer)
             .Include(c => c.CoTenants)
                 .ThenInclude(ct => ct.Customer)
-            .FirstOrDefaultAsync(c => c.Id == request.Id, cancellationToken);
-        
+            .Where(c => c.Id == request.Id)
+            .AsQueryable();
+
+        if (string.Equals(_currentUserService.Role, "tenant", StringComparison.OrdinalIgnoreCase))
+        {
+            var currentUserId = Guid.TryParse(_currentUserService.UserId, out var parsedUserId) ? parsedUserId : Guid.Empty;
+            var currentUserEmail = await _context.ApplicationUsers
+                .Where(u => u.Id == currentUserId)
+                .Select(u => u.Email)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (!string.IsNullOrWhiteSpace(currentUserEmail))
+            {
+                query = query.Where(c => c.Customer.Email == currentUserEmail);
+            }
+        }
+
+        var contract = await query.FirstOrDefaultAsync(cancellationToken);
         if (contract == null) return Result<ContractDto>.Fail("CONTRACT_NOT_FOUND", "Không tìm thấy hợp đồng.");
 
         var dto = new ContractDto
@@ -55,9 +72,9 @@ public class GetContractByIdQueryHandler : IRequestHandler<GetContractByIdQuery,
                     Id = ct.Id,
                     CustomerId = ct.CustomerId,
                     FullName = ct.Customer.FullName,
-                    Phone = ct.Customer.Phone
+                    Phone = ct.Customer.Phone,
                 })
-                .ToList()
+                .ToList(),
         };
 
         return Result<ContractDto>.Ok(dto);

@@ -32,7 +32,7 @@ public class NotificationsController(ISender mediator) : ControllerBase
     }
 
     [HttpGet("logs")]
-    [Authorize(Roles = "owner,manager")]
+    [Authorize(Roles = "admin,landlord")]
     public async Task<ActionResult<List<NotificationLogDto>>> GetLogs([FromQuery] GetNotificationLogsQuery query)
     {
         return Ok(await mediator.Send(query));

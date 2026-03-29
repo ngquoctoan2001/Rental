@@ -11,6 +11,7 @@ import { invoicesApi, transactionsApi, contractsApi } from '@/lib/api';
 import { Modal } from '@/components/shared/Modal';
 import { DataTable } from '@/components/shared/DataTable';
 import { StatusBadge, StatCard } from '@/components/shared';
+import { useAuthStore } from '@/lib/stores/authStore';
 import { Invoice } from '@/types';
 import { format } from 'date-fns';
 
@@ -32,6 +33,7 @@ interface MeterEntry {
 
 export default function InvoicesPage() {
   const queryClient = useQueryClient();
+  const { user } = useAuthStore();
   const [activeTab, setActiveTab] = useState<'billing' | 'meter'>('billing');
   const MONTHS = useMemo(() => buildMonthOptions(), []);
   const [selectedMonth, setSelectedMonth] = useState(MONTHS[0].value);
@@ -42,6 +44,7 @@ export default function InvoicesPage() {
   const [meterEntries, setMeterEntries] = useState<Record<string, MeterEntry>>({});
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [createForm, setCreateForm] = useState({ contractId: '', otherFees: '', discount: '', notes: '' });
+  const canManageInvoices = user?.role !== 'tenant';
 
   const { data: invoices = [], isLoading: isInvoicesLoading } = useQuery<Invoice[]>({
     queryKey: ['invoices', selectedMonth],
@@ -188,18 +191,64 @@ export default function InvoicesPage() {
       label: '',
       render: (_: any, row: Invoice) => (
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button
-            onClick={(e) => { e.stopPropagation(); setSelectedInvoice(row); setIsDetailOpen(true); }}
-            className="p-2 hover:bg-indigo-50 text-indigo-600 rounded-lg transition-colors"
-          >
-            <Send className="w-4 h-4" />
-          </button>
+          {canManageInvoices && (
+            <button
+              onClick={(e) => { e.stopPropagation(); setSelectedInvoice(row); setIsDetailOpen(true); }}
+              className="p-2 hover:bg-indigo-50 text-indigo-600 rounded-lg transition-colors"
+            >
+              <Send className="w-4 h-4" />
+            </button>
+          )}
         </div>
       )
     }
   ];
 
   const isPaid = (inv: Invoice) => ['paid', 'Paid'].includes(inv.status);
+
+  const handleExportInvoices = () => {
+    const headers = ['Mã hóa đơn', 'Phòng', 'Khách thuê', 'Nhà trọ', 'Tổng tiền', 'Hạn thanh toán', 'Trạng thái', 'Link thanh toán'];
+    const rows = invoices.map((invoice) => [
+      invoice.invoiceCode || invoice.invoiceNumber || invoice.id,
+      invoice.roomNumber || '',
+      invoice.customerName || '',
+      invoice.propertyName || '',
+      String(invoice.totalAmount || 0),
+      invoice.dueDate || '',
+      invoice.status || '',
+      invoice.paymentLinkToken ? `${window.location.origin}/pay/${invoice.paymentLinkToken}` : '',
+    ]);
+
+    const csv = [headers, ...rows]
+      .map((row) => row.map((cell) => `"${String(cell ?? '').replaceAll('"', '""')}"`).join(','))
+      .join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `hoa-don-${selectedMonth}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleCopySocialTemplate = async () => {
+    const template = invoices
+      .map((invoice) => {
+        const paymentLink = invoice.paymentLinkToken ? `${window.location.origin}/pay/${invoice.paymentLinkToken}` : 'Khách thanh toán trực tiếp hoặc chủ trọ cập nhật thủ công';
+        return [
+          `Phòng ${invoice.roomNumber || 'N/A'} - ${invoice.customerName || 'Khách thuê'}`,
+          `Hóa đơn: ${invoice.invoiceCode || invoice.invoiceNumber || invoice.id}`,
+          `Tổng tiền: ${(invoice.totalAmount || 0).toLocaleString()}đ`,
+          `Hạn thanh toán: ${invoice.dueDate ? format(new Date(invoice.dueDate), 'dd/MM/yyyy') : 'N/A'}`,
+          `Thanh toán: ${paymentLink}`,
+        ].join('\n');
+      })
+      .join('\n\n');
+
+    await navigator.clipboard.writeText(template || `Danh sách hóa đơn tháng ${selectedMonth}`);
+    alert('Đã sao chép mẫu gửi Zalo/Facebook.');
+  };
 
   return (
     <div className="space-y-8 pb-10">
@@ -216,21 +265,39 @@ export default function InvoicesPage() {
           >
             {MONTHS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
           </select>
-          <button
-            onClick={() => setIsCreateOpen(true)}
-            className="flex items-center justify-center gap-2 px-5 py-3 bg-white border border-slate-200 text-slate-700 rounded-2xl font-bold hover:bg-slate-50 transition-all"
-          >
-            <Plus className="w-5 h-5" />
-            Tạo thủ công
-          </button>
-          <button
-            onClick={() => { if (confirm(`Tạo hóa đơn tháng ${selectedMonth} cho tất cả hợp đồng đang hoạt động?`)) bulkGenerateMutation.mutate(); }}
-            disabled={bulkGenerateMutation.isPending}
-            className="flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 disabled:opacity-60"
-          >
-            {bulkGenerateMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Calculator className="w-5 h-5" />}
-            Tạo hóa đơn loạt
-          </button>
+          {canManageInvoices && (
+            <>
+              <button
+                onClick={handleCopySocialTemplate}
+                className="flex items-center justify-center gap-2 px-5 py-3 bg-white border border-slate-200 text-slate-700 rounded-2xl font-bold hover:bg-slate-50 transition-all"
+              >
+                <Send className="w-5 h-5" />
+                Mẫu Zalo/Facebook
+              </button>
+              <button
+                onClick={handleExportInvoices}
+                className="flex items-center justify-center gap-2 px-5 py-3 bg-white border border-slate-200 text-slate-700 rounded-2xl font-bold hover:bg-slate-50 transition-all"
+              >
+                <Download className="w-5 h-5" />
+                Xuất CSV
+              </button>
+              <button
+                onClick={() => setIsCreateOpen(true)}
+                className="flex items-center justify-center gap-2 px-5 py-3 bg-white border border-slate-200 text-slate-700 rounded-2xl font-bold hover:bg-slate-50 transition-all"
+              >
+                <Plus className="w-5 h-5" />
+                Tạo thủ công
+              </button>
+              <button
+                onClick={() => { if (confirm(`Tạo hóa đơn tháng ${selectedMonth} cho tất cả hợp đồng đang hoạt động?`)) bulkGenerateMutation.mutate(); }}
+                disabled={bulkGenerateMutation.isPending}
+                className="flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 disabled:opacity-60"
+              >
+                {bulkGenerateMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Calculator className="w-5 h-5" />}
+                Tạo hóa đơn loạt
+              </button>
+            </>
+          )}
         </div>
       </div>
 

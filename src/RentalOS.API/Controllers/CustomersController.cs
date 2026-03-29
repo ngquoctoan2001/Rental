@@ -50,7 +50,7 @@ public class CustomersController(IMediator mediator) : ControllerBase
     }
 
     [HttpPatch("{id}/blacklist")]
-    [Authorize(Roles = "Owner")]
+    [Authorize(Roles = "admin,landlord")]
     public async Task<ActionResult> BlacklistCustomer(Guid id, [FromBody] BlacklistRequest request)
     {
         var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);

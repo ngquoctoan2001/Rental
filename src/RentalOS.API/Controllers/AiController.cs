@@ -7,7 +7,7 @@ using System.Text.Json;
 
 namespace RentalOS.API.Controllers;
 
-[Authorize(Roles = "owner,manager")]
+[Authorize(Roles = "admin,landlord")]
 [ApiController]
 [Route("api/v1/[controller]")]
 public class AiController(ISender mediator) : ControllerBase

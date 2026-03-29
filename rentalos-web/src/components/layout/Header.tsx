@@ -18,19 +18,19 @@ import { notificationsApi, propertiesApi } from '@/lib/api';
 import { Property } from '@/types';
 
 const PAGE_TITLES: Record<string, string> = {
-  '/': 'Tong quan',
-  '/properties': 'Nha tro',
-  '/rooms': 'Phong tro',
-  '/customers': 'Khach thue',
-  '/contracts': 'Hop dong',
-  '/invoices': 'Hoa don',
-  '/meter-readings': 'Chi so met',
-  '/transactions': 'Giao dich',
-  '/reports': 'Bao cao',
-  '/ai-assistant': 'Tro ly AI',
-  '/staff': 'Nhan vien',
-  '/settings': 'Cai dat',
-  '/subscribe': 'Goi dich vu',
+  '/': 'Tổng quan',
+  '/tenants': 'Chủ trọ',
+  '/properties': 'Nhà trọ',
+  '/rooms': 'Phòng trọ',
+  '/customers': 'Khách thuê',
+  '/contracts': 'Hợp đồng',
+  '/invoices': 'Hóa đơn',
+  '/meter-readings': 'Chỉ số mét',
+  '/transactions': 'Giao dịch',
+  '/reports': 'Báo cáo',
+  '/ai-assistant': 'Trợ lý AI',
+  '/settings': 'Cài đặt',
+  '/subscribe': 'Gói dịch vụ',
 };
 
 export default function Header() {
@@ -53,8 +53,8 @@ export default function Header() {
   const activeProperty = properties.find((property) => property.id === activePropertyId);
   const pageTitle = PAGE_TITLES[pathname] || 'RentalOS';
   const breadcrumb = useMemo(() => {
-    if (pathname === '/') return 'Tong quan';
-    return `Tong quan > ${pageTitle}`;
+    if (pathname === '/') return 'Tổng quan';
+    return `Tổng quan > ${pageTitle}`;
   }, [pageTitle, pathname]);
 
   const handleMarkRead = async (id: string) => {

@@ -13,8 +13,8 @@ using RentalOS.Infrastructure.Persistence;
 namespace RentalOS.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260328041607_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260329153800_InitialReset")]
+    partial class InitialReset
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -487,7 +487,7 @@ namespace RentalOS.Infrastructure.Migrations
 
                     b.HasIndex("EndDate")
                         .HasDatabaseName("i_x_contracts_end_date")
-                        .HasFilter("\"Status\" = 0");
+                        .HasFilter("\"status\" = 'Active'");
 
                     b.HasIndex("RoomId")
                         .HasDatabaseName("i_x_contracts_room_id");
@@ -877,7 +877,7 @@ namespace RentalOS.Infrastructure.Migrations
                     b.HasIndex("ContractId", "BillingMonth")
                         .IsUnique()
                         .HasDatabaseName("i_x_invoices_contract_id_billing_month")
-                        .HasFilter("\"Status\" != 3");
+                        .HasFilter("\"status\" != 'Cancelled'");
 
                     b.ToTable("invoices", (string)null);
                 });

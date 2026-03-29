@@ -11,7 +11,7 @@ using RentalOS.Application.Modules.Staff.Queries.GetStaffActivityLog;
 
 namespace RentalOS.API.Controllers;
 
-[Authorize(Roles = "owner")]
+[Authorize(Roles = "admin")]
 [ApiController]
 [Route("api/v1/[controller]")]
 public class StaffController(ISender mediator) : ControllerBase

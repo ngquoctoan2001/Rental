@@ -7,12 +7,20 @@ namespace RentalOS.Application.Modules.Invoices.Queries.GetInvoiceById;
 
 public record GetInvoiceByIdQuery(Guid Id) : IRequest<Result<InvoiceDto>>;
 
-public class GetInvoiceByIdQueryHandler(IApplicationDbContext context) 
-    : IRequestHandler<GetInvoiceByIdQuery, Result<InvoiceDto>>
+public class GetInvoiceByIdQueryHandler : IRequestHandler<GetInvoiceByIdQuery, Result<InvoiceDto>>
 {
+    private readonly IApplicationDbContext _context;
+    private readonly ICurrentUserService _currentUserService;
+
+    public GetInvoiceByIdQueryHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
+    {
+        _context = context;
+        _currentUserService = currentUserService;
+    }
+
     public async Task<Result<InvoiceDto>> Handle(GetInvoiceByIdQuery request, CancellationToken cancellationToken)
     {
-        var invoice = await context.Invoices
+        var query = _context.Invoices
             .Include(i => i.Contract)
                 .ThenInclude(c => c.Customer)
             .Include(i => i.Contract)
@@ -20,6 +28,23 @@ public class GetInvoiceByIdQueryHandler(IApplicationDbContext context)
                     .ThenInclude(r => r.Property)
             .AsNoTracking()
             .Where(i => i.Id == request.Id)
+            .AsQueryable();
+
+        if (string.Equals(_currentUserService.Role, "tenant", StringComparison.OrdinalIgnoreCase))
+        {
+            var currentUserId = Guid.TryParse(_currentUserService.UserId, out var parsedUserId) ? parsedUserId : Guid.Empty;
+            var currentUserEmail = await _context.ApplicationUsers
+                .Where(u => u.Id == currentUserId)
+                .Select(u => u.Email)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (!string.IsNullOrWhiteSpace(currentUserEmail))
+            {
+                query = query.Where(i => i.Contract.Customer.Email == currentUserEmail);
+            }
+        }
+
+        var invoice = await query
             .Select(i => new InvoiceDto
             {
                 Id = i.Id,
@@ -54,12 +79,11 @@ public class GetInvoiceByIdQueryHandler(IApplicationDbContext context)
                 OtherFeesNote = i.OtherFeesNote,
                 Discount = i.Discount,
                 DiscountNote = i.DiscountNote,
-                Notes = i.Notes
+                Notes = i.Notes,
             })
             .FirstOrDefaultAsync(cancellationToken);
 
         if (invoice == null) return Result<InvoiceDto>.Fail("INVOICE_NOT_FOUND", "Không tìm thấy hóa đơn.");
-
         return Result<InvoiceDto>.Ok(invoice);
     }
 }

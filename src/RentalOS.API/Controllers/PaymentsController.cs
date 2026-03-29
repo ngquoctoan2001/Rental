@@ -14,7 +14,7 @@ namespace RentalOS.API.Controllers;
 public class PaymentsController(IMediator mediator, IMoMoService momoService, IVNPayService vnpayService) : ControllerBase
 {
     [HttpGet("settings")]
-    [Authorize(Roles = "TenantAdmin")]
+    [Authorize(Roles = "admin,landlord")]
     public async Task<ActionResult> GetSettings()
     {
         var result = await mediator.Send(new GetPaymentSettingsQuery());
@@ -22,7 +22,7 @@ public class PaymentsController(IMediator mediator, IMoMoService momoService, IV
     }
 
     [HttpPut("settings")]
-    [Authorize(Roles = "TenantAdmin")]
+    [Authorize(Roles = "admin,landlord")]
     public async Task<ActionResult> UpdateSettings(UpdatePaymentSettingsCommand command)
     {
         var result = await mediator.Send(command);

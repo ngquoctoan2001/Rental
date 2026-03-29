@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using RentalOS.Application.Common.Interfaces;
 using RentalOS.Application.Common.Models;
 using RentalOS.Application.Modules.Contracts.Dtos;
-using RentalOS.Domain.Entities;
 using RentalOS.Domain.Enums;
 
 namespace RentalOS.Application.Modules.Contracts.Queries.GetContracts;
@@ -18,10 +17,12 @@ public record GetContractsQuery : IRequest<Result<List<ContractDto>>>
 public class GetContractsQueryHandler : IRequestHandler<GetContractsQuery, Result<List<ContractDto>>>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ICurrentUserService _currentUserService;
 
-    public GetContractsQueryHandler(IApplicationDbContext context)
+    public GetContractsQueryHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
     {
         _context = context;
+        _currentUserService = currentUserService;
     }
 
     public async Task<Result<List<ContractDto>>> Handle(GetContractsQuery request, CancellationToken cancellationToken)
@@ -30,6 +31,20 @@ public class GetContractsQueryHandler : IRequestHandler<GetContractsQuery, Resul
             .Include(c => c.Room)
             .Include(c => c.Customer)
             .AsQueryable();
+
+        if (string.Equals(_currentUserService.Role, "tenant", StringComparison.OrdinalIgnoreCase))
+        {
+            var currentUserId = Guid.TryParse(_currentUserService.UserId, out var parsedUserId) ? parsedUserId : Guid.Empty;
+            var currentUserEmail = await _context.ApplicationUsers
+                .Where(u => u.Id == currentUserId)
+                .Select(u => u.Email)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (!string.IsNullOrWhiteSpace(currentUserEmail))
+            {
+                query = query.Where(c => c.Customer.Email == currentUserEmail);
+            }
+        }
 
         if (request.Status.HasValue)
         {
@@ -44,9 +59,9 @@ public class GetContractsQueryHandler : IRequestHandler<GetContractsQuery, Resul
         if (!string.IsNullOrEmpty(request.SearchTerm))
         {
             var search = request.SearchTerm.ToLower();
-            query = query.Where(c => 
-                c.ContractCode.ToLower().Contains(search) || 
-                c.Customer.FullName.ToLower().Contains(search) || 
+            query = query.Where(c =>
+                c.ContractCode.ToLower().Contains(search) ||
+                c.Customer.FullName.ToLower().Contains(search) ||
                 c.Room.RoomNumber.ToLower().Contains(search));
         }
 
@@ -69,7 +84,7 @@ public class GetContractsQueryHandler : IRequestHandler<GetContractsQuery, Resul
                 DepositPaid = c.DepositPaid,
                 SignedByCustomer = c.SignedByCustomer,
                 Status = c.Status,
-                PdfUrl = c.PdfUrl
+                PdfUrl = c.PdfUrl,
             })
             .ToListAsync(cancellationToken);
 

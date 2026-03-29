@@ -6,7 +6,7 @@ using RentalOS.Application.Modules.Onboarding.Queries.GetOnboardingStatus;
 
 namespace RentalOS.API.Controllers;
 
-[Authorize(Roles = "owner")]
+[Authorize(Roles = "admin,landlord")]
 [ApiController]
 [Route("api/v1/[controller]")]
 public class OnboardingController(ISender mediator) : ControllerBase

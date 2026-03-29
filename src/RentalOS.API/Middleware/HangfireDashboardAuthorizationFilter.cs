@@ -8,8 +8,8 @@ public class HangfireDashboardAuthorizationFilter : IDashboardAuthorizationFilte
     {
         var httpContext = context.GetHttpContext();
         
-        // Allow access only to users with 'owner' role
+        // Allow access only to platform admins and landlords.
         return httpContext.User.Identity?.IsAuthenticated == true 
-               && httpContext.User.IsInRole("owner");
+               && (httpContext.User.IsInRole("admin") || httpContext.User.IsInRole("landlord"));
     }
 }

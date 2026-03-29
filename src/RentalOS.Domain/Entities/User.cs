@@ -7,7 +7,7 @@ public class User : IdentityUser<Guid>, IEntity
     public string FullName { get; set; } = string.Empty;
     public string? AvatarUrl { get; set; }
     public string? Phone { get; set; }
-    public string Role { get; set; } = string.Empty; // owner | manager | staff
+    public string Role { get; set; } = string.Empty; // admin | landlord | tenant
     public Guid? TenantId { get; set; }
     
     // Status

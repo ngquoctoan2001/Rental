@@ -12,6 +12,7 @@ import { contractsApi, roomsApi, customersApi } from '@/lib/api';
 import { DataTable } from '@/components/shared/DataTable';
 import { SlideOver } from '@/components/shared/SlideOver';
 import { StatusBadge } from '@/components/shared';
+import { useAuthStore } from '@/lib/stores/authStore';
 import { Contract, Room, Customer } from '@/types';
 import { format, addMonths } from 'date-fns';
 
@@ -29,6 +30,7 @@ const emptyRenew = { months: 12, newMonthlyRent: '' };
 
 export default function ContractsPage() {
   const queryClient = useQueryClient();
+  const { user } = useAuthStore();
   const [isSlideOverOpen, setIsSlideOverOpen] = useState(false);
   const [selectedContractId, setSelectedContractId] = useState<string | null>(null);
   const [form, setForm] = useState({ ...emptyForm });
@@ -39,6 +41,7 @@ export default function ContractsPage() {
   const [isEditContractOpen, setIsEditContractOpen] = useState(false);
   const [editContractForm, setEditContractForm] = useState({ monthlyRent: '', startDate: '', endDate: '' });
   const [coTenantCustomerId, setCoTenantCustomerId] = useState('');
+  const canManageContracts = user?.role !== 'tenant';
 
   const { data: contracts = [], isLoading } = useQuery<Contract[]>({
     queryKey: ['contracts'],
@@ -312,13 +315,15 @@ export default function ContractsPage() {
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Hợp đồng</h1>
           <p className="text-slate-500 mt-1">Quản lý vòng đời hợp đồng từ khi bắt đầu đến khi thanh lý.</p>
         </div>
-        <button
-          onClick={() => setIsSlideOverOpen(true)}
-          className="flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100"
-        >
-          <FilePlus className="w-5 h-5" />
-          Tạo hợp đồng mới
-        </button>
+        {canManageContracts && (
+          <button
+            onClick={() => setIsSlideOverOpen(true)}
+            className="flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100"
+          >
+            <FilePlus className="w-5 h-5" />
+            Tạo hợp đồng mới
+          </button>
+        )}
       </div>
 
       {expiringContracts.length > 0 && (
@@ -353,7 +358,7 @@ export default function ContractsPage() {
 
       {/* Create Contract SlideOver */}
       <SlideOver
-        isOpen={isSlideOverOpen}
+        isOpen={canManageContracts && isSlideOverOpen}
         onClose={() => setIsSlideOverOpen(false)}
         title="Thiết lập hợp đồng mới"
         width="max-w-xl"

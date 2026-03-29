@@ -17,12 +17,20 @@ public record GetInvoicesQuery : IRequest<Result<PagedResult<InvoiceDto>>>
     public int PageSize { get; init; } = 50;
 }
 
-public class GetInvoicesQueryHandler(IApplicationDbContext context) 
-    : IRequestHandler<GetInvoicesQuery, Result<PagedResult<InvoiceDto>>>
+public class GetInvoicesQueryHandler : IRequestHandler<GetInvoicesQuery, Result<PagedResult<InvoiceDto>>>
 {
+    private readonly IApplicationDbContext _context;
+    private readonly ICurrentUserService _currentUserService;
+
+    public GetInvoicesQueryHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
+    {
+        _context = context;
+        _currentUserService = currentUserService;
+    }
+
     public async Task<Result<PagedResult<InvoiceDto>>> Handle(GetInvoicesQuery request, CancellationToken cancellationToken)
     {
-        var query = context.Invoices
+        var query = _context.Invoices
             .Include(i => i.Contract)
                 .ThenInclude(c => c.Customer)
             .Include(i => i.Contract)
@@ -30,6 +38,20 @@ public class GetInvoicesQueryHandler(IApplicationDbContext context)
                     .ThenInclude(r => r.Property)
             .AsNoTracking()
             .AsQueryable();
+
+        if (string.Equals(_currentUserService.Role, "tenant", StringComparison.OrdinalIgnoreCase))
+        {
+            var currentUserId = Guid.TryParse(_currentUserService.UserId, out var parsedUserId) ? parsedUserId : Guid.Empty;
+            var currentUserEmail = await _context.ApplicationUsers
+                .Where(u => u.Id == currentUserId)
+                .Select(u => u.Email)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (!string.IsNullOrWhiteSpace(currentUserEmail))
+            {
+                query = query.Where(i => i.Contract.Customer.Email == currentUserEmail);
+            }
+        }
 
         if (request.PropertyId.HasValue)
             query = query.Where(i => i.Contract.Room.PropertyId == request.PropertyId.Value);
@@ -48,8 +70,8 @@ public class GetInvoicesQueryHandler(IApplicationDbContext context)
 
         if (!string.IsNullOrWhiteSpace(request.Search))
         {
-            query = query.Where(i => 
-                i.InvoiceCode.Contains(request.Search) || 
+            query = query.Where(i =>
+                i.InvoiceCode.Contains(request.Search) ||
                 i.Contract.Customer.FullName.Contains(request.Search) ||
                 i.Contract.Room.RoomNumber.Contains(request.Search));
         }
@@ -95,11 +117,10 @@ public class GetInvoicesQueryHandler(IApplicationDbContext context)
                 OtherFeesNote = i.OtherFeesNote,
                 Discount = i.Discount,
                 DiscountNote = i.DiscountNote,
-                Notes = i.Notes
+                Notes = i.Notes,
             })
             .ToListAsync(cancellationToken);
 
         return Result<PagedResult<InvoiceDto>>.Ok(new PagedResult<InvoiceDto>(items, totalCount, request.PageNumber, request.PageSize));
     }
 }
-

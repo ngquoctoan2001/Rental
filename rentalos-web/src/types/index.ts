@@ -11,7 +11,7 @@ export interface User {
   id: string;
   email: string;
   fullName: string;
-  role: 'owner' | 'manager' | 'staff';
+  role: 'admin' | 'landlord' | 'tenant';
   avatarUrl?: string;
   phoneNumber?: string;
 }
