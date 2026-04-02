@@ -102,7 +102,10 @@ public class VNPayService(
         tenantContext.Initialize(tenant.Id, tenant.Slug, tenant.SchemaName, Guid.Empty, RentalOS.Domain.Enums.UserRole.Landlord, tenant.Plan, tenant.TrialEndsAt, tenant.PlanExpiresAt);
 
         // Manually reinforce search_path for the current connection in this scope
+        // SchemaName is generated internally and stored in our own DB – not user-supplied input.
+#pragma warning disable EF1002
         await context.Database.ExecuteSqlRawAsync($"SET search_path TO \"{tenant.SchemaName}\", public");
+#pragma warning restore EF1002
 
         // 2. Verify Signature
         var setting = await context.Settings.FirstOrDefaultAsync(s => s.Key == "payment.vnpay");

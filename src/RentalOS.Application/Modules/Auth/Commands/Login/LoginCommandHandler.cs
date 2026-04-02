@@ -50,7 +50,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthResultDto>
         var accessToken = _jwtService.GenerateAccessToken(
             user.Id.ToString(),
             tenant.Slug,
-            user.Role,
+            user.Role ?? string.Empty,
             user.Email!,
             tenant.Plan.ToString());
 
@@ -65,7 +65,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthResultDto>
                 Id = user.Id,
                 Email = user.Email!,
                 FullName = user.FullName,
-                Role = user.Role
+                Role = user.Role ?? string.Empty
             },
             Tenant = new TenantDto
             {
