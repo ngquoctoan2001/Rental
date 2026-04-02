@@ -11,7 +11,7 @@ export interface User {
   id: string;
   email: string;
   fullName: string;
-  role: 'admin' | 'landlord' | 'tenant';
+  role: 'admin' | 'landlord';
   avatarUrl?: string;
   phoneNumber?: string;
 }
@@ -63,7 +63,7 @@ export interface Room {
   propertyName?: string;
   roomNumber: string;
   floor: number;
-  status: 'available' | 'rented' | 'maintenance' | 'reserved' | 'Available' | 'Rented' | 'Maintenance' | 'Reserved';
+  status: 'available' | 'rented' | 'reserved' | 'Available' | 'Rented' | 'Reserved';
   basePrice: number;
   areaSqm?: number;
   electricityPrice?: number;

@@ -94,7 +94,7 @@ export default function Header() {
               onChange={(e) => setActiveProperty(e.target.value || null)}
               className="bg-transparent outline-none"
             >
-              <option value="">Tat ca nha tro</option>
+              <option value="">Tất cả nhà trọ</option>
               {properties.map((property) => (
                 <option key={property.id} value={property.id}>
                   {property.name}
@@ -111,7 +111,7 @@ export default function Header() {
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
-            placeholder="Tim kiem nhanh..."
+            placeholder="Tìm kiếm nhanh..."
             className="w-64 rounded-full border-transparent bg-slate-100 py-2 pl-10 pr-4 text-sm outline-none transition-all focus:bg-white focus:ring-2 focus:ring-indigo-500/20"
           />
         </div>
@@ -132,14 +132,14 @@ export default function Header() {
 
           <div className="invisible absolute right-0 top-full mt-2 flex max-h-[480px] w-80 flex-col rounded-xl border border-slate-100 bg-white opacity-0 shadow-2xl transition-all group-hover:visible group-hover:opacity-100">
             <div className="flex items-center justify-between border-b border-slate-100 p-4">
-              <h3 className="font-bold">Thong bao</h3>
+              <h3 className="font-bold">Thông báo</h3>
               <button className="text-xs font-semibold text-indigo-600 hover:underline" onClick={handleMarkAllRead}>
-                Danh dau tat ca la da doc
+                Đánh dấu tất cả là đã đọc
               </button>
             </div>
             <div className="flex-1 space-y-1 overflow-y-auto p-2">
               {notifications.length === 0 ? (
-                <div className="py-8 text-center text-sm text-slate-400">Khong co thong bao moi</div>
+                <div className="py-8 text-center text-sm text-slate-400">Không có thông báo mới</div>
               ) : (
                 notifications.map((notification) => (
                   <button

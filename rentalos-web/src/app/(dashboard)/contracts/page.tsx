@@ -41,7 +41,7 @@ export default function ContractsPage() {
   const [isEditContractOpen, setIsEditContractOpen] = useState(false);
   const [editContractForm, setEditContractForm] = useState({ monthlyRent: '', startDate: '', endDate: '' });
   const [coTenantCustomerId, setCoTenantCustomerId] = useState('');
-  const canManageContracts = user?.role !== 'tenant';
+  const canManageContracts = true;
 
   const { data: contracts = [], isLoading } = useQuery<Contract[]>({
     queryKey: ['contracts'],
@@ -108,6 +108,8 @@ export default function ContractsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contracts'] });
       queryClient.invalidateQueries({ queryKey: ['rooms-available'] });
+      queryClient.invalidateQueries({ queryKey: ['rooms'] });
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
       setIsSlideOverOpen(false);
       setForm({ ...emptyForm });
     },
@@ -118,6 +120,8 @@ export default function ContractsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contracts'] });
       queryClient.invalidateQueries({ queryKey: ['contract-detail'] });
+      queryClient.invalidateQueries({ queryKey: ['rooms'] });
+      queryClient.invalidateQueries({ queryKey: ['rooms-available'] });
     },
   });
 
@@ -126,6 +130,9 @@ export default function ContractsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contracts'] });
       queryClient.invalidateQueries({ queryKey: ['contract-detail'] });
+      queryClient.invalidateQueries({ queryKey: ['rooms'] });
+      queryClient.invalidateQueries({ queryKey: ['rooms-available'] });
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
       setSelectedContractId(null);
       setShowTerminateModal(false);
       setTerminateForm({ ...emptyTerminate });
@@ -137,6 +144,9 @@ export default function ContractsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contracts'] });
       queryClient.invalidateQueries({ queryKey: ['contract-detail'] });
+      queryClient.invalidateQueries({ queryKey: ['rooms'] });
+      queryClient.invalidateQueries({ queryKey: ['rooms-available'] });
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
       setShowRenewModal(false);
       setRenewForm({ ...emptyRenew });
     },
@@ -147,6 +157,8 @@ export default function ContractsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contracts'] });
       queryClient.invalidateQueries({ queryKey: ['contract-detail'] });
+      queryClient.invalidateQueries({ queryKey: ['rooms'] });
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
       setIsEditContractOpen(false);
     },
   });
@@ -614,7 +626,7 @@ export default function ContractsPage() {
                   onChange={e => setCoTenantCustomerId(e.target.value)}
                   className="flex-1 px-3 py-2 text-sm rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 outline-none bg-white"
                 >
-                  <option value="">+ Chứn người đồng thuê...</option>
+                  <option value="">+ Chọn người đồng thuê...</option>
                   {customers
                     .filter(c => c.id !== selectedContract.customerId && !(selectedContract.coTenants ?? []).some((ct: any) => ct.customerId === c.id))
                     .map(c => <option key={c.id} value={c.id}>{c.fullName} - {c.phoneNumber}</option>)

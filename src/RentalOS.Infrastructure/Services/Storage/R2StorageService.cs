@@ -9,23 +9,39 @@ namespace RentalOS.Infrastructure.Services.Storage;
 
 public class R2StorageService : IR2StorageService
 {
-    private readonly IAmazonS3 _s3Client;
+    private readonly IAmazonS3? _s3Client;
     private readonly string _bucketName;
     private readonly string _publicUrl;
     private readonly ILogger<R2StorageService> _logger;
+    private readonly bool _isConfigured;
 
     public R2StorageService(IConfiguration configuration, ILogger<R2StorageService> logger)
     {
         _logger = logger;
-        
+
         var section = configuration.GetSection("CloudflareR2");
-        _bucketName = section["BucketName"] ?? throw new ArgumentNullException("R2 BucketName is missing");
+        _bucketName = section["BucketName"] ?? "not-configured";
         _publicUrl = section["PublicUrl"] ?? "";
+
+        var serviceUrl = section["ServiceUrl"] ?? "";
+
+        // Guard: skip initialization if placeholder or empty URL is set
+        if (string.IsNullOrWhiteSpace(serviceUrl)
+            || serviceUrl.Contains("<account-id>")
+            || !Uri.TryCreate(serviceUrl, UriKind.Absolute, out _))
+        {
+            _logger.LogWarning(
+                "CloudflareR2:ServiceUrl is not configured or contains a placeholder ('{ServiceUrl}'). " +
+                "R2StorageService will be unavailable. Set a valid URL in appsettings or environment variables.",
+                serviceUrl);
+            _isConfigured = false;
+            return;
+        }
 
         var config = new AmazonS3Config
         {
-            ServiceURL = section["ServiceUrl"],
-            ForcePathStyle = true // R2 requires this or it might try to use virtual-host style which can fail depending on region
+            ServiceURL = serviceUrl,
+            ForcePathStyle = true // R2 requires path-style addressing
         };
 
         _s3Client = new AmazonS3Client(
@@ -33,6 +49,15 @@ public class R2StorageService : IR2StorageService
             section["SecretKey"],
             config
         );
+        _isConfigured = true;
+    }
+
+    private IAmazonS3 GetConfiguredClient()
+    {
+        if (!_isConfigured || _s3Client is null)
+            throw new InvalidOperationException(
+                "R2StorageService is not configured. Please set CloudflareR2:ServiceUrl, AccessKey, and SecretKey in your configuration.");
+        return _s3Client;
     }
 
     public async Task<string> UploadAsync(Stream stream, string key, string contentType, CancellationToken ct = default)
@@ -48,7 +73,7 @@ public class R2StorageService : IR2StorageService
                 AutoCloseStream = true
             };
 
-            var fileTransferUtility = new TransferUtility(_s3Client);
+            var fileTransferUtility = new TransferUtility(GetConfiguredClient());
             await fileTransferUtility.UploadAsync(uploadRequest, ct);
 
             _logger.LogInformation("Successfully uploaded file to R2: {Key}", key);
@@ -70,7 +95,7 @@ public class R2StorageService : IR2StorageService
             Expires = DateTime.UtcNow.AddMinutes(expiryMinutes)
         };
 
-        return await Task.Run(() => _s3Client.GetPreSignedURL(request));
+        return await Task.Run(() => GetConfiguredClient().GetPreSignedURL(request));
     }
 
     public async Task<(string Url, DateTime ExpiresAt)> GetPresignedPutUrlAsync(string key, string contentType, TimeSpan expiry)
@@ -84,7 +109,7 @@ public class R2StorageService : IR2StorageService
             Expires = expiresAt,
             ContentType = contentType
         };
-        var url = await Task.Run(() => _s3Client.GetPreSignedURL(request));
+        var url = await Task.Run(() => GetConfiguredClient().GetPreSignedURL(request));
         return (url, expiresAt);
     }
 
@@ -92,7 +117,7 @@ public class R2StorageService : IR2StorageService
     {
         try
         {
-            await _s3Client.DeleteObjectAsync(_bucketName, key);
+            await GetConfiguredClient().DeleteObjectAsync(_bucketName, key);
             _logger.LogInformation("Successfully deleted file from R2: {Key}", key);
         }
         catch (Exception ex)

@@ -1,5 +1,3 @@
-<div align="center">
-
 # 🏠 RentalOS
 
 **Hệ thống quản lý nhà trọ toàn diện — thông minh, đa chi nhánh, tích hợp AI**
@@ -8,8 +6,6 @@
 [![Next.js](https://img.shields.io/badge/Next.js-15-000000?style=flat-square&logo=nextdotjs)](https://nextjs.org)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791?style=flat-square&logo=postgresql)](https://postgresql.org)
 [![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE)
-
-</div>
 
 ---
 
@@ -21,10 +17,11 @@
 | 🤖 **AI Assistant** | Chat với Claude AI — truy vấn dữ liệu, phân tích báo cáo bằng ngôn ngữ tự nhiên |
 | 💳 **Thanh toán đa kênh** | Tích hợp MoMo, VNPay, ZaloPay, chuyển khoản ngân hàng |
 | 📊 **Báo cáo thời gian thực** | Doanh thu, tỷ lệ lấp đầy, xu hướng quá hạn |
-| 🔔 **Thông báo tự động** | Zalo OA, Email, SMS — nhắc hạn hợp đồng, nhắc đóng tiền |
+| 🔔 **Thông báo tự động** | Zalo OA, Email, SMS (SMTP) |
 | 📸 **OCR hóa đơn** | Scan ảnh hóa đơn điện nước bằng Google Vision AI |
 | ⏱️ **Background Jobs** | Hangfire — tự động đánh dấu quá hạn, gửi báo cáo tháng |
 | 🔒 **Bảo mật** | JWT + Refresh Token, Role-based (Owner / Manager / Staff) |
+| ☁️ **Lưu trữ** | Cloudflare R2 (S3-compatible) cho hình ảnh và tài liệu |
 
 ---
 
@@ -32,240 +29,117 @@
 
 ```
 RentalOS (Clean Architecture)
-├── RentalOS.Domain          # Entities, Enums, Domain Events, Exceptions
-├── RentalOS.Application     # CQRS (MediatR), Validators, Interfaces
-├── RentalOS.Infrastructure  # EF Core, Repositories, External Services
-├── RentalOS.API             # ASP.NET Core 10 – REST API + SignalR
-├── RentalOS.Worker          # Hangfire Background Job Worker
+├── src/
+│   ├── RentalOS.API/          # ASP.NET Core 10 – REST API + SignalR
+│   ├── RentalOS.Application/  # CQRS (MediatR), Validators, Interfaces
+│   ├── RentalOS.Domain/       # Entities, Enums, Domain Events, Exceptions
+│   ├── RentalOS.Infrastructure/ # EF Core, Repositories, External Services (Storage, AI, Pay)
+│   ├── RentalOS.Worker/       # Hangfire Background Job Worker
+│   └── RentalOS.Utilities/    # Shared helper utilities
 └── rentalos-web/            # Next.js 15 + TypeScript – Frontend SPA
 ```
 
 **Stack chính:**
 
-- **Backend:** .NET 10, MediatR, FluentValidation, AutoMapper, Dapper, EF Core, Polly, ClosedXML
-- **Frontend:** Next.js 15, TypeScript, Tailwind CSS, Tanstack Query, Zustand, Framer Motion, React Hook Form + Zod
-- **Database:** PostgreSQL 16 – multi-tenant schema per tenant
-- **Storage:** Cloudflare R2 (S3-compatible)
-- **AI:** Anthropic Claude (streaming)
+- **Backend:** .NET 10 (C#), MediatR, FluentValidation, AutoMapper, EF Core 9+
+- **Frontend:** Next.js 15, TypeScript, Tailwind CSS, Tanstack Query, Zustand
+- **Database:** PostgreSQL 16 (Multi-tenant via Schema)
+- **Storage:** Cloudflare R2
 - **Jobs:** Hangfire (PostgreSQL storage)
-- **Deploy:** Docker + Railway
+- **Email:** SMTP (Gmail/SendGrid/...)
 
 ---
 
 ## 🚀 Chạy dự án local
 
-### Yêu cầu
+### Yêu cầu hệ thống
 
-| Công cụ | Phiên bản | Download |
-|---------|-----------|----------|
-| .NET SDK | 10.0+ | [dotnet.microsoft.com](https://dotnet.microsoft.com/download) |
-| Node.js | 22.x LTS | [nodejs.org](https://nodejs.org) |
-| PostgreSQL | 16+ | [postgresql.org](https://www.postgresql.org/download/) hoặc Docker |
-| Docker Desktop | Latest | [docker.com](https://www.docker.com/products/docker-desktop/) *(tuỳ chọn)* |
+| Công cụ | Phiên bản | Link |
+|---------|-----------|------|
+| .NET SDK | 10.0+ | [Download](https://dotnet.microsoft.com/download) |
+| Node.js | 22.x LTS | [Download](https://nodejs.org) |
+| PostgreSQL | 16+ | [Download](https://www.postgresql.org/download/) |
 
 ---
 
-### Bước 1 — Clone repo
+### Bước 1 — Clone Repo
 
 ```bash
 git clone <repo-url>
 cd Rental
 ```
 
----
+### Bước 2 — Cấu hình Backend
 
-### Bước 2 — Khởi động PostgreSQL
-
-> Nếu đã có PostgreSQL chạy local ở port 5432, bỏ qua bước này.
-
-```bash
-# Chạy PostgreSQL bằng Docker
-docker run -d \
-  --name rentalos-db \
-  -e POSTGRES_USER=postgres \
-  -e POSTGRES_PASSWORD=20102001 \
-  -e POSTGRES_DB=rentalos \
-  -p 5432:5432 \
-  postgres:16
-```
-
----
-
-### Bước 3 — Cấu hình Backend
-
-Tạo file `src/RentalOS.API/appsettings.Development.json`:
+Cập nhật file `src/RentalOS.API/appsettings.json` (hoặc tạo `appsettings.Development.json`):
 
 ```json
 {
   "ConnectionStrings": {
-    "DefaultConnection": "Host=localhost;Port=5432;Database=rentalos;Username=postgres;Password=20102001"
+    "DefaultConnection": "Host=localhost;Port=5432;Database=rentalos;Username=postgres;Password=YOUR_PASSWORD"
   },
   "Jwt": {
-    "Secret": "SuperSecretKeyForRentalOS_2025_IdentityV3_AdvancedAuth!",
-    "Issuer": "RentalOS",
-    "Audience": "RentalOS_Users",
-    "ExpiryMinutes": 60,
-    "RefreshTokenExpiryDays": 30
+    "Secret": "MỘT_KEY_BẢO_MẬT_DÀI_ÍT_NHẤT_32_KÝ_TỰ"
   },
   "CloudflareR2": {
     "ServiceUrl": "https://<account-id>.r2.cloudflarestorage.com",
     "AccessKey": "your-access-key",
     "SecretKey": "your-secret-key",
     "BucketName": "rentalos-files",
-    "PublicUrl": "https://files.your-domain.com"
+    "PublicUrl": "https://your-public-cdn.com"
   },
-  "Anthropic": {
-    "ApiKey": "sk-ant-..."
+  "Smtp": {
+    "Host": "smtp.gmail.com",
+    "Port": 587,
+    "Username": "your-email@gmail.com",
+    "Password": "your-app-password"
   }
 }
 ```
 
-> **Lưu ý:** Nếu chưa có Cloudflare R2 hay Anthropic API key, hệ thống vẫn chạy được (các tính năng liên quan sẽ báo lỗi khi dùng).
+> **Lưu ý:** Hệ thống đã có cơ chế tự động bỏ qua (guard) nếu `ServiceUrl` của R2 chưa được cấu hình đúng, giúp ứng dụng vẫn khởi động được mà không bị crash.
 
----
-
-### Bước 4 — Apply Database Migration
+### Bước 3 — Khởi tạo Database
 
 ```bash
+# Di chuyển vào thư mục API
 cd src/RentalOS.API
+
+# Cập nhật DB schema
 dotnet ef database update
-cd ../..
 ```
 
----
+### Bước 4 — Chạy Application
 
-### Bước 5 — Chạy API
-
+**Chạy API:**
 ```bash
-cd src/RentalOS.API
 dotnet run
 ```
+Swagger UI: [http://localhost:5000/swagger](http://localhost:5000/swagger)
 
-API khởi động tại: **http://localhost:5000**  
-Swagger UI: **http://localhost:5000/swagger**
-
----
-
-### Bước 6 — Chạy Worker (Background Jobs)
-
-Mở terminal mới:
-
-```bash
-cd src/RentalOS.Worker
-dotnet run
-```
-
-Hangfire Dashboard: **http://localhost:5001/hangfire**
-
----
-
-### Bước 7 — Chạy Frontend
-
-Mở terminal mới:
-
+**Chạy Frontend (mở terminal mới):**
 ```bash
 cd rentalos-web
-
-# Tạo file môi trường
-echo "NEXT_PUBLIC_API_URL=http://localhost:5000/api" > .env.local
-
-# Cài dependencies (lần đầu)
 npm install
-
-# Khởi động dev server
 npm run dev
 ```
-
-Frontend: **http://localhost:3000**
-
----
-
-### Bước 8 — Tạo tài khoản đầu tiên
-
-Gọi API đăng ký (dùng Swagger hoặc curl):
-
-```bash
-curl -X POST http://localhost:5000/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "owner@demo.vn",
-    "password": "Demo@2025!",
-    "fullName": "Chủ nhà Demo",
-    "tenantName": "Nhà Trọ Demo",
-    "tenantSlug": "demo"
-  }'
-```
-
-Sau đó đăng nhập tại **http://localhost:3000/login**.
+Trang chủ: [http://localhost:3000](http://localhost:3000)
 
 ---
 
-## 🗄️ Cấu trúc Database
+## 🗄️ Database Design (Multi-tenancy)
 
-RentalOS dùng **multi-tenant schema isolation** trên PostgreSQL:
+RentalOS sử dụng chiến lược **Schema-based Isolation**:
+- `public`: Chứa thông tin hệ thống, danh sách tenants, users dùng chung.
+- `tenant_<slug>`: Mỗi khách hàng (chủ nhà) có một schema riêng chứa dữ liệu kinh doanh (phòng, khách thuê, hợp đồng).
 
-- Schema `public` — bảng `tenants`, `users`, `subscriptions`
-- Schema `tenant_<slug>` — toàn bộ dữ liệu của từng tenant (phòng, hợp đồng, hóa đơn, ...)
-
----
-
-## 🐳 Deploy với Docker
-
-```bash
-# Build image
-docker build -t rentalos-api .
-
-# Chạy
-docker run -d \
-  -p 8080:8080 \
-  -e ConnectionStrings__DefaultConnection="Host=<db-host>;..." \
-  rentalos-api
-```
+Cơ chế này đảm bảo:
+1. **Bảo mật**: Dữ liệu chủ nhà A không bao giờ lẫn vào chủ nhà B.
+2. **Hiệu năng**: Query trên các bảng nhỏ hơn so với dùng chung 1 bảng khổng lồ.
+3. **Mở rộng**: Dễ dàng backup/restore dữ liệu cho từng khách hàng cụ thể.
 
 ---
 
-## 🚂 Deploy lên Railway
+## 📜 Giấy phép
 
-1. Push code lên GitHub
-2. Kết nối repo với [Railway](https://railway.app)
-3. Thêm PostgreSQL service từ Railway marketplace
-4. Set environment variables trong Railway dashboard (xem [docs/SETUP.md](docs/SETUP.md))
-5. Deploy tự động từ `main` branch
-
-```bash
-# Hoặc dùng Railway CLI
-railway up
-```
-
----
-
-## 📁 Cấu trúc thư mục
-
-```
-Rental/
-├── src/
-│   ├── RentalOS.API/          # REST API Controllers, Middleware, Program.cs
-│   ├── RentalOS.Application/  # Commands, Queries, Validators, Interfaces
-│   ├── RentalOS.Domain/       # Entities, Enums, Domain Events
-│   ├── RentalOS.Infrastructure/ # EF Core, Services (AI, Payment, Storage...)
-│   └── RentalOS.Worker/       # Hangfire Jobs
-├── rentalos-web/              # Next.js Frontend
-│   └── src/
-│       ├── app/               # App Router pages
-│       ├── components/        # Shared UI components
-│       ├── lib/               # API clients, stores, hooks, schemas
-│       └── types/             # TypeScript type definitions
-├── tests/
-│   ├── RentalOS.UnitTests/
-│   └── RentalOS.IntegrationTests/
-├── docs/                      # Tài liệu kỹ thuật
-├── Dockerfile
-├── railway.toml
-└── RentalOS.slnx
-```
-
----
-
-## 📜 License
-
-MIT © 2025 RentalOS Team
+Phát triển bởi **Antigravity**. MIT License.

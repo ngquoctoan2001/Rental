@@ -17,9 +17,6 @@ public static class DatabaseSeeder
     private const string DemoLandlordEmail = "landlord@rentalos.vn";
     private const string DemoLandlordPassword = "Landlord@123456!";
 
-    private const string DemoTenantEmail = "tenant@rentalos.vn";
-    private const string DemoTenantPassword = "Tenant@123456!";
-
     public static async Task SeedAsync(IServiceProvider serviceProvider)
     {
         var roleManager = serviceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
@@ -27,7 +24,7 @@ public static class DatabaseSeeder
         var context = serviceProvider.GetRequiredService<ApplicationDbContext>();
         var schemaManager = serviceProvider.GetRequiredService<ITenantSchemaManager>();
 
-        foreach (var roleName in new[] { "admin", "landlord", "tenant" })
+        foreach (var roleName in new[] { "admin", "landlord" })
         {
             if (!await roleManager.RoleExistsAsync(roleName))
             {
@@ -59,7 +56,6 @@ public static class DatabaseSeeder
 
         await EnsureUser(userManager, platformTenant, "admin", PlatformAdminEmail, PlatformAdminPassword, "Platform Admin", "0900000000");
         await EnsureUser(userManager, demoLandlordTenant, "landlord", DemoLandlordEmail, DemoLandlordPassword, "Demo Landlord", "0900000001");
-        await EnsureUser(userManager, demoLandlordTenant, "tenant", DemoTenantEmail, DemoTenantPassword, "Demo Tenant", "0900000002");
 
         var allTenants = await context.Tenants.ToListAsync();
         foreach (var tenant in allTenants)

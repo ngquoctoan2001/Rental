@@ -10,12 +10,10 @@ public record GetInvoiceByIdQuery(Guid Id) : IRequest<Result<InvoiceDto>>;
 public class GetInvoiceByIdQueryHandler : IRequestHandler<GetInvoiceByIdQuery, Result<InvoiceDto>>
 {
     private readonly IApplicationDbContext _context;
-    private readonly ICurrentUserService _currentUserService;
 
-    public GetInvoiceByIdQueryHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
+    public GetInvoiceByIdQueryHandler(IApplicationDbContext context)
     {
         _context = context;
-        _currentUserService = currentUserService;
     }
 
     public async Task<Result<InvoiceDto>> Handle(GetInvoiceByIdQuery request, CancellationToken cancellationToken)
@@ -29,20 +27,6 @@ public class GetInvoiceByIdQueryHandler : IRequestHandler<GetInvoiceByIdQuery, R
             .AsNoTracking()
             .Where(i => i.Id == request.Id)
             .AsQueryable();
-
-        if (string.Equals(_currentUserService.Role, "tenant", StringComparison.OrdinalIgnoreCase))
-        {
-            var currentUserId = Guid.TryParse(_currentUserService.UserId, out var parsedUserId) ? parsedUserId : Guid.Empty;
-            var currentUserEmail = await _context.ApplicationUsers
-                .Where(u => u.Id == currentUserId)
-                .Select(u => u.Email)
-                .FirstOrDefaultAsync(cancellationToken);
-
-            if (!string.IsNullOrWhiteSpace(currentUserEmail))
-            {
-                query = query.Where(i => i.Contract.Customer.Email == currentUserEmail);
-            }
-        }
 
         var invoice = await query
             .Select(i => new InvoiceDto

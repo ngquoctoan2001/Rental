@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import {
   BarChart3,
@@ -54,17 +54,11 @@ const NAV_ITEMS = {
     { name: 'Gói dịch vụ', href: '/subscribe', icon: CreditCard },
     { name: 'Cài đặt', href: '/settings', icon: Settings },
   ],
-  tenant: [
-    { name: 'Tổng quan', href: '/', icon: LayoutDashboard },
-    { name: 'Phòng trọ', href: '/rooms', icon: Bed },
-    { name: 'Hợp đồng', href: '/contracts', icon: FileText },
-    { name: 'Hóa đơn', href: '/invoices', icon: Receipt },
-    { name: 'Giao dịch', href: '/transactions', icon: Wallet },
-  ],
 } as const;
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { sidebarOpen, toggleSidebar, activePropertyId, setActiveProperty } = useUIStore();
   const { user, logout } = useAuthStore();
   const { plan } = usePlanLimit();
@@ -165,7 +159,7 @@ export default function Sidebar() {
             </div>
 
             <button
-              onClick={() => logout()}
+              onClick={() => { logout(); router.push('/login'); }}
               className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-slate-400 transition-colors hover:bg-red-900/20 hover:text-red-400"
             >
               <LogOut className="h-5 w-5" />

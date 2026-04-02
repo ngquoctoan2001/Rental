@@ -15,4 +15,5 @@ export * from './transactions';
 export * from './ai';
 export * from './onboarding';
 export * from './files';
+export * from './tenants';
 export * from './client';

@@ -30,7 +30,7 @@ public class TenantMiddleware(RequestDelegate next, IMemoryCache memoryCache)
                         var publicSchemaName = publicTenant.SchemaName;
                         
                         // Initialize tenant context with minimal info (no user)
-                        tenantContext.Initialize(publicTenant.Id, publicTenant.Slug, publicSchemaName, Guid.Empty, RentalOS.Domain.Enums.UserRole.Tenant, RentalOS.Domain.Enums.PlanType.Trial, publicTenant.TrialEndsAt, publicTenant.PlanExpiresAt);
+                        tenantContext.Initialize(publicTenant.Id, publicTenant.Slug, publicSchemaName, Guid.Empty, RentalOS.Domain.Enums.UserRole.Landlord, RentalOS.Domain.Enums.PlanType.Trial, publicTenant.TrialEndsAt, publicTenant.PlanExpiresAt);
 
                         var publicSetSearchPathSql = $"SET search_path TO \"{publicSchemaName}\", public";
                         await dbContext.Database.ExecuteSqlRawAsync(publicSetSearchPathSql);
@@ -88,7 +88,7 @@ public class TenantMiddleware(RequestDelegate next, IMemoryCache memoryCache)
         var roleClaim = context.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value 
                         ?? context.User.FindFirst("role")?.Value;
         
-        var role = Enum.TryParse<RentalOS.Domain.Enums.UserRole>(roleClaim, true, out var r) ? r : RentalOS.Domain.Enums.UserRole.Tenant;
+        var role = Enum.TryParse<RentalOS.Domain.Enums.UserRole>(roleClaim, true, out var r) ? r : RentalOS.Domain.Enums.UserRole.Landlord;
         
         var planClaim = context.User.FindFirst("plan")?.Value;
         var plan = Enum.TryParse<RentalOS.Domain.Enums.PlanType>(planClaim, true, out var p) ? p : RentalOS.Domain.Enums.PlanType.Trial;

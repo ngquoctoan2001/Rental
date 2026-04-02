@@ -171,7 +171,7 @@ export default function CustomersPage() {
         />
         <StatCard 
           title="Đang thuê" 
-          value={customers.filter(c => !c.isBlacklisted).length.toString()} 
+          value={customers.filter(c => !!c.activeContract).length.toString()} 
           icon={CheckCircle2}
           color="emerald"
         />
@@ -565,6 +565,7 @@ export default function CustomersPage() {
                   onClick={() => {
                     setEditForm({ fullName: selectedCustomer!.fullName, idCardNumber: selectedCustomer!.idCardNumber, phoneNumber: selectedCustomer!.phoneNumber, email: selectedCustomer!.email ?? '', address: (selectedCustomer as any).currentAddress ?? (selectedCustomer as any).address ?? '', notes: (selectedCustomer as any).notes ?? '' });
                     setEditingCustomer(selectedCustomer);
+                    setIsDetailModalOpen(false);
                     setIsEditModalOpen(true);
                   }}
                   className="w-full py-2.5 px-4 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-700 flex items-center gap-2 hover:border-indigo-300 hover:text-indigo-600 transition-colors"
@@ -602,18 +603,18 @@ export default function CustomersPage() {
                 <div className="space-y-4">
                   <div className="flex flex-col gap-3 rounded-3xl border border-indigo-100 bg-indigo-50/40 p-5 md:flex-row md:items-center md:justify-between">
                     <div>
-                      <p className="text-xs font-black uppercase tracking-widest text-indigo-400">Gan phong cho khach thue</p>
+                      <p className="text-xs font-black uppercase tracking-widest text-indigo-400">Gán phòng cho khách thuê</p>
                       <p className="mt-1 text-sm font-medium text-slate-600">
                         {selectedCustomer.activeContract
-                          ? `Dang o phong ${selectedCustomer.activeContract.roomNumber} - ${selectedCustomer.activeContract.propertyName}`
-                          : 'Khach thue nay chua duoc gan vao phong nao.'}
+                          ? `Đang ở phòng ${selectedCustomer.activeContract.roomNumber} - ${selectedCustomer.activeContract.propertyName}`
+                          : 'Khách thuê này chưa được gán vào phòng nào.'}
                       </p>
                     </div>
                     <Link
                       href={`/contracts?customerId=${selectedCustomer.id}`}
                       className="inline-flex items-center justify-center rounded-2xl bg-indigo-600 px-5 py-3 text-sm font-bold text-white transition-all hover:bg-indigo-700"
                     >
-                      {selectedCustomer.activeContract ? 'Tao hop dong moi' : 'Gan vao phong'}
+                      {selectedCustomer.activeContract ? 'Tạo hợp đồng mới' : 'Gán vào phòng'}
                     </Link>
                   </div>
                   <div className="bg-slate-50 rounded-3xl p-6 border border-slate-100 grid grid-cols-2 gap-y-6">

@@ -20,12 +20,10 @@ public record GetInvoicesQuery : IRequest<Result<PagedResult<InvoiceDto>>>
 public class GetInvoicesQueryHandler : IRequestHandler<GetInvoicesQuery, Result<PagedResult<InvoiceDto>>>
 {
     private readonly IApplicationDbContext _context;
-    private readonly ICurrentUserService _currentUserService;
 
-    public GetInvoicesQueryHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
+    public GetInvoicesQueryHandler(IApplicationDbContext context)
     {
         _context = context;
-        _currentUserService = currentUserService;
     }
 
     public async Task<Result<PagedResult<InvoiceDto>>> Handle(GetInvoicesQuery request, CancellationToken cancellationToken)
@@ -39,19 +37,6 @@ public class GetInvoicesQueryHandler : IRequestHandler<GetInvoicesQuery, Result<
             .AsNoTracking()
             .AsQueryable();
 
-        if (string.Equals(_currentUserService.Role, "tenant", StringComparison.OrdinalIgnoreCase))
-        {
-            var currentUserId = Guid.TryParse(_currentUserService.UserId, out var parsedUserId) ? parsedUserId : Guid.Empty;
-            var currentUserEmail = await _context.ApplicationUsers
-                .Where(u => u.Id == currentUserId)
-                .Select(u => u.Email)
-                .FirstOrDefaultAsync(cancellationToken);
-
-            if (!string.IsNullOrWhiteSpace(currentUserEmail))
-            {
-                query = query.Where(i => i.Contract.Customer.Email == currentUserEmail);
-            }
-        }
 
         if (request.PropertyId.HasValue)
             query = query.Where(i => i.Contract.Room.PropertyId == request.PropertyId.Value);

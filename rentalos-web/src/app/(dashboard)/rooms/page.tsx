@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import {
   BedDouble, Plus, Search, Filter, Zap, Droplets,
-  MoreVertical, Edit3, Trash2, QrCode, Wrench,
+  MoreVertical, Edit3, Trash2, QrCode,
   CheckCircle2, AlertCircle, Clock, Home, DollarSign,
   ChevronRight, X, Save, Layers, FileUp, Upload
 } from 'lucide-react';
@@ -18,7 +18,6 @@ import { Room, Property } from '@/types';
 const STATUS_OPTIONS = [
   { value: 'available', label: 'Trống', color: 'bg-emerald-500', lightColor: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
   { value: 'rented',  label: 'Đã thuê', color: 'bg-indigo-500', lightColor: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
-  { value: 'maintenance', label: 'Bảo trì', color: 'bg-amber-500', lightColor: 'bg-amber-50 text-amber-700 border-amber-200' },
   { value: 'reserved', label: 'Đặt trước', color: 'bg-purple-500', lightColor: 'bg-purple-50 text-purple-700 border-purple-200' },
 ];
 
@@ -65,7 +64,7 @@ export default function RoomsPage() {
   const [activeTab, setActiveTab] = useState<'info' | 'meter' | 'history'>('info');
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [importResult, setImportResult] = useState<{ imported: number; skipped: number; errors: string[] } | null>(null);
-  const canManageRooms = user?.role !== 'tenant';
+  const canManageRooms = true;
 
   // Data
   const { data: rooms = [], isLoading } = useQuery<Room[]>({
@@ -133,7 +132,7 @@ export default function RoomsPage() {
     total: rooms.length,
     available: rooms.filter(r => normalizeStatus(r.status) === 'available').length,
     occupied: rooms.filter(r => normalizeStatus(r.status) === 'rented').length,
-    maintenance: rooms.filter(r => normalizeStatus(r.status) === 'maintenance').length,
+    reserved: rooms.filter(r => normalizeStatus(r.status) === 'reserved').length,
   }), [rooms]);
 
   // Helpers
@@ -220,10 +219,10 @@ export default function RoomsPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: 'Tổng số phòng', value: stats.total, icon: BedDouble, color: 'indigo' },
+                  { label: 'Tổng số phòng', value: stats.total, icon: BedDouble, color: 'indigo' },
           { label: 'Đang trống', value: stats.available, icon: CheckCircle2, color: 'emerald' },
           { label: 'Đã cho thuê', value: stats.occupied, icon: Home, color: 'indigo' },
-          { label: 'Đang bảo trì', value: stats.maintenance, icon: Wrench, color: 'amber' },
+          { label: 'Đặt trước', value: stats.reserved, icon: DollarSign, color: 'amber' },
         ].map(s => (
           <StatCard key={s.label} title={s.label} value={String(s.value)} icon={s.icon} color={s.color as any} />
         ))}

@@ -23,10 +23,10 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 
         builder.HasIndex(x => x.InviteToken);
 
-        // Ignore navs that don't exist in per-tenant DDL to prevent shadow FK columns
+        // ManagedContracts is not mapped via any FK config, so ignore to prevent shadow column
         builder.Ignore(x => x.ManagedContracts);
-        builder.Ignore(x => x.AssignedTasks);
-        builder.Ignore(x => x.Reviews);
-        builder.Ignore(x => x.Addresses);
+        // Note: AssignedTasks, Reviews, Addresses are mapped via their own IEntityTypeConfiguration
+        // (MaintenanceTaskConfiguration, ReviewConfiguration, AddressConfiguration) using WithMany(),
+        // so they must NOT be ignored here to avoid EF Core warnings.
     }
 }
